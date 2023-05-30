@@ -31,3 +31,4 @@ go.sum
 /data
 /transcoding
 /TODO.md
+/cmd/__debug_bin
