@@ -1,0 +1,550 @@
+/* noto-sans-regular - latin */
+@font-face {
+    font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+    font-family: 'Noto Sans';
+    font-style: normal;
+    font-weight: 400;
+    src: url('/assets/fonts/noto-sans-v27-latin-regular.eot'); /* IE9 Compat Modes */
+    src: url('/assets/fonts/noto-sans-v27-latin-regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+         url('/assets/fonts/noto-sans-v27-latin-regular.woff2') format('woff2'), /* Super Modern Browsers */
+         url('/assets/fonts/noto-sans-v27-latin-regular.woff') format('woff'), /* Modern Browsers */
+         url('/assets/fonts/noto-sans-v27-latin-regular.ttf') format('truetype'), /* Safari, Android, iOS */
+         url('/assets/fonts/noto-sans-v27-latin-regular.svg#NotoSans') format('svg'); /* Legacy iOS */
+  }
+  
+  
+/* Set the background color to dark gray */
+body {
+    background-color: #333333;
+    font-family: 'Noto Sans', sans-serif;
+}
+
+/* Add some padding to the top for the navbar */
+.main-content {
+    width: 100%;
+    padding-top: 2rem;
+    text-align: center;
+}
+
+/* Add a box-shadow to the navbar */
+nav.navbar {
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+/* Add some padding to the navbar text */
+nav.navbar a {
+    padding-left: 10px;
+}
+
+/* Style the links in the navbar */
+nav.navbar a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* navbar-brand is the title of the website */
+nav.navbar .navbar-brand {
+    font-size: 1.5em;
+    margin-left: 1rem;
+}
+
+/* Add a hover effect to the links in the navbar */
+nav.navbar a:hover {
+    color: #ddd;
+}
+
+/* nav bar dropdown from navbar.tmpl */
+.dropdown-menu {
+    background-color: #444444;
+    right: 0;
+    left: auto;
+    margin: 0.5rem 1rem;
+}
+
+.dropdown {
+    color: #fff;
+    text-align: right;
+    
+    /* force right align */
+    float: right;
+    right: 0;
+    position: absolute;
+    left: auto;
+}
+
+.dropdown-item {
+    color: #fff;
+    text-align: left;
+}
+
+.dropdown-item:hover {
+    color: #ddd;
+}
+
+
+/* Center the title on the index page */
+h1 {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 50px;
+}
+
+/* Style the list-group-item on the index page */
+ul.list-group-item {
+    border: none;
+}
+
+/* Style the links in the list-group-item */
+ul.list-group-item a {
+    color: #fff;
+}
+
+/* Add a hover effect to the links in the list-group-item */
+ul.list-group-item a:hover {
+    color: #ddd;
+}
+
+/* Style the footer */
+footer {
+    color: #fff;
+    text-align: center;
+    padding: 20px 0;
+}
+
+.info h3 {
+    font-size: 1.5em;
+    padding-bottom: 0.25rem;
+}
+
+.vjs-skipped {
+    background-color: red;
+}
+
+.white-text {
+    color: white;
+}
+
+.thumbnail {
+    width: 120px;
+    height: 120px;
+    border-radius: 5px;
+    flex-shrink: 0;
+    object-fit: cover;
+    object-position: center;
+}
+.creators {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-right: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+.creator {
+    display: flex;
+    align-items: center;
+    width: 33%;
+    margin-bottom: 0.5rem;
+    text-align: center;
+    height: 90px;
+    width: 33vh;
+}
+
+.creator img {
+    width: 90px;
+    height: 90px;
+    margin-right: 20px;
+    object-fit: cover;
+    object-position: center;
+}
+
+.name {
+    margin-left: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    text-overflow: ellipsis;
+    line-height: 90px;
+}
+
+/* Path: static\css\styles.css */
+
+.image-header img {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    z-index: -5;
+}
+
+.image-header {
+    margin-bottom: -5.5rem;
+    z-index: -5;
+}
+
+
+.page-title {
+    font-size: 2em;
+    font-weight: bold;
+    margin-bottom: 30px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #f5e6d9;
+    margin-left: 100px;
+}
+
+#vid-img {
+    width: 265px;
+    max-height: 265px;
+    object-fit: cover;
+    object-position: center;
+
+}
+
+a {
+    color: #cccccc;
+    text-decoration: none;
+    /* color: #00ccff; */
+}
+
+a:hover {
+    color: #ffffff;
+    /* color: #00ffff; */
+}
+
+#vid-title {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+    text-align: left;
+}
+
+.video-box {
+    text-align: left;
+}
+
+.content-header {
+    background-color: #454545;
+    padding: 2rem;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+    margin-left: 15%;
+    margin-right: 15%;
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: #fff;;
+}
+
+#page-select {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    justify-content: center;
+    font-size: 1.5rem;
+    display: flex;
+}
+
+#page-select span {
+    margin: 0 1rem;
+    color: #fff;
+}
+
+#page-select input {
+    width: 3rem;
+    text-align: center;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* make it look nicer */
+    background-color: #454545;
+    color: #fff;
+    border: none;
+    
+}
+
+/* put green progress bar under the video player if it is still in progress, width is the same as the thumnail */
+.watched-text {
+    background-color: #00cc00;
+    width: 100%;
+    height: 3px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+}
+
+
+.in-progress-text {
+    background-color: #ff0000;
+    height: 3px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.in-progress-bkg {
+    background-color: white;
+    height: 3px;
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+}
+
+.unlisted-text {
+    background-color: #ffa631;
+    width: 100%;
+    height: 3px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.unavailable-text {
+    background-color: #ff0000;
+    width: 100%;
+    height: 3px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.private-text {
+    background-color: #ff0000;
+    width: 100%;
+    height: 3px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+/* search bar in the nav bar, align on the right next to Account dropdown */
+.search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    width: 100%;
+}
+
+.search-bar input {
+    margin-left: 1rem;
+    width: 100%;
+    color: #fff;
+    background-color: #454545;
+    border: none;
+    border-radius: 10px;
+    padding: 0.5rem;
+    font-size: 1rem;
+}
+
+/* search results that only show the title, creator, and thumbnail. From navbar.tmpl */
+
+#search-results {
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: #454545;
+    border-radius: 10px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+    z-index: 1;
+    display: none;
+}
+
+#search-results ul {
+    /* each item a single line */
+    list-style-type: none;
+}
+
+.search-result {
+    margin-bottom: 0.5rem;
+}
+
+.search-result {
+    width: 100%;
+    list-style-type: none;
+}
+
+.search-result-thumbnail img {
+    height: 50px;
+    max-width: 120px;
+    object-fit: cover;
+    object-position: center;
+    margin-bottom: 0.25rem;
+    margin-right: 0.5rem;
+}
+
+.search-result-title {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+    text-align: left;
+}
+
+.search-result-channel {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+    text-align: left;
+}
+
+.download-options {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    color: #fff;
+}
+
+.download-option-header {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+    text-align: left;
+}
+
+.download-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.download-option-content-input text {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+    text-align: left;
+}
+
+.download-option-content-header {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+    text-align: left;
+}
+
+.logo img {
+    max-width: 40%;
+    height: auto;
+    margin-bottom: 30px;
+}
+
+/* Mobile Styles */
+
+@media screen and (max-width: 768px) {
+    .main-content {
+        padding-top: 1rem;
+    }
+
+    .logo img {
+        max-width: 75%;
+        margin-bottom: 20px;
+    }
+    
+    nav.navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 0.5rem 1rem;
+    }
+    
+    nav.navbar .navbar-brand {
+        font-size: 1.2em;
+        margin-left: 0.5rem;
+    }
+    
+    /* Show the dropdown menu on mobile devices */
+    .dropdown {
+        display: block;
+        /* no longer float right */
+        float: none;
+        position: relative;
+        text-align: left;
+    }
+    
+    /* Style the dropdown menu on mobile devices */
+    .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: auto;
+        background-color: #444444;
+        border-radius: 0;
+        width: 100%;
+        padding: 0;
+        z-index: 100;
+        display: none;
+    }
+    
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+        white-space: nowrap;
+    }
+    
+    .dropdown.show .dropdown-menu {
+        display: block;
+    }
+
+    .content-header {
+        margin-left: 5%;
+        margin-right: 5%;
+        font-size: 2rem;
+    }
+
+    #page-select {
+        font-size: 1.2rem;
+    }
+
+    #page-select a {
+        margin-top: 0.5rem;
+    }
+
+    #page-select span {
+        margin: 0.5rem 1rem;
+    }
+
+    #page-select input {
+        width: 50px;
+        margin: 0.5rem 0;
+    }
+
+    .creators {
+        flex-direction: column;
+        align-items: left;
+        margin-left: 5%;
+    }
+
+    .creator {
+        width: 100%;
+        height: auto;
+    }
+
+    .creator img {
+        width: 100px;
+        height: 100px;
+        margin: 0.25rem;
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .name {
+        width: auto;
+        line-height: normal;
+        font-size: 1rem;
+        /* wrap text */
+        white-space: normal;
+        text-align: left;
+    }
+    
+}

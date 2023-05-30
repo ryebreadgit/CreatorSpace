@@ -1,0 +1,14 @@
+<svg viewBox="0 0 2560 1440" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="2560" height="1440" fill="#9146FF" />
+  <g transform="translate(1280, 720)">
+    <!-- Outer white frame -->
+    <rect x="-300" y="-150" width="600" height="300" fill="#FFFFFF" />
+    <!-- Black screen area -->
+    <rect x="-280" y="-130" width="560" height="260" fill="#000000" />
+    <!-- Blue bar at the top of the screen -->
+    <rect x="-280" y="-130" width="560" height="20" fill="#9146FF" />
+    <!-- Blue power button -->
+    <circle cx="220" cy="0" r="30" fill="#9146FF" />
+    <rect x="210" y="-10" width="20" height="20" fill="#FFFFFF" />
+  </g>
+</svg>

@@ -1,0 +1,7 @@
+<svg viewBox="0 0 2560 1440" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="2560" height="1440" fill="#FF0000" />
+  <g transform="translate(1280, 720)">
+    <rect x="-280" y="-220" width="560" height="320" rx="40" fill="#FFFFFF" />
+    <polygon points="-100,60 160,-60 -100,-180" fill="#FF0000" />
+  </g>
+</svg>

@@ -1,0 +1,11 @@
+<svg viewBox="0 0 2560 1440" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="2560" height="1440" fill="#1DA1F2" />
+  <g transform="translate(1280, 720)">
+    <!-- White circle in the center of the banner -->
+    <circle cx="0" cy="0" r="150" fill="#FFFFFF" />
+    <!-- Blue check mark inside the circle -->
+    <path d="M -90,0
+             L -30,60
+             L 90,-60" stroke="#1DA1F2" stroke-width="30" stroke-linecap="round" fill="none" />
+  </g>
+</svg>

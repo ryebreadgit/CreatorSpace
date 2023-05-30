@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ .Video.Title }} - CreatorSpace</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+    
+
+    <link rel="stylesheet" href="/assets/lib/bootstrap-5.3.0-alpha3-dist/css/bootstrap.min.css">
+    <script src="/assets/lib/bootstrap-5.3.0-alpha3-dist/js/bootstrap.min.js"></script>
+
+
+    <link rel="stylesheet" href="/assets/css/watch.css">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/videos.css">
+
+    <link rel="stylesheet" href="/assets/lib/video-js-8.3.0/video-js.min.css">
+    <script src="/assets/lib/video-js-8.3.0/video.min.js"></script>
+    <link rel="stylesheet" href="/assets/lib/vsg-skin.css">
+
+
+    <meta name="description" content="Watch {{ .Video.Title }} by {{ .Creator.Name }} on CreatorSpace.">
+    <meta property="og:image" content="/api/youtube/video/thumbnail/{{ .Video.VideoID }}">
+    <meta name="keywords" content="creator, archive, youtube, twitch, video, collection, watch">
+    <meta name="author" content="CreatorSpace">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+{{template "navbar.tmpl" }}
+
+{{define "comment"}}
+    <div class="comment">
+        <div class="comment-info">
+            <img src="/assets/img/defaults/avatars/default_avatar.svg" alt="">
+            <div class="comment-info-text">
+                <span class="comment-author">{{.Author}}</span>
+                <span class="comment-date">{{.TimeString}}</span>
+            </div>
+        </div>
+        <div class="comment-text">
+            <p>{{.Text}}</p>
+        </div>
+        <div class="comment-votes">
+            <span class="comment-vote-count">{{.Votes}}</span>
+        </div>
+    </div>
+    <hr />
+{{end}}
+
+{{define "comment-reply"}}
+{{end}}
+
+{{define "video-recs"}}
+<!--<div class="video-data carousel-item {{ if eq .Index 0 }}active{{ end }}">-->
+<div class="video-data">
+    <div class="creator-info">
+      <a href="/creators/{{.Recommendation.ChannelID}}">
+        {{if eq .Recommendation.VideoType "Twitch"}}
+          <img src="/api/twitch/creators/{{.Recommendation.ChannelID}}/thumbnail" alt={{.Recommendation.ChannelTitle}}>
+        {{else}}
+          <img src="/api/youtube/creators/{{.Recommendation.ChannelID}}/thumbnail" alt={{.Recommendation.ChannelTitle}}>
+        {{end}}
+        <span class="creator-info-text">{{.Recommendation.ChannelTitle}}</span>
+      </a>
+    </div>
+    <div class="video">
+      <div class="thumbnail-box">
+          <a href="/watch/{{.Recommendation.VideoID}}"><img src="/api/media/{{.Recommendation.VideoID}}/thumbnail" style="width: 187.5px;height: 105px;" alt="{{.Recommendation.Title}}"></a>
+          
+          {{if .Recommendation.Watched}}
+           <span class="watched-text"></span>
+          {{end}}
+          {{if eq .Recommendation.Availability "unavailable"}}
+            <span class="unavailable-text"></span>
+          {{end}}
+          {{if eq .Recommendation.Availability "unlisted"}}
+            <span class="unlisted-text"></span>
+          {{end}}
+          {{if eq .Recommendation.Availability "private"}}
+            <span class="private-text"></span>
+          {{end}}
+          {{if .Recommendation.Progress}}
+            <div class="in-progress-text" style="width: {{.Recommendation.Progress}}%"></div>
+            <div class="in-progress-bkg"></div>
+          {{end}}
+          
+          <div class="length">{{.Recommendation.Length}}</div>
+      </div>
+      <div class="info">
+        <h3><a href="/watch/{{.Recommendation.VideoID}}">{{.Recommendation.Title}}</a></h3>
+        <ul>
+          {{if .Recommendation.Views}}
+            <li>{{.Recommendation.Views}} views</li>
+          {{end}}
+          <li>Published on {{.Recommendation.PublishedAt}}</li>
+        </ul>
+      </div>
+    </div>
+</div>
+{{end}}
+
+{{ if eq .Video.VideoType "short" }}
+<div class="vjs-video-wrapper vjs-short-video">
+{{ else }}
+<div class="vjs-video-wrapper">
+{{ end }}
+    <video-js id="vid-player"
+      class="video-js vsg-player vjs-controls-enabled vjs-workinghover vjs-fluid vjs-youtube vjs-user-inactive"
+      poster="/api/media/{{ .Video.VideoID }}/thumbnail">
+    </video-js>
+</div>
+
+<main>
+    <div class="video-data">
+        <div class="video-title">
+            {{ .Video.Title }}
+        </div>
+        <div class="video-details">
+            {{if .Video.Views}}{{ .Video.Views }} Views | {{end}}Published on {{.Video.PublishedAt}}
+        </div>
+    </div>
+
+    <div class="description-box">
+        <div class="description-data">
+            <h2>Description</h2>
+            <p class="description-text">{{ .Video.Description }}</p>
+        </div>
+        <button id="show-more">Show More</button>
+    </div>
+
+    <div class="right-side-info">
+        <div class="creator-info-box">
+            <h2>About the Creator</h2>
+            <a href="/creators/{{ .Creator.ChannelID }}">
+                <img src="/api/youtube/creators/{{.Creator.ChannelID}}/thumbnail">
+                <h3>{{ .Creator.Name }}</h3>
+            </a>
+            <div class="creator-info-box-info">
+                <p>{{ .Creator.Description }}</p>
+            </div>
+            <hr>
+            <span class="creator-stats">{{.Creator.VideoCount}} videos
+            {{if .Creator.Subscribers}}
+            | {{.Creator.Subscribers}} Subscribers
+            {{end}}
+            </span>
+            <br />
+            <span class="creator-link">
+            {{if eq .Creator.Platform "Twitch"}}
+                <a href="https://www.twitch.tv/videos/{{ .Video.VideoID }}" target="_blank">View Video on Twitch</a>
+                | 
+                <a href="https://www.twitch.tv/{{ .Creator.Name }}" target="_blank">View Creator on Twitch</a>
+            {{else}}
+                <a href="https://www.youtube.com/watch?v={{ .Video.VideoID }}" target="_blank">View Video on YouTube</a>
+                | 
+                <a href="https://www.youtube.com/channel/{{ .Creator.ChannelID }}" target="_blank">View Creator on YouTube</a>
+            {{end}}
+
+            </span>
+        </div>
+        
+        <div class="recommendation-box">
+            <h2>Recommended Videos</h2>
+            <hr />
+            <div class="recommendation-list">
+                 <!--div class="carousel slide" data-ride="carousel" id="carousel">
+                    <div class="carousel-inner">-->
+                        {{ range $index, $recommendation := .Recommendations }}
+                            {{ template "video-recs" (dict "Recommendation" $recommendation "Index" $index) }}
+                        {{ end }}
+                          
+                    
+                <!--<a class="carousel-control-next" href="#carousel" role="button" data-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="sr-only">Next</span>
+                    </a>
+                </div>-->
+            </div>
+        </div>
+
+    </div>
+     
+    <div class="comments-box">
+        <h2>Comments</h2>
+        <div class="comments">
+            {{ range .Comments }}
+            {{$cname := $.Creator.Name}}
+            {{ if .ParentCommentID }}
+                {{ template "comment-reply" . }}
+            {{ else }}
+                {{ template "comment" . }}
+            {{ end }}
+            {{ end }}
+            {{ if .Comments }}
+            <a href="/api/youtube/comments/{{ .Video.VideoID }}/all"><span class="view-all-comments">View All Comments</span></a>
+            {{ else }}
+            <p class="no-comments">Comments Unavailable</p>
+            {{ end }}
+    </div>
+     
+</main>
+
+<script>
+    let showMoreButton = document.getElementById("show-more");
+    let descriptionBox = document.querySelector(".description-data");
+    let descriptionText = document.querySelector(".description-text");
+
+    if (descriptionBox.offsetHeight > 100) {
+        descriptionBox.style.height = "100px";
+        descriptionBox.style.overflow = "hidden";
+        descriptionBox.style.textOverflow = "ellipsis";
+        showMoreButton.style.display = "inline-block";
+    } else {
+        showMoreButton.style.display = "none";
+    }
+
+    showMoreButton.addEventListener("click", function () {
+        if (descriptionBox.style.height === "100px") {
+            descriptionBox.style.height = "auto";
+            showMoreButton.innerText = "Show Less";
+        } else {
+            descriptionBox.style.height = "100px";
+            showMoreButton.innerText = "Show More";
+        }
+    });
+</script>
+<script>
+    let vidSrcType = "{{ .Video.VideoType }}";
+    let vidSrcMime = "{{ .Video.MimeType }}";
+    let vidSrc = ""
+    if (vidSrcType == "Twitch") {
+        vidsrc = '/api/media/{{ .Video.VideoID }}/manifest.m3u8'
+    } else {
+        vidsrc = '/api/media/{{ .Video.VideoID }}'
+    }
+    let player = videojs('vid-player', {
+        controls: true,
+        autoplay: false,
+        preload: 'auto',
+        sources: [{
+            src: vidsrc,
+            type: vidSrcMime
+        }],
+        html5: {
+        vhc: {
+            hlsExpiration: 5
+        }
+        {{if eq .Video.VideoType "short"}}
+        ,loop: true
+        {{end}}
+    }
+    });
+
+
+    let sponsorBlock = [];
+    {{ range .SponsorBlock }}
+    sponsorBlock.push({
+        "segmentStart": "{{ .SegmentStart }}",
+        "segmentEnd": "{{ .SegmentEnd }}",
+        "category": "{{ .Category }}"
+    });
+    {{ end }}
+
+    // iterate over all sponsorBlock segments, if segments overlap, check if they're the same category and merge them if so
+    for (let i = 0; i < sponsorBlock.length; i++) {
+        for (let j = i + 1; j < sponsorBlock.length; j++) {
+            if (sponsorBlock[i]['segmentEnd'] >= sponsorBlock[j]['segmentStart']) {
+                if (sponsorBlock[i]['category'] == sponsorBlock[j]['category']) {
+                    sponsorBlock[i]['segmentEnd'] = sponsorBlock[j]['segmentEnd'];
+                    sponsorBlock.splice(j, 1);
+                }
+            }
+        }
+    }
+
+    // If sponsorBlock segments were found, log them to the console
+
+    if (sponsorBlock.length == 0) {
+        console.log(`No SponsorBlock segments found`)
+    } else {
+        console.log(`SponsorBlock segments found: ${JSON.stringify(sponsorBlock)}`)
+    }
+
+    // iterate over all sponsorBlock segments and highlight them on the videojs progress bar
+
+    for (let sb of sponsorBlock) {
+        // check if segment is a sponsor
+        if (sb['category'] != "sponsor") {
+            continue;
+        }
+
+        // highlight videojs progress bar with red color between segmentStart and segmentEnd
+        const segmentStart = sb["segmentStart"];
+        const segmentEnd = sb["segmentEnd"];
+        const segmentLength = segmentEnd - segmentStart;
+        const length = "{{ .Video.Length }}";
+
+        const segmentBar = document.createElement('div');
+        segmentBar.classList.add('vjs-segment-bar');
+        segmentBar.style.left = `${segmentStart / length * 100}%`;
+        segmentBar.style.width = `${segmentLength / length * 100}%`;
+        // light green background color
+        segmentBar.style.backgroundColor = '#00ff00';
+
+        player.controlBar.progressControl.seekBar.el().appendChild(segmentBar);
+
+    }
+
+    // If sponsorBlock segments were found, add an icon to the videojs control bar to the left of the fullscreen button. When clicked, it will enable or disable the sponsorBlock segments. The icon is /assets/img/PlayerStartIconSponsorBlocker.svg when disabled and /assets/img/PlayerStopIconSponsorBlocker.svg when enabled.
+
+    // check cookie to see if sponsorBlock is enabled or disabled
+    let sponsorBlockEnabled = false
+    {{ if .SponsorBlockEnabled }}
+        sponsorBlockEnabled = true
+    {{ end }}
+    let sponsorSegmentFound = false;
+    for (let sb of sponsorBlock) {
+        // check if segment is a sponsor
+        if (sb['category'] == "sponsor") {
+            sponsorSegmentFound = true;
+            break;
+        }
+
+    }
+
+    // Add theater mode button to videojs control bar
+    const theaterModeButton = document.createElement('button');
+    theaterModeButton.classList.add('vjs-theater-mode-button');
+    theaterModeButton.classList.add('vjs-control');
+    theaterModeButton.classList.add('vjs-button');
+    theaterModeButton.setAttribute('aria-live', 'polite');
+    theaterModeButton.setAttribute('aria-disabled', 'false');
+    theaterModeButton.setAttribute('title', 'Theater Mode');
+    theaterModeButton.setAttribute('type', 'button');
+    theaterModeButton.setAttribute('aria-label', 'Theater Mode');
+    theaterModeButton.setAttribute('tabindex', '0');
+    theaterModeButton.setAttribute('role', 'button');
+    theaterModeButton.innerHTML = `<img src="/assets/img/PlayerTheaterModeIcon.svg" alt="Theater Mode Icon">`;
+    theaterModeButton.querySelector('img').style.width = '18px';
+
+    let theaterModeEnabled = false;
+theaterModeButton.addEventListener('click', function () {
+  let videoPlayerContainer = document.getElementsByClassName("vjs-video-wrapper")[0];
+  let videoPlayer = document.getElementById("vid-player");
+  
+  if (!theaterModeEnabled) {
+    videoPlayerContainer.classList.add('theater-mode-enabled');
+    theaterModeEnabled = true;
+  } else {
+    videoPlayerContainer.classList.remove('theater-mode-enabled');
+    videoPlayer.classList.remove('theater-mode-enabled');
+    theaterModeEnabled = false;
+  }
+    
+  videoPlayerContainer.style.transition = 'all 0.2s ease-in-out';
+    setTimeout(function () {
+        videoPlayerContainer.style.transition = 'none';
+    }, 200);
+    });
+
+    
+
+    player.controlBar.el().insertBefore(theaterModeButton, player.controlBar.fullscreenToggle.el());
+
+    if (sponsorBlock.length > 0 && sponsorSegmentFound) {
+        const sponsorBlockButton = document.createElement('button');
+        sponsorBlockButton.classList.add('vjs-sponsor-block-button');
+        sponsorBlockButton.classList.add('vjs-control');
+        sponsorBlockButton.classList.add('vjs-button');
+        sponsorBlockButton.setAttribute('aria-live', 'polite');
+        sponsorBlockButton.setAttribute('aria-disabled', 'false');
+        sponsorBlockButton.setAttribute('title', 'SponsorBlock');
+        sponsorBlockButton.setAttribute('type', 'button');
+        sponsorBlockButton.setAttribute('aria-label', 'SponsorBlock');
+        sponsorBlockButton.setAttribute('tabindex', '0');
+        sponsorBlockButton.setAttribute('role', 'button');
+        // set to /assets/img/PlayerStartIconSponsorBlocker.svg when disabled and /assets/img/PlayerStopIconSponsorBlocker.svg when enabled
+        if (sponsorBlockEnabled) {
+            sponsorBlockButton.classList.add('vjs-sponsor-block-button-enabled');
+            sponsorBlockButton.innerHTML = `<img src="/assets/img/PlayerStopIconSponsorBlocker.svg" alt="SponsorBlock Icon">`;
+        } else {
+            sponsorBlockButton.innerHTML = `<img src="/assets/img/PlayerStartIconSponsorBlocker.svg" alt="SponsorBlock Icon">`;
+        }
+        sponsorBlockButton.querySelector('img').style.width = '18px';
+
+        sponsorBlockButton.addEventListener('click', function () {
+            if (sponsorBlockButton.classList.contains('vjs-sponsor-block-button-enabled')) {
+                sponsorBlockButton.classList.remove('vjs-sponsor-block-button-enabled');
+                sponsorBlockButton.innerHTML = `<img src="/assets/img/PlayerStartIconSponsorBlocker.svg" alt="SponsorBlock Icon">`;
+                sponsorBlockEnabled = false;
+            } else {
+                sponsorBlockButton.classList.add('vjs-sponsor-block-button-enabled');
+                sponsorBlockButton.innerHTML = `<img src="/assets/img/PlayerStopIconSponsorBlocker.svg" alt="SponsorBlock Icon">`;
+                sponsorBlockEnabled = true;
+            }
+            sponsorBlockButton.querySelector('img').style.width = '18px';
+            updateSponsorblockSettings(sponsorBlockEnabled)
+        });
+
+        // ensure that the sponsorBlock button is added to the control bar before the theater mode button
+        player.controlBar.el().insertBefore(sponsorBlockButton, theaterModeButton);
+    }
+
+    player.ready();
+
+    // when player can play, check if the video is a short video, if so, loop it
+    let progress = '{{.Progress}}';
+    player.on('playing', function () {
+        if (progress != "0") {
+            // jump to progress
+            player.currentTime(progress);
+            // ensure that the progress is set to 0 so that it doesn't jump to the progress again
+            progress = "0";
+        }
+    });
+
+    player.on('timeupdate', function () {
+        for (let sb of sponsorBlock) {
+            if (!sponsorBlockEnabled) {
+                continue;
+            }
+            if (player.currentTime() >= sb['segmentStart'] && player.currentTime() < sb['segmentEnd'] && sb['category'] == "sponsor") {
+                // if the segment time would exceed the video duration, set the end time to the video duration
+                if (sb['segmentEnd'] >= player.duration()) {
+                    sb['segmentEnd'] = player.duration();
+                    sendCompletedRequest("{{.VideoID}}");
+                }
+                player.currentTime(sb['segmentEnd']);
+            }
+        }
+    });
+
+    function updateSponsorblockSettings(data) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/user/{{.UserID}}/sponsorblock');
+        // data expecting PostForm("sponsorblockEnabled")
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.send("sponsorblockEnabled=" + data);
+    }
+
+
+    // when pressing right arrow key or left arrow key, skip forward or back in video
+    document.addEventListener('keydown', function (event) {
+        // check if video is in view of the user
+        let video = document.getElementById("vid-player");
+        let videoRect = video.getBoundingClientRect();
+        // once only 10% of the bottom of the video is in view, the video is considered out of view
+        let isInView = videoRect.bottom > 0.1 * window.innerHeight;
+
+        // check if in a text input
+        let isInput = document.activeElement.tagName == "INPUT" || document.activeElement.tagName == "TEXTAREA";
+
+        // check if in a modal
+        let isModal = document.activeElement.classList.contains("modal");
+
+        // check if in a dropdown
+        let isDropdown = document.activeElement.classList.contains("dropdown");
+
+        if (isInput || isModal || isDropdown) {
+            return;
+        }
+
+        if (!isInView) {
+            return;
+        }
+        if (event.key == " ") {
+            event.preventDefault();
+            if (player.paused()) {
+                player.play();
+            } else {
+                player.pause();
+            }
+        } else if (event.key == "ArrowRight") {
+            event.preventDefault();
+            player.currentTime(player.currentTime() + 10);
+        } else if (event.key == "ArrowLeft") {
+            event.preventDefault();
+            player.currentTime(player.currentTime() - 5);
+        }
+    });
+
+
+
+    function sendCompletedRequest() {
+        let xhr = new XMLHttpRequest();
+        let user_id = "{{.UserID}}";
+        let video_id = "{{.Video.VideoID}}";
+        xhr.open("POST", `/api/user/${user_id}/progress/${video_id}/complete`, true);
+        xhr.send();
+    }
+
+    let lastTime = 0;
+    let completed = false;
+    let ignoreTimeupdate = false;
+    {{if .Video.Watched}}
+        completed = true;
+    {{end}}
+    // keep track of user's current time
+    player.on('timeupdate', function () {
+
+        // ignore if player is paused
+        if (player.paused()) {
+            return;
+        }
+
+        // Ignore if we've already watched this video
+        if (completed) {
+            return;
+        }
+
+        let curTime = player.currentTime();
+
+        // Skip if within the first 5 seconds
+        if (curTime < 5) {
+            return
+        }
+
+        // only update every 5 seconds, round to nearest 5 seconds and if it has been less than 0.1 seconds since the last update, ignore
+        if (Math.abs(curTime - lastTime) < 5 && Math.abs(curTime - lastTime) > 0.1) {
+            return;
+        }
+
+        // if in the last 60 seconds, mark as watched by sending a request to the server /api/user/${user_id}/progress/${video_id}/complete
+        if (curTime >= player.duration() - 60) {
+            sendCompletedRequest();
+            completed = true;
+            return;
+        }
+
+        // Skip if short video
+        if (player.duration() < 60 || vidSrcType == "short") {
+            return;
+        }
+
+        // send request to server to update the user's progress for the current video. /api/user/${user_id}/progress/${video_id} is a POST request that takes in the video ID and the current time of the video
+        let xhr = new XMLHttpRequest();
+        let user_id = "{{.UserID}}";
+        let video_id = "{{.Video.VideoID}}";
+        xhr.open("POST", `/api/user/${user_id}/progress/${video_id}`, true);
+
+        // send progress as "progress" json key
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify({
+            "video_id": video_id,
+            "progress": curTime.toString()
+        }));
+        lastTime = curTime;
+    });
+
+    // on video end, send request to server to mark video as completed
+    player.on('ended', function () {
+        if (!completed) {
+            sendCompletedRequest();
+            completed = true;
+        }
+    });
+
+    player.on('ready', function () {
+
+        // range over subtitles and add them to the video
+        {{ range .Subtitles }}
+            player.addRemoteTextTrack({
+                kind: 'captions',
+                language: "{{.Language}}",
+                label: "{{.LanguageText}}",
+                src: '/api/youtube/subtitles/{{ $.Video.VideoID }}/{{ .Language }}'
+            }, true);
+            console.log("subtitles added");
+        {{ end }}
+
+    });
+
+    // replace links in description with hyperlinks, use regex to match links.
+    let regex = /(https?:\/\/[^\s]+)/g;
+    let description = descriptionText.innerHTML;
+    let matches = description.match(regex);
+    if (matches != null) {
+        for (let match of matches) {
+            description = description.replace(match, `<a href="${match}" target="_blank">${match}</a>`);
+        }
+        descriptionText.innerHTML = description;
+    }
+
+    // Do the same for the creator-info-box class
+    let creatorInfoBox = document.getElementsByClassName("creator-info-box-info")[0];
+    let creatorInfoBoxText = creatorInfoBox.innerHTML;
+    let creatorInfoBoxMatches = creatorInfoBoxText.match(regex);
+    if (creatorInfoBoxMatches != null) {
+        for (let match of creatorInfoBoxMatches) {
+            creatorInfoBoxText = creatorInfoBoxText.replace(match, `<a href="${match}" target="_blank">${match}</a>`);
+        }
+        creatorInfoBox.innerHTML = creatorInfoBoxText;
+    }
+
+
+    // replace timestamps in description with hyperlinks that seek to the timestamp, allow for timestamps in the format of 00:00:00, 0:00:00, 00:00, 0:00
+    let timestampRegex = /(\d{1,2}:\d{2}:\d{2}|\d{1}:\d{2}:\d{2}|\d{1,2}:\d{2}|\d{1}:\d{2})/g;
+    let timestampMatches = description.match(timestampRegex);
+    if (timestampMatches != null) {
+        for (let match of timestampMatches) {
+            let timestamp = match.split(":");
+            let seconds = 0;
+            if (timestamp.length == 3) {
+                seconds = parseInt(timestamp[0]) * 3600 + parseInt(timestamp[1]) * 60 + parseInt(timestamp[2]);
+            } else if (timestamp.length == 2) {
+                seconds = parseInt(timestamp[0]) * 60 + parseInt(timestamp[1]);
+            }
+            description = description.replace(match, `<a href="#" onclick="player.currentTime(${seconds});">${match}</a>`);
+        }
+        descriptionText.innerHTML = description;
+    }
+
+    // Use timestamp regex to do the same in comments
+    let comments = document.getElementsByClassName("comment-text");
+    for (let comment of comments) {
+        let commentText = comment.innerHTML;
+        let timestampMatches = commentText.match(timestampRegex);
+        if (timestampMatches != null) {
+            for (let match of timestampMatches) {
+                let timestamp = match.split(":");
+                let seconds = 0;
+                if (timestamp.length == 3) {
+                    seconds = parseInt(timestamp[0]) * 3600 + parseInt(timestamp[1]) * 60 + parseInt(timestamp[2]);
+                } else if (timestamp.length == 2) {
+                    seconds = parseInt(timestamp[0]) * 60 + parseInt(timestamp[1]);
+                }
+                commentText = commentText.replace(match, `<a href="#" onclick="player.currentTime(${seconds});">${match}</a>`);
+            }
+            comment.innerHTML = commentText;
+        }
+    }
+
+    function sendCompletedRequestAlert(video_id, video_title) {
+        let xhr = new XMLHttpRequest();
+        let user_id = "{{.UserID}}";
+        xhr.open("POST", `/api/user/${user_id}/progress/${video_id}/complete`, true);
+        xhr.send();
+        alert(`Successfully marked ${video_title} as watched!`);
+    }
+
+</script>
+</body>
+</html>

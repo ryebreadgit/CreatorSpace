@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Download - CreatorSpace</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/assets/lib/bootstrap-5.3.0-alpha3-dist/css/bootstrap.min.css">
+    <script src="/assets/lib/bootstrap-5.3.0-alpha3-dist/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="CreatorSpace is a tool to archive and watch your favorite creators. Add to or view your current collection of videos.">
+    <meta name="keywords" content="creator, archive, youtube, twitch, video, collection, watch">
+    <meta name="author" content="CreatorSpace">
+    <meta property="og:image" content="https://creatorspace.app/assets/img/banner.png">
+</head>
+<body>
+{{template "navbar.tmpl"}}
+
+<div class="main-content">
+    <div class="content-header">Download {{.VideoName}}</div>
+    <div class="content-thumbnail">
+        <img src="{{.Thumbnail}}" alt="Thumbnail">
+    </div>
+    <div class="content-description">
+        <p>{{.Description}}</p>
+    </div>
+    <div class="content-download">
+        <p>Download {{.VideoName}} from {{.Platform}}.</p>
+        <div class="download-button">
+        <button class="btn btn-primary" onclick="download()">Download</button>
+        </div>
+    </div>
+
+    
+</div>
+
+<script>
+    function download() {
+        // make request to /api/download/{id}/{type}
+
+        var id = '{{.ID}}';
+        var type = '{{.Type}}';
+        var url = "/api/downloads/" + id + "/" + type;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send();
+
+        xhr.onloadend = function () {
+            // check if 200 response, if so alert and redirect to /download/
+            if (xhr.status == 200) {
+                alert("Download started!");
+                window.location.href = "/download/";
+            } else {
+                // get error message from response
+                var response = JSON.parse(xhr.responseText);
+                var message = response.err
+                alert(`Download failed! ${message}`);
+            }
+        };
+    }
+</script>
+
+</body>
+</html>

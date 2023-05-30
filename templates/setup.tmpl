@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Setup</title>
+</head>
+<body>
+    <h1>Setup</h1>
+    <form method="POST" action="/submit-setup">
+        <label for="BaseYouTubePath">Base YouTube Path:</label>
+        <input type="text" id="BaseYouTubePath" name="BaseYouTubePath" value="./downloads/youtube/" required><br>
+
+        <label for="BaseTwitchPath">Base Twitch Path:</label>
+        <input type="text" id="BaseTwitchPath" name="BaseTwitchPath" value="./downloads/twitch/" required><br>
+
+        <label for="JwtSecret">JWT Secret:</label>
+        <input type="text" id="JwtSecret" name="JwtSecret" value="CHANGE_ME" required><br>
+
+        <label for="DatabaseType">Database Type:</label>
+        <select id="DatabaseType" name="DatabaseType" onchange="onDbTypeChange()" required>
+            <option value="Postgres">Postgres</option>
+            <option value="SQLite3" selected>SQLite3</option>
+        </select>
+
+
+        <div id="SQLite3-options" style="display:none;">
+            <label for="DatabasePath">Database Path:</label>
+            <input type="text" id="DatabasePath" name="DatabasePath" value="./database.db"><br>
+        </div>
+
+        <div id="Postgres-options">
+            <label for="DatabaseHost">Database Host:</label>
+            <input type="text" id="DatabaseHost" name="DatabaseHost" value="127.0.0.1" required><br>
+
+            <label for="DatabasePort">Database Port:</label>
+            <input type="text" id="DatabasePort" name="DatabasePort" value="5432" required><br>
+
+            <label for="DatabaseUser">Database User:</label>
+            <input type="text" id="DatabaseUser" name="DatabaseUser" required><br>
+
+            <label for="DatabasePass">Database Password:</label>
+            <input type="password" id="DatabasePass" name="DatabasePass" required><br>
+
+            <label for="DatabaseName">Database Name:</label>
+            <input type="text" id="DatabaseName" name="DatabaseName" required><br>
+
+            <label for="DatabaseSSLMode">Database SSL Mode:</label>
+            <input type="text" id="DatabaseSSLMode" name="DatabaseSSLMode" value="disable" required><br>
+
+            <label for="DatabaseTimeZone">Database Time Zone:</label>
+            <input type="text" id="DatabaseTimeZone" name="DatabaseTimeZone" value="America/Denver" required><br>
+        </div>
+
+        <label for="RedisAddress">Redis Address (Optional):</label>
+        <input type="text" id="RedisAddress" name="RedisAddress"><br>
+
+        <label for="RedisPassword">Redis Password (Optional):</label>
+        <input type="password" id="RedisPassword" name="RedisPassword"><br>
+
+        <label for="RedisDB">Redis DB (Optional):</label>
+        <input type="number" id="RedisDB" name="RedisDB"><br>
+
+    <label for="OpenRegister">Open Register:</label>
+    <input type="checkbox" id="OpenRegister" name="OpenRegister"><br>
+
+    <input type="submit" value="Submit">
+    </form>
+
+    <style>
+        body {
+            background-color: #333333;
+            font-family: 'Noto Sans', sans-serif;
+            color: #ffffff;
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 2em;
+            text-align: center;
+            padding-bottom: 20px;
+        }
+
+        form {
+            width: 90%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #444444;
+            border-radius: 5px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            margin-top: 20px;
+            color: #bbbbbb;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="number"],
+        select {
+            width: 95%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        input[type="submit"] {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        input[type="checkbox"] {
+            width: auto;
+        }
+    </style>
+
+    <script>
+        function onDbTypeChange() {
+            var dbType = document.getElementById("DatabaseType").value;
+            var sqliteInputs = document.getElementById("SQLite3-options").getElementsByTagName("input");
+            var postgresInputs = document.getElementById("Postgres-options").getElementsByTagName("input");
+            
+            if (dbType === "SQLite3") {
+                document.getElementById("SQLite3-options").style.display = "block";
+                document.getElementById("Postgres-options").style.display = "none";
+
+                for(var i = 0; i < sqliteInputs.length; i++) {
+                    sqliteInputs[i].required = true;
+                    sqliteInputs[i].disabled = false;
+                }
+                for(var i = 0; i < postgresInputs.length; i++) {
+                    postgresInputs[i].required = false;
+                    postgresInputs[i].disabled = true;
+                }
+            } else {
+                document.getElementById("SQLite3-options").style.display = "none";
+                document.getElementById("Postgres-options").style.display = "block";
+
+                for(var i = 0; i < sqliteInputs.length; i++) {
+                    sqliteInputs[i].required = false;
+                    sqliteInputs[i].disabled = true;
+                }
+                for(var i = 0; i < postgresInputs.length; i++) {
+                    postgresInputs[i].required = true;
+                    postgresInputs[i].disabled = false;
+                }
+            }
+        }
+
+        window.onload = function() {
+            onDbTypeChange();
+        };
+    </script>
+
+</body>

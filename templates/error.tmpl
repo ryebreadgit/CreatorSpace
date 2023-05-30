@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{.ret}} - CreatorSpace</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/assets/lib/bootstrap-5.3.0-alpha3-dist/css/bootstrap.min.css">
+    <script src="/assets/lib/bootstrap-5.3.0-alpha3-dist/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="CreatorSpace is a tool to archive and watch your favorite creators. Add to or view your current collection of videos.">
+    <meta name="keywords" content="creator, archive, youtube, twitch, video, collection, watch">
+    <meta name="author" content="CreatorSpace">
+    <meta property="og:image" content="https://creatorspace.app/assets/img/banner.png">
+</head>
+<body>
+{{template "navbar.tmpl"}}
+
+<div class="main-content container my-5">
+    <h1 class="text-center text-white">Uh oh, there was an error loading this page!</h1>
+    <p class="text-center text-white">{{ .ret }}: {{ .err }}</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,377 @@
+#container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+#video-list {
+    padding: 0;
+    margin: 0 auto;
+}
+.video {
+display: flex;
+align-items: flex-start;
+margin-bottom: 20px;
+}
+.video img {
+width: 250px;
+height: 140px;
+object-fit: cover;
+object-position: center;
+border-radius: 5px;
+}
+.video .info {
+margin-left: 20px;
+text-align: left;
+}
+.video h3 {
+margin: 0;
+font-size: 18px;
+text-align: left;
+}
+.video .description {
+margin-top: 5px;
+margin-bottom: 10px;
+font-size: 14px;
+color: #ddd;
+max-height: calc(140px * 2 / 3); /* Limit to 2/3 of thumbnail height */
+overflow: hidden;
+text-overflow: ellipsis;
+text-align: left;
+}
+
+.video ul,
+#video-list ul {
+list-style: none;
+padding: 0;
+margin: 0;
+font-size: 14px;
+color: #ddd;
+}
+
+.length {
+position: absolute;
+bottom: 0;
+right: 0;
+padding: 5px;
+margin: 3px;
+background-color: rgba(0, 0, 0, 0.5);
+z-index: 1;
+color: #fff;
+text-align: right;
+font-size: 12px;
+border-radius: 5px;
+}
+.thumbnail-box {
+position: relative;
+}
+
+.video li {
+display: inline-block;
+margin-right: 10px;
+}
+.video li:last-child {
+margin-right: 0;
+}
+
+.video a:hover {
+    color: #ddd;
+}
+
+.video a {
+    color: #fff;
+}
+
+.video-box {
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-right: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.video-title a:hover {
+    color: #ddd;
+}
+
+.video-box img {
+    object-fit: cover;
+    object-position: center;
+    border-radius: 5px;
+}
+
+#vid-info {
+    display: flex;
+    align-items: center;
+    text-align: left;
+    font-size: 0.85rem;
+}
+
+.creator-info {
+    display: flex;
+    align-items: center;
+    text-align: left;
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+}
+
+
+
+/* position vertical center .creator-info-text relative to .creator-info img */
+.creator-info-text {
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    /* allow text to extend the height of the container as needed */
+    height: 100%;
+    /* allow text to wrap */
+    white-space: normal;
+}
+
+.creator-info img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+hr {
+    border: 1px solid #ddd;
+}
+
+#video-list {
+    margin-top: 50px;
+}
+
+#video-list ul {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#video-list li {
+    width: 20%;
+    padding: 20px;
+    text-align: center;
+}
+
+#video-list li .thumbnail-box img {
+    width: 100%;
+}
+
+#about-creator {
+    display: flex;
+    align-items: center;
+    margin: 50px 10%;
+    padding: 50px;
+    background-color: #454545;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+    color: #f5e6d9;
+    z-index: 5;
+    position: relative;
+}
+
+#about-creator img {
+    width: 200px;
+    height: 200px;
+    border-radius: 100px;
+    margin-right: 50px;
+    object-fit: cover;
+    object-position: center;
+}
+
+#about-creator p {
+    font-size: 1.2em;
+    white-space: pre-wrap;
+    text-align: left;
+    color: white;
+}
+
+/* creator name */
+#about-creator h1 {
+    font-size: 2em;
+    font-weight: bold;
+    margin-bottom: 30px;
+    margin-right: 50px;
+    letter-spacing: 1px;
+    color: #f5e6d9;
+}
+
+/* subscriber and video count */
+#about-creator h3 {
+    font-size: 1em;
+    padding-bottom: 0.25rem;
+    color: #f5e6d9;
+    margin-right: 50px;
+    letter-spacing: 1px;
+
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 0.3s, box-shadow 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.image-container:hover .image-overlay {
+  opacity: 1;
+}
+
+.image-overlay:hover .checkmark {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 1);
+  background-image: linear-gradient(to bottom, rgba(0, 128, 0, 1), rgba(0, 104, 0, 1));
+}
+
+.checkmark {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 24px;
+  height: 24px;
+  background-image: linear-gradient(to bottom, rgba(0, 128, 0, 0.5), rgba(0, 104, 0, 0.35));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.checkmark svg {
+  top: 50%;
+  left: 50%;
+  transform: translate(1px, 1px);
+  fill: white;
+  width: 16px;
+  height: 16px;
+}
+
+.small-overlay {
+  width: 14px;
+  height: 14px;
+}
+
+/* Mobile Styles */
+
+@media screen and (max-width: 768px) {
+    #container {
+      padding: 10px;
+    }
+  
+    .video {
+      flex-direction: column;
+      align-items: center;
+    }
+  
+    .video img {
+      width: 100%;
+      height: auto;
+    }
+  
+    .video .info {
+      margin-left: 0;
+      margin-top: 10px;
+      align-self: flex-start;
+    }
+  
+    .video h3 {
+      font-size: 16px;
+    }
+  
+    .video .description {
+      max-height: unset;
+    }
+  
+    .video ul {
+      font-size: 12px;
+    }
+  
+    .length {
+      font-size: 10px;
+    }
+  
+    .video li {
+      margin-right: 5px;
+    }
+  
+    .video-box {
+      margin-right: 5px;
+      margin-top: 5px;
+      margin-bottom: 5px;
+    }
+  
+    #vid-info {
+      font-size: 0.75rem;
+    }
+  
+    .creator-info {
+      font-size: 0.75rem;
+    }
+  
+    .creator-info-text {
+      font-size: 1rem;
+    }
+  
+    .creator-info img {
+      width: 25px;
+      height: 25px;
+      margin-right: 3px;
+    }
+    #video-list {
+        margin-top: 30px;
+      }
+    
+      #video-list ul {
+        display: block;
+      }
+    
+      #video-list li {
+        width: 100%;
+        padding: 10px;
+        text-align: center;
+      }
+    
+      #video-list li .thumbnail-box img {
+        width: 100%;
+      }
+
+    #about-creator {
+      flex-direction: column;
+      align-items: center;
+      margin: 30px 0;
+      padding: 30px;
+      margin-left: 5%;
+      margin-right: 5%;
+    }
+  
+    #about-creator img {
+      width: 250px;
+      height: 250px;
+      margin-right: 0;
+      margin-bottom: 20px;
+    }
+  
+    #about-creator p {
+      font-size: 1em;
+    }
+  
+    #about-creator h1 {
+      font-size: 1.5em;
+      margin-bottom: 20px;
+      margin-right: 0;
+    }
+
+    .video .description {
+        display: none;
+      }
+  
+    #about-creator h3 {
+      font-size: 0.9em;
+      margin-right: 0;
+    }
+  
+}

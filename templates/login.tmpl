@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Log in</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="stylesheet" type="text/css" href="/assets/css/auth.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+<div class="container">
+    <div class="invalid-text hidden">Invalid Credentials!</div>
+    <div class="logo">
+        <img src="/assets/img/banner.png" class="img-fluid mx-auto d-block"
+             alt="Logo">
+    </div>
+    <h1>Log in</h1>
+    <p>Log in to access your account.</p>
+    <form action="" method="post">
+    <table>
+        <tr>
+        <td>Username:</td>
+        <td><input type="text" name="username" /></td>
+        </tr>
+        <tr>
+        <td>Password:</td>
+        <td><input type="password" name="password" /></td>
+        </tr>
+        </form>
+        </tr>
+    </table>
+    <div class="input-actions">
+        <p><input type="submit" value="Log in" /></p>
+        {{ if .OpenRegister }}
+        <p><a href="/register">Register</a></p>
+        {{ end }}
+    </div>
+</div>
+    <script>
+        // login to /api/auth/login, if 200 response, redirect to /home
+
+        let form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            let username = document.querySelector('input[name="username"]').value;
+            let password = document.querySelector('input[name="password"]').value;
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                // format body for c.PostForm("username") and password
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            })
+            .then(function(response) {
+                if (response.status === 200) {
+                    window.location = '/home';
+                } else {
+                    let invalidText = document.querySelector('.invalid-text');
+                    invalidText.classList.remove('hidden');
+                    /* flash the error momentarily */
+                    setTimeout(function() {
+                        invalidText.classList.add('hidden');
+                    }, 2000);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

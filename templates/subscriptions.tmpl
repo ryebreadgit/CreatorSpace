@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Subscriptions - CreatorSpace</title>
+	<link rel="icon" type="image/x-icon" href="/favicon.ico">
+	<link rel="stylesheet" href="/assets/lib/bootstrap-5.3.0-alpha3-dist/css/bootstrap.min.css">
+	<script src="/assets/lib/bootstrap-5.3.0-alpha3-dist/js/bootstrap.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="/assets/css/styles.css">
+	<link rel="stylesheet" type="text/css" href="/assets/css/videos.css">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="CreatorSpace is a tool to archive and watch your favorite creators. Add to or view your current collection of videos.">
+	<meta name="keywords" content="creator, archive, youtube, twitch, video, collection, watch">
+	<meta name="author" content="CreatorSpace">
+	<meta property="og:image" content="/assets/img/banner.png">
+</head>
+
+<body>
+{{template "navbar.tmpl" }}
+
+{{define "video"}}
+<div class="video-data">
+	<div class="creator-info">
+	<a href="/creators/{{.ChannelID}}">
+		{{if eq .VideoType "Twitch"}}
+		<img src="/api/twitch/creators/{{.ChannelID}}/thumbnail" alt={{.ChannelTitle}}>
+		{{else}}
+		<img src="/api/youtube/creators/{{.ChannelID}}/thumbnail" alt={{.ChannelTitle}}>
+		{{end}}
+		<span class="creator-info-text">{{.ChannelTitle}}</span>
+	</a>
+	</div>
+	<div class="video">
+	<div class="thumbnail-box">
+		<div class="image-container">
+			<a href="/watch/{{.VideoID}}">
+				<img src="/api/media/{{.VideoID}}/thumbnail" alt="{{.Title}}">
+			</a>
+			<div class="image-overlay">
+				{{if not .Watched}}
+				<span class="checkmark small-overlay" onclick="sendCompletedRequestAlert('{{.VideoID}}', '{{.Title}}')">
+					<svg viewBox="0 0 24 24">
+						<path fill-rule="evenodd" d="M6.72 13.278l-3.457-3.428a.562.562 0 0 1 0-.794l.909-.903a.552.552 0 0 1 .782 0L7 10.76l6.14-6.08a.552.552 0 0 1 .782 0l.908.903a.562.562 0 0 1 0 .794l-6.69 6.638a.564.564 0 0 1-.393.164.564.564 0 0 1-.393-.164z"/>
+					</svg>
+				</span>
+				{{end}}
+			</div>
+		</div>
+		
+		
+		{{if .Watched}}
+		<span class="watched-text"></span>
+		{{end}}
+		{{if eq .Availability "unavailable"}}
+			<span class="unavailable-text"></span>
+		{{end}}
+		{{if eq .Availability "unlisted"}}
+			<span class="unlisted-text"></span>
+		{{end}}
+		{{if eq .Availability "private"}}
+			<span class="private-text"></span>
+		{{end}}
+		{{if .Progress}}
+			<div class="in-progress-text" style="width: {{.Progress}}%"></div>
+			<div class="in-progress-bkg"></div>
+		{{end}}
+		
+		<div class="length">{{.Length}}</div>
+	</div>
+	<div class="info">
+		<h3><a href="/watch/{{.VideoID}}">{{.Title}}</a></h3>
+		<ul>
+		{{if .Views}}
+			<li>{{.Views}} views</li>
+		{{end}}
+		<li>Published on {{.PublishedAt}}</li>
+		<li>By <a href="/creators/{{.ChannelID}}">{{.ChannelTitle}}</a></li>
+		</ul>
+		<a href="/watch/{{.VideoID}}">
+		<p class="description">{{.Description}}</p>
+		</a>
+	</div>
+	</div>
+	<hr />
+</div>
+{{end}}
+
+<div class="main-content">
+	<div class="content-header">Subscriptions</div>  
+	</div>
+	<div id="container">
+		{{range .Videos}}
+			<div class="video-row">
+			{{template "video" .}}
+			</div>
+		{{end}}
+	</div>
+	<section id="page-select">
+	{{ if .PrevPage }}
+	{{ if .Filter }}
+	{{ if .Sort }}
+		<a href="/subscriptions?page={{.PrevPage}}&filter={{ .Filter }}&sort={{ .Sort }}">Back Page</a>
+	{{ else }}
+		<a href="/subscriptions?page={{.PrevPage}}&filter={{ .Filter }}">Back Page</a>
+	{{ end }}
+	{{ else }}
+		{{ if .Sort }}
+			<a href="/subscriptions?page={{.PrevPage}}&sort={{ .Sort }}">Back Page</a>
+		{{ else }}
+			<a href="/subscriptions?page={{.PrevPage}}">Back Page</a>
+		{{ end }}
+	{{ end }}
+		<span> | </span>
+	{{ end }}
+	{{ if or .PrevPage .NextPage }}
+			<input type="text" id="page-number" name="page-number" placeholder="#">
+	{{ end }}
+	{{ if .NextPage }}
+		<span> | </span>
+		{{ if .Filter }}
+		{{ if .Sort }}
+			<a href="/subscriptions?page={{.NextPage}}&filter={{ .Filter }}&sort={{ .Sort }}">Next Page</a>
+		{{ else }}
+			<a href="/subscriptions?page={{.NextPage}}&filter={{ .Filter }}">Next Page</a>
+		{{ end }}
+		{{ else }}
+			{{ if .Sort }}
+				<a href="/subscriptions?page={{.NextPage}}&sort={{ .Sort }}">Next Page</a>
+			{{ else }}
+				<a href="/subscriptions?page={{.NextPage}}">Next Page</a>
+			{{ end }}
+		{{ end }}
+	{{ end }}
+</section>
+</div>
+<script>
+document.getElementById("page-number").addEventListener("keyup", function(event) {
+	if (event.keyCode === 13) {
+		event.preventDefault();
+		let templocation = "/subscriptions?page=" + document.getElementById("page-number").value;
+		{{ if .Filter }}
+			templocation += "&filter={{ .Filter }}"
+		{{ end }}
+		{{ if .Sort }}
+			templocation += "&sort={{ .Sort }}"
+		{{ end }}
+		window.location.href = templocation
+	}
+});
+function sendCompletedRequestAlert(video_id, video_title) {
+        let xhr = new XMLHttpRequest();
+        let user_id = "{{.UserID}}";
+        xhr.open("POST", `/api/user/${user_id}/progress/${video_id}/complete`, true);
+        xhr.send();
+        alert(`Successfully marked ${video_title} as watched!`);
+    }
+</script>
+</body>
+</html>

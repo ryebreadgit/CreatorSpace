@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Download - CreatorSpace</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/assets/lib/bootstrap-5.3.0-alpha3-dist/css/bootstrap.min.css">
+    <script src="/assets/lib/bootstrap-5.3.0-alpha3-dist/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="CreatorSpace is a tool to archive and watch your favorite creators. Add to or view your current collection of videos.">
+    <meta name="keywords" content="creator, archive, youtube, twitch, video, collection, watch">
+    <meta name="author" content="CreatorSpace">
+    <meta property="og:image" content="https://creatorspace.app/assets/img/banner.png">
+</head>
+<body>
+{{template "navbar.tmpl"}}
+
+<div class="main-content">
+    <div class="content-header">Download</div>
+    <div class="download-options">
+        <div class="download-option">
+            <div class="download-option-header">Video</div>
+            <div class="download-option-content">
+                <div class="download-option-content-header">Video ID</div>
+                <div class="download-option-content-input">
+                    <input type="text" id="video-id" placeholder="Video ID">
+                </div>
+            </div>
+        </div>
+        <div class="download-option">
+            <div class="download-option-header">Channel</div>
+            <div class="download-option-content">
+                <div class="download-option-content-header">Channel ID</div>
+                <div class="download-option-content-input">
+                    <input type="text" id="channel-id" placeholder="Channel ID">
+                </div>
+            </div>
+        </div>
+        <div class="download-option">
+            <div class="download-option-header">Shorts</div>
+            <div class="download-option-content">
+                <div class="download-option-content-header">Channel ID</div>
+                <div class="download-option-content-input">
+                    <input type="text" id="shorts-id" placeholder="Channel ID">
+                </div>
+            </div>
+        </div>
+        <div class="download-option">
+            <div class="download-option-header">Playlist</div>
+            <div class="download-option-content">
+                <div class="download-option-content-header">Playlist ID</div>
+                <div class="download-option-content-input">
+                    <input type="text" id="playlist-id" placeholder="Playlist ID">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="download-button">
+        <button class="btn btn-primary" onclick="download()">Download</button>
+        </div>
+</div>
+
+<script>
+    function download() {
+        var videoID = document.getElementById("video-id").value;
+        var channelID = document.getElementById("channel-id").value;
+        var shortsID = document.getElementById("shorts-id").value;
+        var playlistID = document.getElementById("playlist-id").value;
+
+        if (videoID != "") {
+            window.location.href = "/download/video/" + videoID;
+        } else if (channelID != "") {
+            window.location.href = "/download/channel/" + channelID;
+        } else if (shortsID != "") {
+            window.location.href = "/download/shorts/" + shortsID;
+        } else if (playlistID != "") {
+            window.location.href = "/download/playlist/" + playlistID;
+        } else {
+            alert("Please enter a valid ID");
+        }
+    }
+</script>
+
+</body>
+</html>

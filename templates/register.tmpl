@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Register</title>
+        <link rel="icon" type="image/x-icon" href="/favicon.ico">
+        <link rel="stylesheet" type="text/css" href="/assets/css/auth.css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+        <div class="container">
+            
+            <div class="invalid-text hidden"></div>
+            <div class="logo">
+                <img src="/assets/img/banner.png" class="img-fluid mx-auto d-block"
+                    alt="Logo">
+            </div>
+            <h1>Register</h1>
+            <form action="" method="post">
+            <table>
+                <tr>
+                    <td>Username:</td>
+                    <td><input type="text" name="username" id="username"/></td>
+                </tr>
+                <tr>
+                    <td>Password:</td>
+                    <td><input type="password" name="password" id="password"/></td>
+                </tr>
+                <tr>
+                    <td>Confirm password:</td>
+                    <td><input type="password" name="confirm_password" id="confirm_password"/></td>
+                </tr>
+            </table>
+            <div class="input-actions">
+                <p><input type="submit" value="Sign Up" /></p>
+                <p><a href="/login">Login</a></p>
+            </div>
+            </form>
+        </div>
+        <script>
+            // login to /api/auth/login, if 200 response, redirect to /home
+
+        let form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            let username = document.querySelector('input[name="username"]').value;
+            let password = document.querySelector('input[name="password"]').value;
+            fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                // format body for c.PostForm("username") and password
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            })
+            .then(function(response) {
+                if (response.status === 200) {
+                    window.location = '/home';
+                } else {
+                    let invalidText = document.querySelector('.invalid-text');
+                    // the response is {"data":"empty fields","status":"error"}, so we need to parse it
+                    response.json().then(function(data) {
+                        invalidText.innerHTML = "Error: " + data.data;
+                    });
+                    invalidText.classList.remove('hidden');
+                    /* flash the error momentarily */
+                    setTimeout(function() {
+                        invalidText.classList.add('hidden');
+                    }, 2000);
+                }
+            });
+        });
+        </script>
+    </body>
+</html>

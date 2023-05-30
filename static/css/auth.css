@@ -1,0 +1,138 @@
+/* css for login, logout, and registration page */
+
+body {
+    background-color: #333333;
+    font-family: 'Noto Sans', sans-serif;
+    text-align: center;
+}
+
+.container {
+    padding-top: 2rem;
+    text-align: center;
+    /* center container horizontally on the whole page */
+    margin: 0 auto;
+
+    /* center container vertically on the whole page */
+    transform: translateY(25%);
+}
+
+a {
+    color: #cccccc;
+    text-decoration: none;
+    /* color: #00ccff; */
+}
+
+a:hover {
+    color: #ffffff;
+    /* color: #00ffff; */
+}
+
+p {
+    color: #fff;
+}
+
+h1 {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 50px;
+}
+
+table {
+    margin: 0 auto;
+    margin-top: 50px;
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 10px;
+    width: 25%;
+}
+
+table input {
+    margin-bottom: 10px;
+    border-radius: 2px;
+    font-size: 1em;
+    width: 100%;
+    padding: 5px;
+}
+
+tr {
+    padding: 10px;
+}
+
+.input-actions input {
+    border-radius: 5px;
+    background-color: #838383;
+    color: #fff;
+    padding: 5px;
+    font-size: 1em;
+    margin: 10px;
+    width: 5%
+}
+
+.invalid-text {
+    color: red;
+    font-size: 0.8em;
+}
+
+.invalid-text.hidden {
+    display: none;
+}
+
+.logo img {
+    max-width: 20%;
+    height: auto;
+    margin-bottom: 30px;
+}
+
+input[type=text],
+input[type=password] {
+    border: 1px solid #838383;
+    border-radius: 5px;
+    padding: 5px;
+    font-size: 1em;
+    width: 97%;
+}
+
+.input-actions input {
+    font-size: 1em;
+}
+
+/* Add this line to make the viewport responsive */
+@media only screen and (max-width: 768px) {
+
+    .container {
+        /* Bring the container back to the top of the page */
+        transform: translateY(0%);
+    }
+
+    .logo img {
+        max-width: 75%;
+        margin-bottom: 20px;
+    }
+
+    table {
+        width: 100%;
+    }
+
+    table td {
+        display: block;
+        text-align: left;
+        margin-bottom: 10px;
+    }
+
+    table input {
+        font-size: 0.8em;
+        width: 100%;
+    }
+
+    .input-actions input {
+        font-size: 0.8em;
+        width: auto;
+    }
+
+    /* fix button size on mobile */
+
+    .input-actions input {
+        width: 75%;
+    }
+}
+
