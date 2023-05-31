@@ -71,6 +71,35 @@ func SetupDatabase() {
 			return
 		}
 
+		user := database.User{
+			Username:    c.PostForm("Username"),
+			Password:    c.PostForm("Password"),
+			AccountType: "admin",
+		}
+
+		// Write user to ./newuser.txt
+		f, err = os.Create("newuser.txt")
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
+			return
+		}
+
+		defer f.Close()
+
+		// convert user to json
+		userJson, err := json.MarshalIndent(user, "", "  ")
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
+			return
+		}
+
+		// write user to file
+		_, err = f.Write(userJson)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
+			return
+		}
+
 		// restart the program
 
 		general.RestartSelf()

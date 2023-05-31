@@ -177,7 +177,9 @@ func SignupUser(user User, db *gorm.DB) error {
 		}
 	}
 
-	user.AccountType = "user"
+	if user.AccountType != "admin" {
+		user.AccountType = "user"
+	}
 
 	return insertUser(user, db)
 }
