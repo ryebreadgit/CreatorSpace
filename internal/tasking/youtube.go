@@ -19,8 +19,7 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/kolesa-team/go-webp/decoder"
-	_ "github.com/kolesa-team/go-webp/webp"
+	"golang.org/x/image/webp"
 	"gorm.io/gorm"
 
 	"github.com/corona10/goimagehash"
@@ -946,6 +945,14 @@ func loadImage(filename string) (image.Image, error) {
 		return nil, err
 	}
 	defer file.Close()
+
+	if strings.HasSuffix(filename, ".webp") {
+		img, err := webp.Decode(file)
+		if err != nil {
+			return nil, err
+		}
+		return img, nil
+	}
 
 	img, _, err := image.Decode(file)
 	if err != nil {
