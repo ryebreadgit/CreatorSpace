@@ -764,6 +764,9 @@ func updateVideoMetadata(videoID string) error {
 		}
 		if time.Since(pubTime) > 7*24*time.Hour && !video.Updated {
 			video.Updated = true
+		} else if !video.Updated {
+			// Ensure it's not null
+			video.Updated = false
 		}
 	}
 

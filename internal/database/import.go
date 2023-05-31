@@ -272,10 +272,6 @@ func importSponsorBlockMetadata(filePath string, settings *Settings, db *gorm.DB
 	}
 
 	for _, s := range v.Segments {
-		metjson, err := json.Marshal(s)
-		if err != nil {
-			return err
-		}
 		spon := SponsorBlock{
 			SegmentStart: s.StartTime,
 			SegmentEnd:   s.EndTime,
@@ -284,7 +280,6 @@ func importSponsorBlockMetadata(filePath string, settings *Settings, db *gorm.DB
 			Category:     s.Category,
 			Hidden:       s.Hidden,
 			ShadowHidden: s.ShadowHidden,
-			MetadataJson: string(metjson),
 		}
 		spon.FilePath = strings.ReplaceAll(filePath, "//", "/")
 		spon.FilePath = strings.ReplaceAll(filePath, settings.BaseYouTubePath, "")
@@ -342,11 +337,6 @@ func importCommentMetadata(filePath string, settings *Settings, db *gorm.DB) err
 			// return error
 			return err
 		}
-		// convert map to Comment struct
-		metjson, err := json.Marshal(v)
-		if err != nil {
-			return err
-		}
 		commid := v.CommentID
 		parentid := ""
 		if strings.Contains(commid, ".") {
@@ -355,7 +345,6 @@ func importCommentMetadata(filePath string, settings *Settings, db *gorm.DB) err
 		}
 		v.CommentID = commid
 		v.ParentCommentID = parentid
-		v.MetadataJson = string(metjson)
 		v.FilePath = strings.ReplaceAll(filePath, "//", "/")
 		v.FilePath = strings.ReplaceAll(filePath, settings.BaseYouTubePath, "")
 

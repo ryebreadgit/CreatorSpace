@@ -51,7 +51,6 @@ type Video struct {
 	AgeRestricted bool
 	Updated       bool
 	MimeType      string
-	MetadataJson  string
 }
 
 type SponsorBlock struct {
@@ -67,7 +66,6 @@ type SponsorBlock struct {
 	Hidden       int
 	ShadowHidden int
 	Votes        int
-	MetadataJson string
 	FilePath     string
 }
 
