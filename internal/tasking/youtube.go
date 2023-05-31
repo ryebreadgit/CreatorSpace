@@ -428,10 +428,6 @@ func updateVideoMetadata(videoID string) error {
 		fmt.Printf("Video metadata path changed from %v to %v\n", originalVideo.MetadataPath, video.MetadataPath)
 		updateVidMeta = true
 	}
-	if video.FilePath != originalVideo.FilePath {
-		fmt.Printf("Video file path changed from %v to %v\n", originalVideo.FilePath, video.FilePath)
-		updateVidMeta = true
-	}
 	if video.Availability != originalVideo.Availability {
 		fmt.Printf("Video availability changed from %v to %v\n", originalVideo.Availability, video.Availability)
 		updateVidMeta = true
@@ -482,16 +478,6 @@ func updateVideoMetadata(videoID string) error {
 	if video.Tags != string(tagsJSON) {
 		video.Tags = string(tagsJSON)
 		updateVidMeta = true
-	}
-
-	// check the comments path if it exists, i don't trust that shiz
-	if video.CommentsPath != "" {
-		// Check on disk if the comments path exists
-		checkPath := fmt.Sprintf("%v%v", settings.BaseYouTubePath, video.CommentsPath)
-		if _, err := os.Stat(checkPath); os.IsNotExist(err) {
-			// if the comments path doesn't exist, set it to empty
-			video.CommentsPath = ""
-		}
 	}
 
 	// check if commentsPath ends in .jsonl or missing, if so just download the comments and update the comments path
@@ -874,7 +860,7 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 	thumbPath := fmt.Sprintf("%v/avatar.png", creatorPath)
 	bannerPath := fmt.Sprintf("%v/banner.png", creatorPath)
 
-	creator.FilePath = metaPath
+	creator.FilePath = strings.ReplaceAll(metaPath, settings.BaseYouTubePath, "")
 
 	var thumbUrl string
 	var bannerUrl string
@@ -1024,6 +1010,8 @@ func downloadComments(videoID string) (string, error) {
 		return data.Comments[i].LikeCount > data.Comments[j].LikeCount
 	})
 
+	sanitizedCommentPath := strings.ReplaceAll(commentPath, settings.BaseYouTubePath, "")
+
 	// Check the first 20 comments. Skip any replies. If any of the comments are not in the database, add them
 	var i int
 	for _, comment := range data.Comments {
@@ -1039,7 +1027,7 @@ func downloadComments(videoID string) (string, error) {
 		newComment.Votes = strconv.Itoa(comment.LikeCount)
 		newComment.TimeParsed = float64(comment.Timestamp)
 		newComment.TimeString = comment.TimeText
-		newComment.FilePath = commentPath
+		newComment.FilePath = sanitizedCommentPath
 
 		_, err := database.GetComment(comment.ID, db)
 		if err != nil {
@@ -1063,7 +1051,7 @@ func downloadComments(videoID string) (string, error) {
 		}
 	}
 
-	return commentPath, nil
+	return sanitizedCommentPath, nil
 }
 
 func subDownload(subFile string, url string, ext string) error {
