@@ -23,8 +23,6 @@
 go.work
 
 go.sum
-*.db
-
 /.vscode
 /.idea
 /downloads
@@ -32,3 +30,6 @@ go.sum
 /transcoding
 /TODO.md
 /cmd/__debug_bin
+*.exe
+*.db
+*.old
