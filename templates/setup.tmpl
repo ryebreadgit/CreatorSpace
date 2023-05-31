@@ -15,6 +15,11 @@
         <label for="Password">Admin Password:</label>
         <input type="text" id="Password" name="Password" value="" required><br>
     
+        <label for="OpenRegister">Have Open Registration (vs. manual creation):</label>
+        <input type="checkbox" id="OpenRegister" name="OpenRegister" checked><br>
+
+        <label for="PublicImages">Enable Images Publically (disables jwt auth to allow images in metadata):</label>
+        <input type="checkbox" id="PublicImages" name="PublicImages" checked><br>
 
         <label for="BaseYouTubePath">Base YouTube Path:</label>
         <input type="text" id="BaseYouTubePath" name="BaseYouTubePath" value="./downloads/youtube/" required><br>
@@ -24,6 +29,8 @@
 
         <label for="JwtSecret">JWT Secret:</label>
         <input type="text" id="JwtSecret" name="JwtSecret" value="CHANGE_ME" required><br>
+
+        <hr>
 
         <label for="DatabaseType">Database Type:</label>
         <select id="DatabaseType" name="DatabaseType" onchange="onDbTypeChange()" required>
@@ -60,6 +67,8 @@
             <input type="text" id="DatabaseTimeZone" name="DatabaseTimeZone" value="America/Denver" required><br>
         </div>
 
+        <hr>
+
         <label for="RedisAddress">Redis Address (Optional):</label>
         <input type="text" id="RedisAddress" name="RedisAddress"><br>
 
@@ -68,9 +77,6 @@
 
         <label for="RedisDB">Redis DB (Optional):</label>
         <input type="number" id="RedisDB" name="RedisDB"><br>
-
-    <label for="OpenRegister">Open Register:</label>
-    <input type="checkbox" id="OpenRegister" name="OpenRegister"><br>
 
     <input type="submit" value="Submit">
     </form>

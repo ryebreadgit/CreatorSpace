@@ -32,9 +32,17 @@ func Routes(route *gin.Engine) {
 		media := api.Group("/media")
 		{
 			media.Use(gin.Logger())
-			media.Use(jwttoken.JwtMiddleware())
-			media.GET("/:video_id", apiMedia)
+
+			// Check if public images is enabled and only enable JWT after if so
+			if !settings.PublicImages {
+				media.Use(jwttoken.JwtMiddleware())
+			}
 			media.GET("/:video_id/thumbnail", apiThumbnail)
+			if settings.PublicImages {
+				media.Use(jwttoken.JwtMiddleware())
+			}
+
+			media.GET("/:video_id", apiMedia)
 			media.GET("/:video_id/recommendations", func(c *gin.Context) {
 				vidID := c.Param("video_id")
 				userID, err := jwttoken.GetUserFromToken(c)

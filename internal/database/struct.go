@@ -128,6 +128,7 @@ type Settings struct {
 	RedisDB          int
 	JwtSecret        string
 	OpenRegister     bool
+	PublicImages     bool
 }
 
 type User struct {
