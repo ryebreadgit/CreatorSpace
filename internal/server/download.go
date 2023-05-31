@@ -55,6 +55,7 @@ func getDownloadPage(c *gin.Context) {
 		"Platform":    "YouTube",
 		"ID":          videoid,
 		"Type":        vidtype,
+		"ServerPath":  settings.ServerPath,
 	})
 
 }

@@ -310,6 +310,7 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 			"LinkedAccounts": linkedaccs,
 			"UserID":         user,
 			"Subscribed":     subscribed,
+			"ServerPath":     settings.ServerPath,
 		}
 
 		if nextPageFound {

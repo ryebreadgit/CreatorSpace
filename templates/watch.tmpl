@@ -20,8 +20,8 @@
     <link rel="stylesheet" href="/assets/lib/vsg-skin.css">
 
 
-    <meta name="description" content="Watch {{ .Video.Title }} by {{ .Creator.Name }} on CreatorSpace.">
-    <meta property="og:image" content="/api/youtube/video/thumbnail/{{ .Video.VideoID }}">
+    <meta name="description" content="Watch '{{ .Video.Title }}' by '{{ .Creator.Name }}' on CreatorSpace.">
+    <meta property="og:image" content="{{ .ServerPath }}/api/youtube/video/thumbnail/{{ .Video.VideoID }}">
     <meta name="keywords" content="creator, archive, youtube, twitch, video, collection, watch">
     <meta name="author" content="CreatorSpace">
     <meta name="viewport" content="width=device-width, initial-scale=1">

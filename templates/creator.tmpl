@@ -10,9 +10,12 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Watch {{ .Creator.Name }} on CreatorSpace.">
-    <meta name="keywords" content="creator, archive, youtube, twitch, video, collection, watch">
-    <meta name="author" content="CreatorSpace">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="CreatorSpace is a tool to archive and watch your favorite creators. Add to or view your current collection of videos.">
+	<meta name="keywords" content="creator, archive, youtube, twitch, video, collection, watch">
+	<meta name="author" content="CreatorSpace">
+	<meta property="og:image" content="/api/youtube/creators/{{.Creator.ChannelID}}/thumbnail">
 </head>
 <body>
 {{template "navbar.tmpl" }}

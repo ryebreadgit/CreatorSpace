@@ -9,11 +9,14 @@
     <h1>Setup</h1>
     <form method="POST" action="/submit-setup">
 
+        <label for="ServerPath">Server Path (for metadata):</label>
+        <input type="text" id="ServerPath" name="ServerPath" value="http://127.0.0.1:8080" required><br>
+
         <label for="Username">Admin Username:</label>
         <input type="text" id="Username" name="Username" value="admin" required><br>
 
         <label for="Password">Admin Password:</label>
-        <input type="text" id="Password" name="Password" value="" required><br>
+        <input type="text" id="Password" name="Password" required><br>
     
         <label for="OpenRegister">Have Open Registration (vs. manual creation):</label>
         <input type="checkbox" id="OpenRegister" name="OpenRegister" checked><br>

@@ -266,8 +266,9 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		ret := gin.H{
-			"Videos": videos,
-			"UserID": user,
+			"Videos":     videos,
+			"UserID":     user,
+			"ServerPath": settings.ServerPath,
 		}
 
 		if nextPageFound {

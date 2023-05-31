@@ -125,6 +125,7 @@ type Settings struct {
 	DatabaseTimeZone string
 	RedisAddress     string
 	RedisPassword    string
+	ServerPath       string
 	RedisDB          int
 	JwtSecret        string
 	OpenRegister     bool

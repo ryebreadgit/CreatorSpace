@@ -260,6 +260,7 @@ func page_watch(db *gorm.DB) gin.HandlerFunc {
 			"UserID":                 user,
 			"Subtitles":              subtitles,
 			"Recommendations":        recs,
+			"ServerPath":             settings.ServerPath,
 		})
 	}
 }
