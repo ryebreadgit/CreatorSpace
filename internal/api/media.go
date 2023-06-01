@@ -42,7 +42,7 @@ func apiMedia(c *gin.Context) {
 	}
 
 	filePath := fmt.Sprintf("%v/%v", basePath, vidData.FilePath)
-	if !ifFileExists(filePath) {
+	if _, err := os.Stat(filePath); err == nil {
 		c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": "file not found"})
 		return
 	}

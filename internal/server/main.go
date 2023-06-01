@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -138,5 +139,47 @@ func init() {
 	if err != nil {
 		fmt.Printf("Error getting settings: %s\n", err)
 		return
+	}
+
+	// if ./newuser.txt exists, create a new user. Use os
+
+	if _, err := os.Stat("./newuser.txt"); err == nil {
+		// Open the file and read the contents to database.User
+		f, err := os.Open("./newuser.txt")
+		if err != nil {
+			fmt.Printf("Error opening file: %s\n", err)
+			return
+		}
+		defer f.Close()
+
+		var userdata database.User
+		err = json.NewDecoder(f).Decode(&userdata)
+		if err != nil {
+			fmt.Printf("Error decoding file: %s\n", err)
+			return
+		}
+
+		// create user
+		err = database.SignupUser(userdata, db)
+		if err != nil {
+			fmt.Printf("Error creating user: %s\n", err)
+			return
+		}
+
+		// Close the file
+		err = f.Close()
+		if err != nil {
+			fmt.Printf("Error closing file: %s\n", err)
+			return
+		}
+
+		// delete file
+		err = os.Remove("./newuser.txt")
+		if err != nil {
+			fmt.Printf("Error deleting file: %s\n", err)
+			return
+		}
+
+		fmt.Printf("New user created: %v\n", userdata.Username)
 	}
 }

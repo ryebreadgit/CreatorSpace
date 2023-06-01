@@ -4,9 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
-
-	"encoding/json"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -155,44 +152,4 @@ func init() {
 		fmt.Printf("Error connecting to redis: %v\n", err)
 	}
 
-	// if ./newuser.txt exists, create a new user
-	if ifFileExists("./newuser.txt") {
-		// Open the file and read the contents to database.User
-		f, err := os.Open("./newuser.txt")
-		if err != nil {
-			fmt.Printf("Error opening file: %s\n", err)
-			return
-		}
-		defer f.Close()
-
-		var userdata database.User
-		err = json.NewDecoder(f).Decode(&userdata)
-		if err != nil {
-			fmt.Printf("Error decoding file: %s\n", err)
-			return
-		}
-
-		// create user
-		err = database.SignupUser(userdata, db)
-		if err != nil {
-			fmt.Printf("Error creating user: %s\n", err)
-			return
-		}
-
-		// delete file
-		err = os.Remove("./newuser.txt")
-		if err != nil {
-			fmt.Printf("Error deleting file: %s\n", err)
-			return
-		}
-
-		fmt.Printf("New user created: %v\n", userdata.Username)
-	}
-
-}
-
-func ifFileExists(file string) bool {
-	// Check if file exists
-	_, err := os.Stat(file)
-	return !os.IsNotExist(err)
 }
