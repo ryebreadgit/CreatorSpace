@@ -17,21 +17,24 @@
 {{template "navbar.tmpl"}}
 
 <div class="main-content">
-    <div class="content-header">Download {{.VideoName}}</div>
-    <div class="content-thumbnail">
-        <img src="{{.Thumbnail}}" alt="Thumbnail">
-    </div>
-    <div class="content-description">
-        <p>{{.Description}}</p>
-    </div>
-    <div class="content-download">
-        <p>Download {{.VideoName}} from {{.Platform}}.</p>
-        <div class="download-button">
-        <button class="btn btn-primary" onclick="download()">Download</button>
+    <div class="content-header">Download</div>
+        <div class="content-thumbnail">
+            <img src="{{.Thumbnail}}" alt="Thumbnail">
+        </div>
+        <div class="content-download-confirm">
+        
+            <div class="content-title">
+                <h1>{{.VideoName}}</h1>
+            </div>
+            <div class="content-description">
+                <p>{{.Description}}</p>
+            </div>
+            <div class="content-download">
+            <div class="download-button">
+                <button class="btn btn-primary" onclick="download()">Download</button>
+            </div>
         </div>
     </div>
-
-    
 </div>
 
 <script>
@@ -50,7 +53,7 @@
         xhr.onloadend = function () {
             // check if 200 response, if so alert and redirect to /download/
             if (xhr.status == 200) {
-                alert("Download started!");
+                alert("Download added to queue!");
                 window.location.href = "/download/";
             } else {
                 // get error message from response

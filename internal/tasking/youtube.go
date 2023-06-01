@@ -838,6 +838,24 @@ func updateAllVideoMetadata() error {
 	return ret
 }
 
+func GetCreatorMetadata(creatorID string) (database.YoutubePlaylistStruct, error) {
+	// Get creator json from https://www.youtube.com/channel/$creatorID/about from yt-dlp. Export to stdout and unmarshal into a Creator struct
+	cmd := exec.Command("yt-dlp", "--dump-single-json", fmt.Sprintf("https://www.youtube.com/channel/%v/about", creatorID))
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		return database.YoutubePlaylistStruct{}, err
+	}
+
+	var data database.YoutubePlaylistStruct
+	err = json.Unmarshal(out.Bytes(), &data)
+	if err != nil {
+		return database.YoutubePlaylistStruct{}, err
+	}
+	return data, nil
+}
+
 func getNewCreator(creatorID string) (database.Creator, error) {
 
 	// Check if creatorid exists, if so skip
@@ -848,18 +866,8 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 		return database.Creator{}, err
 	}
 
-	// Get creator json from https://www.youtube.com/channel/$creatorID/about from yt-dlp. Export to stdout and unmarshal into a Creator struct
-	cmd := exec.Command("yt-dlp", "--dump-single-json", fmt.Sprintf("https://www.youtube.com/channel/%v/about", creatorID))
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err = cmd.Run()
-	if err != nil {
-		return database.Creator{}, err
-	}
-
-	var creator database.Creator
-	var data database.YoutubePlaylistStruct
-	err = json.Unmarshal(out.Bytes(), &data)
+	creator := database.Creator{}
+	data, err := GetCreatorMetadata(creatorID)
 	if err != nil {
 		return database.Creator{}, err
 	}

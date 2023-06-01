@@ -126,6 +126,59 @@ footer {
     color: white;
 }
 
+.content-download-confirm {
+    font-size: 1.25rem;
+    margin: 1rem;
+    text-align: center;
+    /* give it a nice background and border */
+    background-color: #454545;
+    border-radius: 10px;
+    padding: 0.5rem;
+    color: #fff;
+    max-width: 75%;
+    /* center it */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.content-download-confirm .content-description a {
+    color: #00ccff;
+}
+
+.content-download-confirm .content-download {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+    text-align: left;
+}
+
+.content-download-confirm .download-button {
+    padding: 0.5rem;
+    font-size: 1rem;
+    color: #fff;
+    margin-bottom: 0.25rem;
+}
+
+.content-download-confirm .download-button button {
+    /* center the button */
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+.content-thumbnail img {
+    width: 20%;
+    height: 20%;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 5px;
+}
+
+.content-title {
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+    text-align: left;
+}
+
 .thumbnail {
     width: 120px;
     height: 120px;

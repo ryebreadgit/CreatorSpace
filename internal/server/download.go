@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
@@ -35,6 +36,18 @@ func getDownloadPage(c *gin.Context) {
 	var data database.YouTubeVideoInfoStruct
 	var err error
 
+	// Check if already in download queue
+	_, err = database.GetDownloadQueueItem(videoid, vidtype, db)
+	if err == nil {
+		// Video already in download queue
+		c.HTML(http.StatusConflict, "error.tmpl", gin.H{
+			"ret": http.StatusConflict,
+			"err": "Video already in download queue",
+		})
+		c.Abort()
+		return
+	}
+
 	// get youtube-dl metadata
 	if vidtype == "video" {
 		data, err = tasking.GetYouTubeMetadata(url, false)
@@ -42,10 +55,30 @@ func getDownloadPage(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
 			return
 		}
+	} else if vidtype == "channel" || vidtype == "shorts" || vidtype == "streams" {
+		creatorMetadata, err := tasking.GetCreatorMetadata(videoid)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
+			return
+		}
+		// capitalize first letter of video type
+		data.Title = creatorMetadata.Uploader + " - " + strings.ToUpper(vidtype[:1]) + strings.ToLower(vidtype[1:])
+		data.Description = creatorMetadata.Description
+		// Get uncropped thumbnail and banner
+		for _, thumb := range creatorMetadata.Thumbnails {
+			if thumb.ID == "avatar_uncropped" {
+				data.Thumbnail = thumb.URL
+				break
+			}
+		}
+
+		if data.Thumbnail == "" && len(creatorMetadata.Thumbnails) > 0 {
+			data.Thumbnail = creatorMetadata.Thumbnails[0].URL
+		}
 	} else {
 		data.Title = videoid
 		data.Thumbnail = "https://i.ytimg.com/vi/" + videoid + "/hqdefault.jpg"
-		data.Description = "Playlist"
+		data.Description = "Download '" + videoid + "'" + " from YouTube as a " + vidtype
 	}
 
 	c.HTML(http.StatusOK, "download-confirm.tmpl", gin.H{
