@@ -900,7 +900,11 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 	thumbPath := fmt.Sprintf("%v/avatar.png", creatorPath)
 	bannerPath := fmt.Sprintf("%v/banner.png", creatorPath)
 
-	creator.FilePath = strings.ReplaceAll(metaPath, settings.BaseYouTubePath, "")
+	creator.FilePath, err = general.SanitizeFilePath(metaPath)
+	if err != nil {
+		return database.Creator{}, err
+	}
+	creator.FilePath = strings.ReplaceAll(creator.FilePath, settings.BaseYouTubePath, "")
 
 	var thumbUrl string
 	var bannerUrl string
@@ -928,7 +932,11 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 		if err != nil {
 			fmt.Printf("Error downloading thumbnail for %v: %v\n", creator.Name, err)
 		} else {
-			creator.ThumbnailPath = strings.ReplaceAll(thmb, settings.BaseYouTubePath, "")
+			creator.ThumbnailPath, err = general.SanitizeFilePath(thmb)
+			if err != nil {
+				return database.Creator{}, err
+			}
+			creator.ThumbnailPath = strings.ReplaceAll(creator.ThumbnailPath, settings.BaseYouTubePath, "")
 		}
 	}
 
@@ -939,7 +947,11 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 		if err != nil {
 			fmt.Printf("Error downloading banner for %v: %v\n", creator.Name, err)
 		} else {
-			creator.BannerPath = strings.ReplaceAll(thmb, settings.BaseYouTubePath, "")
+			creator.BannerPath, err = general.SanitizeFilePath(thmb)
+			if err != nil {
+				return database.Creator{}, err
+			}
+			creator.BannerPath = strings.ReplaceAll(creator.BannerPath, settings.BaseYouTubePath, "")
 		}
 	}
 

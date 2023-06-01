@@ -220,6 +220,16 @@ func getCreatorThumbnailPath(creatorID string) (string, error) {
 		basePath = settings.BaseYouTubePath
 	}
 	thumbPath := fmt.Sprintf("%s/%s", basePath, creatorData.ThumbnailPath)
+	thumbPath, err = general.SanitizeFilePath(thumbPath)
+	if err != nil {
+		return "", err
+	}
+
+	// Get absolute path
+	thumbPath, err = filepath.Abs(thumbPath)
+	if err != nil {
+		return "", err
+	}
 
 	// check if thumbnail exists or is empty
 	if _, err := os.Stat(thumbPath); os.IsNotExist(err) || creatorData.ThumbnailPath == "" {

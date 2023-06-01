@@ -19,6 +19,7 @@ func SetupDatabase() {
 	router.GET("/", func(c *gin.Context) {
 		// redirect to setup
 		c.Redirect(http.StatusTemporaryRedirect, "/setup")
+		c.Abort()
 	})
 
 	router.GET("/setup", func(c *gin.Context) {
@@ -129,6 +130,7 @@ func SetupDatabase() {
 		general.RestartSelf()
 
 		c.Redirect(http.StatusTemporaryRedirect, "/")
+		c.Abort()
 
 	})
 
