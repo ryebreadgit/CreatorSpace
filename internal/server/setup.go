@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
@@ -70,6 +71,12 @@ func SetupDatabase() {
 		if settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "/" || settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "\\" {
 			settings.BaseTwitchPath = settings.BaseTwitchPath[:len(settings.BaseTwitchPath)-1]
 		}
+
+		// Replace // with / and \ with /
+		settings.BaseYouTubePath = strings.ReplaceAll(settings.BaseYouTubePath, "//", "/")
+		settings.BaseYouTubePath = strings.ReplaceAll(settings.BaseYouTubePath, "\\", "/")
+		settings.BaseTwitchPath = strings.ReplaceAll(settings.BaseTwitchPath, "//", "/")
+		settings.BaseTwitchPath = strings.ReplaceAll(settings.BaseTwitchPath, "\\", "/")
 
 		// save settings to settings.json and restart the program
 		f, err := os.Create("settings.json")
