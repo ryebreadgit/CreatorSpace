@@ -189,11 +189,11 @@ func downloadThumbnail(thumbUrl string, oldThumbnailPath string, videoID string)
 	}
 
 	// Update the video thumbnail path in the database. Remove the youtube path from the path
-	newThumbPath = strings.TrimPrefix(newThumbPath, settings.BaseYouTubePath)
 	newThumbPath, err = general.SanitizeFilePath(newThumbPath)
 	if err != nil {
 		return "", err
 	}
+	newThumbPath = strings.ReplaceAll(newThumbPath, settings.BaseYouTubePath, "")
 	return newThumbPath, nil
 }
 
@@ -399,17 +399,8 @@ func updateVideoMetadata(videoID string) error {
 	default:
 		video.Availability = "unavailable"
 	}
-	// if thumbnail path, video path, or metadata path have the youtube default path, trim this
-	video.ThumbnailPath = strings.ReplaceAll(video.ThumbnailPath, settings.BaseYouTubePath, "")
-	// if the metadata path has the youtube default path, trim this
-	video.MetadataPath = strings.ReplaceAll(video.MetadataPath, settings.BaseYouTubePath, "")
 
-	// replace \ with / in the these paths and // with /
-	video.ThumbnailPath = strings.ReplaceAll(video.ThumbnailPath, "//", "/")
-	video.MetadataPath = strings.ReplaceAll(video.MetadataPath, "//", "/")
-	video.FilePath = strings.ReplaceAll(video.FilePath, "//", "/")
-
-	// Do the same with \
+	// Sanitize the paths
 	video.ThumbnailPath, err = general.SanitizeFilePath(video.ThumbnailPath)
 	if err != nil {
 		return err
@@ -422,6 +413,11 @@ func updateVideoMetadata(videoID string) error {
 	if err != nil {
 		return err
 	}
+
+	// if thumbnail path, video path, or metadata path have the youtube default path, trim this
+	video.ThumbnailPath = strings.ReplaceAll(video.ThumbnailPath, settings.BaseYouTubePath, "")
+	video.MetadataPath = strings.ReplaceAll(video.MetadataPath, settings.BaseYouTubePath, "")
+	video.FilePath = strings.ReplaceAll(video.FilePath, settings.BaseYouTubePath, "")
 
 	var updateVidMeta bool
 
@@ -511,13 +507,13 @@ func updateVideoMetadata(videoID string) error {
 			}
 			// if the comments path is different, update the comments path
 			if newCommPath != video.CommentsPath {
-				// replace the youtube default path
-				video.CommentsPath = strings.ReplaceAll(newCommPath, settings.BaseYouTubePath, "")
-				// replace \ with / in the these paths and // with /
 				video.CommentsPath, err = general.SanitizeFilePath(video.CommentsPath)
 				if err != nil {
 					return err
 				}
+
+				// replace the youtube default path
+				video.CommentsPath = strings.ReplaceAll(newCommPath, settings.BaseYouTubePath, "")
 
 				err = database.UpdateVideo(video, db)
 				if err != nil {
@@ -554,6 +550,7 @@ func updateVideoMetadata(videoID string) error {
 				video.SubtitlePath = strings.ReplaceAll(string(newSubsJSON), settings.BaseYouTubePath, "")
 
 				video.SubtitlePath, err = general.SanitizeFilePath(video.SubtitlePath)
+				video.SubtitlePath = strings.ReplaceAll(video.SubtitlePath, settings.BaseYouTubePath, "")
 				if err != nil {
 					return err
 				}
