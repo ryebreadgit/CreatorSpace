@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
@@ -55,6 +56,24 @@ func SetupDatabase() {
 
 		if settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "/" || settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "\\" {
 			settings.BaseTwitchPath = settings.BaseTwitchPath[:len(settings.BaseTwitchPath)-1]
+		}
+
+		// Change // to / and \ to / in BaseYouTubePath and BaseTwitchPath
+		settings.BaseYouTubePath = strings.ReplaceAll(settings.BaseYouTubePath, "\\", "/")
+		settings.BaseTwitchPath = strings.ReplaceAll(settings.BaseYouTubePath, "//", "/")
+
+		var err error
+		// Sanitize BaseYouTubePath and BaseTwitchPath
+		settings.BaseYouTubePath, err = general.SanitizeFilePath(settings.BaseYouTubePath)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
+			return
+		}
+
+		settings.BaseTwitchPath, err = general.SanitizeFilePath(settings.BaseTwitchPath)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
+			return
 		}
 
 		// save settings to settings.json and restart the program

@@ -112,6 +112,7 @@ func importVideoMetadata(filePath string, thumbnailPath string, subtitlePath str
 	fp += ".mp4"
 	fp = strings.ReplaceAll(fp, "/metadata/metadata/", "/videos/")
 	fp = strings.ReplaceAll(fp, "//", "/")
+	fp = strings.ReplaceAll(fp, "\\", "/")
 
 	// check if file exists
 	if _, err := os.Stat(fp); err != nil {
@@ -238,6 +239,10 @@ func importYouTubeCreatorMetadata(filePath string, thumbnailPath string, bannerP
 	cre.ThumbnailPath = strings.ReplaceAll(thumbnailPath, "//", "/")
 	cre.BannerPath = strings.ReplaceAll(bannerPath, "//", "/")
 
+	cre.FilePath = strings.ReplaceAll(filePath, "\\", "/")
+	cre.ThumbnailPath = strings.ReplaceAll(thumbnailPath, "\\", "/")
+	cre.BannerPath = strings.ReplaceAll(bannerPath, "\\", "/")
+
 	cre.FilePath = strings.ReplaceAll(filePath, settings.BaseYouTubePath, "")
 	cre.ThumbnailPath = strings.ReplaceAll(thumbnailPath, settings.BaseYouTubePath, "")
 	cre.BannerPath = strings.ReplaceAll(bannerPath, settings.BaseYouTubePath, "")
@@ -282,6 +287,7 @@ func importSponsorBlockMetadata(filePath string, settings *Settings, db *gorm.DB
 			ShadowHidden: s.ShadowHidden,
 		}
 		spon.FilePath = strings.ReplaceAll(filePath, "//", "/")
+		spon.FilePath = strings.ReplaceAll(filePath, "\\", "/")
 		spon.FilePath = strings.ReplaceAll(filePath, settings.BaseYouTubePath, "")
 		spon.VideoID = filePath[strings.LastIndex(filePath, "(")+1 : strings.LastIndex(filePath, ")")]
 		// import Video struct into database
@@ -346,6 +352,7 @@ func importCommentMetadata(filePath string, settings *Settings, db *gorm.DB) err
 		v.CommentID = commid
 		v.ParentCommentID = parentid
 		v.FilePath = strings.ReplaceAll(filePath, "//", "/")
+		v.FilePath = strings.ReplaceAll(filePath, "\\", "/")
 		v.FilePath = strings.ReplaceAll(filePath, settings.BaseYouTubePath, "")
 
 		v.VideoID = filePath[strings.LastIndex(filePath, "(")+1 : strings.LastIndex(filePath, ")")]
@@ -511,17 +518,20 @@ func importTwitchCreatorMetadata(filePath string, thumbnailPath string, bannerPa
 		Platform:    "Twitch",
 	}
 	creator.FilePath = strings.ReplaceAll(filePath, "//", "/")
+	creator.FilePath = strings.ReplaceAll(filePath, "\\", "/")
 	creator.FilePath = strings.ReplaceAll(creator.FilePath, settings.BaseTwitchPath, "")
 
 	// if thumbnailpath exists, set thumbnail path
 	if _, err := os.Stat(thumbnailPath); err == nil {
 		thumbnailPath = strings.ReplaceAll(thumbnailPath, "//", "/")
+		thumbnailPath = strings.ReplaceAll(thumbnailPath, "\\", "/")
 		creator.ThumbnailPath = strings.ReplaceAll(thumbnailPath, settings.BaseTwitchPath, "")
 	}
 
 	// if bannerpath exists, set banner path
 	if _, err := os.Stat(bannerPath); err == nil {
 		bannerPath = strings.ReplaceAll(bannerPath, "//", "/")
+		bannerPath = strings.ReplaceAll(bannerPath, "\\", "/")
 		creator.BannerPath = strings.ReplaceAll(bannerPath, settings.BaseTwitchPath, "")
 	}
 
@@ -580,6 +590,7 @@ func importTwitchVideo(filePath string, chatPath string, thumbnailPath string, c
 	}
 
 	filePath = strings.ReplaceAll(filePath, "//", "/")
+	filePath = strings.ReplaceAll(filePath, "\\", "/")
 	vi.FilePath = strings.ReplaceAll(filePath, settings.BaseTwitchPath, "")
 
 	// get video length
@@ -595,12 +606,14 @@ func importTwitchVideo(filePath string, chatPath string, thumbnailPath string, c
 	comOs, err := os.Stat(chatPath)
 	if err == nil && !comOs.IsDir() {
 		chatPath = strings.ReplaceAll(chatPath, "//", "/")
+		chatPath = strings.ReplaceAll(chatPath, "\\", "/")
 		vi.CommentsPath = strings.ReplaceAll(chatPath, settings.BaseTwitchPath, "")
 	}
 	// if thumbnail path exists, set thumbnail path
 	thumbOs, err := os.Stat(thumbnailPath)
 	if err == nil && !thumbOs.IsDir() {
 		thumbnailPath = strings.ReplaceAll(thumbnailPath, "//", "/")
+		thumbnailPath = strings.ReplaceAll(thumbnailPath, "\\", "/")
 		vi.ThumbnailPath = strings.ReplaceAll(thumbnailPath, settings.BaseTwitchPath, "")
 	}
 

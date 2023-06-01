@@ -191,6 +191,7 @@ func downloadThumbnail(thumbUrl string, oldThumbnailPath string, videoID string)
 	// Update the video thumbnail path in the database. Remove the youtube path from the path
 	newThumbPath = strings.TrimPrefix(newThumbPath, settings.BaseYouTubePath)
 	newThumbPath = strings.ReplaceAll(newThumbPath, "//", "/")
+	newThumbPath = strings.ReplaceAll(newThumbPath, "\\", "/")
 	return newThumbPath, nil
 }
 
@@ -402,6 +403,11 @@ func updateVideoMetadata(videoID string) error {
 	video.MetadataPath = strings.ReplaceAll(video.MetadataPath, "//", "/")
 	video.FilePath = strings.ReplaceAll(video.FilePath, "//", "/")
 
+	// Do the same with \
+	video.ThumbnailPath = strings.ReplaceAll(video.ThumbnailPath, "\\", "/")
+	video.MetadataPath = strings.ReplaceAll(video.MetadataPath, "\\", "/")
+	video.FilePath = strings.ReplaceAll(video.FilePath, "\\", "/")
+
 	var updateVidMeta bool
 
 	if video.Title != originalVideo.Title {
@@ -492,6 +498,11 @@ func updateVideoMetadata(videoID string) error {
 			if newCommPath != video.CommentsPath {
 				// replace the youtube default path
 				video.CommentsPath = strings.ReplaceAll(newCommPath, settings.BaseYouTubePath, "")
+				// replace \ with / in the these paths and // with /
+				video.CommentsPath = strings.ReplaceAll(video.CommentsPath, "//", "/")
+				// Do the same with \
+				video.CommentsPath = strings.ReplaceAll(video.CommentsPath, "\\", "/")
+
 				err = database.UpdateVideo(video, db)
 				if err != nil {
 					return err
@@ -525,6 +536,12 @@ func updateVideoMetadata(videoID string) error {
 			if string(newSubsJSON) != video.SubtitlePath {
 				// replace the youtube default path
 				video.SubtitlePath = strings.ReplaceAll(string(newSubsJSON), settings.BaseYouTubePath, "")
+
+				// replace \ with / in the these paths and // with /
+				video.SubtitlePath = strings.ReplaceAll(video.SubtitlePath, "//", "/")
+				// Do the same with \
+				video.SubtitlePath = strings.ReplaceAll(video.SubtitlePath, "\\", "/")
+
 				err = database.UpdateVideo(video, db)
 				if err != nil {
 					return err

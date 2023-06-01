@@ -155,6 +155,9 @@ func getVideoThumbnailPath(videoID string) (string, error) {
 	thumbPath = filepath.Clean(thumbPath)
 	redirect := false
 
+	// replace \ with /
+	thumbPath = strings.ReplaceAll(thumbPath, "\\", "/")
+
 	dat, err := os.Stat(thumbPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -533,7 +536,14 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 		scoredRecommendations[i], scoredRecommendations[j] = scoredRecommendations[j], scoredRecommendations[i]
 	})
 
-	for i := 0; i < 10; i++ {
+	topNum := 10
+
+	// if there are less than 10 recommendations, set topNum to the length of scoredRecommendations
+	if len(scoredRecommendations) < 10 {
+		topNum = len(scoredRecommendations)
+	}
+
+	for i := 0; i < topNum; i++ {
 		topReccs = append(topReccs, scoredRecommendations[i])
 	}
 
