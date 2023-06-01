@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
@@ -50,6 +49,16 @@ func SetupDatabase() {
 		}
 
 		var err error
+
+		// Remove trailing slash from BaseYouTubePath and BaseTwitchPath
+		if settings.BaseYouTubePath[len(settings.BaseYouTubePath)-1:] == "/" || settings.BaseYouTubePath[len(settings.BaseYouTubePath)-1:] == "\\" {
+			settings.BaseYouTubePath = settings.BaseYouTubePath[:len(settings.BaseYouTubePath)-1]
+		}
+
+		if settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "/" || settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "\\" {
+			settings.BaseTwitchPath = settings.BaseTwitchPath[:len(settings.BaseTwitchPath)-1]
+		}
+
 		// Sanitize BaseYouTubePath and BaseTwitchPath
 		settings.BaseYouTubePath, err = general.SanitizeFilePath(settings.BaseYouTubePath)
 		if err != nil {
@@ -62,21 +71,6 @@ func SetupDatabase() {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
 			return
 		}
-
-		// Remove trailing slash from BaseYouTubePath and BaseTwitchPath
-		if settings.BaseYouTubePath[len(settings.BaseYouTubePath)-1:] == "/" || settings.BaseYouTubePath[len(settings.BaseYouTubePath)-1:] == "\\" {
-			settings.BaseYouTubePath = settings.BaseYouTubePath[:len(settings.BaseYouTubePath)-1]
-		}
-
-		if settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "/" || settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "\\" {
-			settings.BaseTwitchPath = settings.BaseTwitchPath[:len(settings.BaseTwitchPath)-1]
-		}
-
-		// Replace // with / and \ with /
-		settings.BaseYouTubePath = strings.ReplaceAll(settings.BaseYouTubePath, "//", "/")
-		settings.BaseYouTubePath = strings.ReplaceAll(settings.BaseYouTubePath, "\\", "/")
-		settings.BaseTwitchPath = strings.ReplaceAll(settings.BaseTwitchPath, "//", "/")
-		settings.BaseTwitchPath = strings.ReplaceAll(settings.BaseTwitchPath, "\\", "/")
 
 		// save settings to settings.json and restart the program
 		f, err := os.Create("settings.json")
