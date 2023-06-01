@@ -48,15 +48,6 @@ func SetupDatabase() {
 			OpenRegister:     openRegister,
 		}
 
-		// Remove trailing slash from BaseYouTubePath and BaseTwitchPath
-		if settings.BaseYouTubePath[len(settings.BaseYouTubePath)-1:] == "/" || settings.BaseYouTubePath[len(settings.BaseYouTubePath)-1:] == "\\" {
-			settings.BaseYouTubePath = settings.BaseYouTubePath[:len(settings.BaseYouTubePath)-1]
-		}
-
-		if settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "/" || settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "\\" {
-			settings.BaseTwitchPath = settings.BaseTwitchPath[:len(settings.BaseTwitchPath)-1]
-		}
-
 		var err error
 		// Sanitize BaseYouTubePath and BaseTwitchPath
 		settings.BaseYouTubePath, err = general.SanitizeFilePath(settings.BaseYouTubePath)
@@ -69,6 +60,15 @@ func SetupDatabase() {
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
 			return
+		}
+
+		// Remove trailing slash from BaseYouTubePath and BaseTwitchPath
+		if settings.BaseYouTubePath[len(settings.BaseYouTubePath)-1:] == "/" || settings.BaseYouTubePath[len(settings.BaseYouTubePath)-1:] == "\\" {
+			settings.BaseYouTubePath = settings.BaseYouTubePath[:len(settings.BaseYouTubePath)-1]
+		}
+
+		if settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "/" || settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "\\" {
+			settings.BaseTwitchPath = settings.BaseTwitchPath[:len(settings.BaseTwitchPath)-1]
 		}
 
 		// save settings to settings.json and restart the program

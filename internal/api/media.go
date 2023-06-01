@@ -42,8 +42,11 @@ func apiMedia(c *gin.Context) {
 	}
 
 	filePath := fmt.Sprintf("%v/%v", basePath, vidData.FilePath)
-	if _, err := os.Stat(filePath); err == nil {
-		c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": "file not found"})
+
+	filePath = strings.ReplaceAll(filePath, "//", "/")
+
+	if _, err := os.Stat(filePath); err != nil {
+		c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": fmt.Sprintf("file not found: %v", filePath)})
 		return
 	}
 
@@ -154,9 +157,6 @@ func getVideoThumbnailPath(videoID string) (string, error) {
 	// replace double slashes
 	thumbPath = filepath.Clean(thumbPath)
 	redirect := false
-
-	// replace \ with /
-	thumbPath = strings.ReplaceAll(thumbPath, "\\", "/")
 
 	dat, err := os.Stat(thumbPath)
 	if err != nil {

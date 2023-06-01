@@ -335,6 +335,8 @@ func updateVideoMetadata(videoID string) error {
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "unavailable video") {
 			video.Availability = "unavailable"
+			// Set updated to true
+			video.Updated = true
 			err = database.UpdateVideo(video, db)
 			if err != nil {
 				return err
@@ -342,6 +344,8 @@ func updateVideoMetadata(videoID string) error {
 			return nil
 		} else if strings.Contains(strings.ToLower(err.Error()), "private video") {
 			video.Availability = "private"
+			// Set updated to true
+			video.Updated = true
 			err = database.UpdateVideo(video, db)
 			if err != nil {
 				return err
