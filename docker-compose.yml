@@ -7,6 +7,8 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - /CreatorSpace/downloads:/path/to/downloads
-      - /CreatorSpace/settings.json:/path/to/appdata/CreatorSpace/settings.json
-      - /CreatorSpace/database.db:/path/to/appdata/CreatorSpace/database.db # optional for sqlite
+      - /downloads:/path/to/downloads
+      - /settings.json:/path/to/appdata/CreatorSpace/settings.json
+      - /database.db:/path/to/appdata/CreatorSpace/database.db # optional for sqlite
+    environment:
+          - GIN_MODE=release
