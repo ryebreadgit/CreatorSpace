@@ -4,7 +4,7 @@
 
 ## Introduction
 
-**CreatorSpace** is a comprehensive content archiving platform designed for YouTube, Twitch, and Twitter creators.
+**CreatorSpace** is a comprehensive content archiving platform designed for YouTube creators.
 
 ## Features
 
