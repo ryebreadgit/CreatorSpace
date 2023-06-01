@@ -41,7 +41,7 @@ func getLocalSettings() (Settings, error) {
 	// open ./settings.json file and load into Settings struct
 	var settings Settings
 	// open file
-	file, err := os.Open("./settings.json")
+	file, err := os.Open("./config/settings.json")
 	if err != nil {
 		return settings, err
 	}
