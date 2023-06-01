@@ -37,6 +37,10 @@ func SanitizeFilePath(fp string) (string, error) {
 		}
 	}
 
+	// remove double slashes and backslashes
+	fp = strings.ReplaceAll(fp, "//", "/")
+	fp = strings.ReplaceAll(fp, "\\", "/")
+
 	// If the file name is valid, check if it contains any invalid characters
 	if safeFileName == "" {
 		for _, invalidChar := range invalidChars {

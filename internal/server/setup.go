@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
@@ -57,10 +56,6 @@ func SetupDatabase() {
 		if settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "/" || settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "\\" {
 			settings.BaseTwitchPath = settings.BaseTwitchPath[:len(settings.BaseTwitchPath)-1]
 		}
-
-		// Change // to / and \ to / in BaseYouTubePath and BaseTwitchPath
-		settings.BaseYouTubePath = strings.ReplaceAll(settings.BaseYouTubePath, "\\", "/")
-		settings.BaseTwitchPath = strings.ReplaceAll(settings.BaseYouTubePath, "//", "/")
 
 		var err error
 		// Sanitize BaseYouTubePath and BaseTwitchPath
