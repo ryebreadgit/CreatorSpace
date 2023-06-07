@@ -33,14 +33,24 @@
 <details>
 <summary>Click to expand</summary>
 
+***Subscriptions*** - View all of your subscriptions in one place.
 ![Subscriptions](./.github/img/subscriptions.png)
 
+***Creator View*** - View all of the videos for a specific creator.
 ![Creator View](./.github/img/creator.png)
 
+***Library View*** - View all of the videos in your library.
+![Library View](./.github/img/library.png)
+
+***Creators*** - View all of the creators in your library.
+![Creators](./.github/img/creators.png)
+
+***Video Playback*** - Watch and playback videos directly from the application.
 ![Video View](./.github/img/video-playing.png)
 
 ![Comments and Recommendations](./.github/img/comments-recommendations.png)
 
+***On-Disk Archival*** - All videos, metadata, and updates are saved to disk.
 ![On-Disk Info](./.github/img/disk-creator.png)
 
 </details>
