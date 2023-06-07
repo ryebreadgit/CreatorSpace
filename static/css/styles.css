@@ -56,14 +56,14 @@ nav.navbar a:hover {
 }
 
 /* nav bar dropdown from navbar.tmpl */
-.dropdown-menu {
+nav.navbar .dropdown-menu {
     background-color: #444444;
     right: 0;
     left: auto;
     margin: 0.5rem 1rem;
 }
 
-.dropdown {
+nav.navbar .dropdown {
     color: #fff;
     text-align: right;
     
@@ -74,15 +74,18 @@ nav.navbar a:hover {
     left: auto;
 }
 
-.dropdown-item {
+nav.navbar .dropdown-item {
     color: #fff;
     text-align: left;
 }
 
-.dropdown-item:hover {
+nav.navbar .dropdown-item:hover {
     color: #ddd;
 }
 
+#sort-filter-container {
+    margin: -2rem 10%;
+}
 
 /* Center the title on the index page */
 h1 {
@@ -291,6 +294,10 @@ a:hover {
     font-weight: bold;
     margin-bottom: 1rem;
     color: #fff;;
+}
+
+#filters-container {
+    padding: 0 15%;
 }
 
 #page-select {

@@ -4,7 +4,7 @@
     <title>{{ .Creator.Name }} - CreatorSpace</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="stylesheet" href="/assets/lib/bootstrap-5.3.0-alpha3-dist/css/bootstrap.min.css">
-    <script src="/assets/lib/bootstrap-5.3.0-alpha3-dist/js/bootstrap.min.js"></script>
+    <script src="/assets/lib/bootstrap-5.3.0-alpha3-dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" type="text/css" href="/assets/css/styles.css">
     <link rel="stylesheet" type="text/css" href="/assets/css/videos.css">
 
@@ -47,6 +47,40 @@
             <button id="subscribeBtn" class="btn btn-danger">Subscribe</button>
         {{ end }}
     </span>
+</section>
+<section id="sort-filter-container">
+    <div class="sortfilter row py-2">
+            <div class="col-md-6 text-start">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        Filter
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="all">All</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="public">Public</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="unlisted">Unlisted</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="private">Private</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="unavailable">Unavailable</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        Sort
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="newest">Newest</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="oldest">Oldest</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="mostviews">Most Views</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="leastviews">Least Views</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="mostlikes">Most Likes</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="leastlikes">Least Likes</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 </section>
 <section id="video-type">
     {{ range .LinkedAccounts }}
@@ -239,6 +273,66 @@ var creator_title = '{{.Creator.Name}}'; // Replace with the actual creator titl
         xhr.open("POST", `/api/user/${user_id}/progress/${video_id}/complete`, true);
         xhr.send();
         alert(`Successfully marked ${video_title} as watched!`);
+    }
+
+    let filterDropdown = document.querySelector('#filterDropdown');
+    let sortDropdown = document.querySelector('#sortDropdown');
+    let filterItems = document.querySelectorAll('#filterDropdown + .dropdown-menu .dropdown-item');
+    let sortItems = document.querySelectorAll('#sortDropdown + .dropdown-menu .dropdown-item');
+
+    filterItems.forEach(item => {
+        item.addEventListener('click', () => {
+            let curSort = "{{.Sort}}";
+            updatePageWithParams(item.dataset.value, curSort);
+        });
+        // if item is set to {{.Filter}} then set the default dropdown text to that item
+        if (item.dataset.value === "{{.Filter}}" && item.dataset.value !== "all") {
+            filterDropdown.innerHTML = item.innerHTML;
+        }
+    });
+
+    sortItems.forEach(item => {
+        item.addEventListener('click', () => {
+            let curFilter = "{{.Filter}}";
+            updatePageWithParams(curFilter, item.dataset.value);
+        });
+        // if item is set to {{.Sort}} then set the default dropdown text to that item
+        if (item.dataset.value === "{{.Sort}}" && item.dataset.value !== "newest") {
+            sortDropdown.innerHTML = item.innerHTML;
+        }
+    });
+
+    function updatePageWithParams(filter, sort) {
+        let baseUrl = window.location.origin + window.location.pathname;
+        let searchParams = new URLSearchParams(window.location.search);
+
+        let page = 0;
+        {{if .NextPage}}
+            page = {{.NextPage}} - 1;
+        {{else if .PrevPage}}
+            page = {{.PrevPage}} + 1;
+        {{end}}
+
+        if (page) {
+            searchParams.set('page', page);
+        } else {
+            searchParams.delete('page');
+        }
+
+        if (filter) {
+            searchParams.set('filter', filter);
+        } else {
+            searchParams.delete('filter');
+        }
+
+        if (sort) {
+            searchParams.set('sort', sort);
+        } else {
+            searchParams.delete('sort');
+        }
+        
+        // Update the window location
+        window.location.href = `${baseUrl}?${searchParams.toString()}`;
     }
   </script>
 </body>
