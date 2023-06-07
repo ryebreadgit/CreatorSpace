@@ -114,18 +114,6 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		vidargs := db.Select("title", "video_id", "likes", "views", "channel_title", "channel_id", "published_at", "description", "length", "video_type", "availability").Limit(20).Offset((pageInt - 1) * 20)
-		if sortQuery != "" {
-			// when casting we may get non-int values, so we need to filter those out
-			if sort == "mostviews" || sort == "leastviews" {
-				vidargs = vidargs.Where("views != ''")
-				vidargs = vidargs.Where("views NOT like '%[^0-9]%'")
-			}
-			if sort == "mostlikes" || sort == "leastlikes" {
-				vidargs = vidargs.Where("likes != ''").Where("likes != 'None'")
-				vidargs = vidargs.Where("likes NOT like '%[^0-9]%'")
-			}
-			vidargs = vidargs.Order(sortQuery)
-		}
 
 		// Get the user's subscriptions
 		userSubscriptions, err := database.GetPlaylistByUserID(user, "Subscriptions", db)
@@ -140,7 +128,6 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 		// Add subscriptions to query
 		if len(userSubscriptions) > 0 {
 			for _, sub := range userSubscriptions {
-				// check if filter is set
 				if filterQuery != "" {
 					vidargs = vidargs.Or(filterQuery).Where("channel_id = ?", sub)
 				} else {
@@ -154,6 +141,19 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 				"err": "No subscriptions found",
 			})
 			return
+		}
+
+		if sortQuery != "" {
+			// when casting we may get non-int values, so we need to filter those out
+			if sort == "mostviews" || sort == "leastviews" {
+				vidargs = vidargs.Where("views != ''")
+				vidargs = vidargs.Where("views NOT like '%[^0-9]%'")
+			}
+			if sort == "mostlikes" || sort == "leastlikes" {
+				vidargs = vidargs.Where("likes != ''").Where("likes != 'None'")
+				vidargs = vidargs.Where("likes NOT like '%[^0-9]%'")
+			}
+			vidargs = vidargs.Order(sortQuery)
 		}
 
 		videos, err := database.GetAllVideos(vidargs)

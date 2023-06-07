@@ -80,7 +80,7 @@ func GetVideoSubtitles(video string, db *gorm.DB) ([]VidSubtitle, error) {
 func GetAllVideos(db *gorm.DB) ([]Video, error) {
 	// get all videos
 	var videos []Video
-	err := db.Order("published_at desc, title").Find(&videos).Error
+	err := db.Find(&videos).Error
 	if err != nil {
 		return nil, err
 	}
