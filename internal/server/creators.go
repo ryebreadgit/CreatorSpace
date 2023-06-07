@@ -41,7 +41,7 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 
 		filterList := map[string]string{
 			"all":         "",
-			"public":      "availability = 'public'",
+			"public":      "availability = 'available'",
 			"live":        "availability = 'live' OR video_type = 'Twitch'",
 			"notlive":     "availability != 'live' AND video_type != 'Twitch'",
 			"twitch":      "video_type = 'Twitch'",

@@ -267,12 +267,20 @@ var creator_title = '{{.Creator.Name}}'; // Replace with the actual creator titl
   });
   }
 
-  function sendCompletedRequestAlert(video_id, video_title) {
+    function sendCompletedRequestAlert(video_id, video_title, data) {
         let xhr = new XMLHttpRequest();
         let user_id = "{{.UserID}}";
         xhr.open("POST", `/api/user/${user_id}/progress/${video_id}/complete`, true);
         xhr.send();
+		// Get the image container and add <span class="watched-text"></span>
+		let imageContainer = document.querySelector(`img[src="/api/media/${video_id}/thumbnail"]`).parentElement.parentElement;
+		let watchedText = document.createElement('span');
+		watchedText.classList.add('watched-text');
+		imageContainer.appendChild(watchedText);
         alert(`Successfully marked ${video_title} as watched!`);
+		// Get the checkmark from imageContainer and hide it
+		let checkmark = imageContainer.querySelector('.checkmark');
+		checkmark.style.display = 'none';
     }
 
     let filterDropdown = document.querySelector('#filterDropdown');
