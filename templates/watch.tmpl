@@ -631,14 +631,6 @@ theaterModeButton.addEventListener('click', function () {
         }
     }
 
-    function sendCompletedRequestAlert(video_id, video_title) {
-        let xhr = new XMLHttpRequest();
-        let user_id = "{{.UserID}}";
-        xhr.open("POST", `/api/user/${user_id}/progress/${video_id}/complete`, true);
-        xhr.send();
-        alert(`Successfully marked ${video_title} as watched!`);
-    }
-
 </script>
 </body>
 </html>

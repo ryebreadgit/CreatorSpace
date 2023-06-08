@@ -187,10 +187,22 @@
         xhr.send();
 		// Get the image container and add <span class="watched-text"></span>
 		let imageContainer = document.querySelector(`img[src="/api/media/${video_id}/thumbnail"]`).parentElement.parentElement;
-		let watchedText = document.createElement('span');
+		
+        // Remove in-progress-text and in-progress-bkg if they exist
+        let thumbBox = imageContainer.parentElement;
+        let inProgressText = thumbBox.querySelector('.in-progress-text');
+        let inProgressBkg = thumbBox.querySelector('.in-progress-bkg');
+        if (inProgressText) {
+            inProgressText.style.display = 'none'
+        }
+        if (inProgressBkg) {
+            inProgressBkg.style.display = 'none'
+        }
+        
+        let watchedText = document.createElement('span');
 		watchedText.classList.add('watched-text');
 		imageContainer.appendChild(watchedText);
-        alert(`Successfully marked ${video_title} as watched!`);
+        //alert(`Successfully marked ${video_title} as watched!`); //Adding watched-text instead
 		// Get the checkmark from imageContainer and hide it
 		let checkmark = imageContainer.querySelector('.checkmark');
 		checkmark.style.display = 'none';
