@@ -74,7 +74,7 @@ func SetupDatabase() {
 		}
 
 		// save settings to settings.json and restart the program
-		f, err := os.Create("settings.json")
+		f, err := os.Create("./config/settings.json")
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
 			return

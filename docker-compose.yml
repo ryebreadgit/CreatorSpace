@@ -1,0 +1,30 @@
+version: '3'
+services:
+  app:
+    build:
+      context: https://github.com/ryebreadgit/CreatorSpace.git
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    volumes:
+      - /path/to/downloads:/downloads
+      - /path/to/appdata/CreatorSpace/settings.json:/config/settings.json
+      # - /path/to/appdata/CreatorSpace/database.db:/database.db
+    environment:
+      - GIN_MODE=release
+    depends_on:
+      - db
+      - redis
+  db:
+    image: postgres:13
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=your_username
+      - POSTGRES_PASSWORD=your_password
+      - POSTGRES_DB=your_database_name
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+  redis:
+    image: redis:latest
+    restart: unless-stopped
