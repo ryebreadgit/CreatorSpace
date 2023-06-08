@@ -261,6 +261,26 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 			}
 		}
 
+		// Get all sponsorblock from db here action_type = 'full'
+		sponsorArgs := db.Select("video_id", "category", "action_type")
+		for _, video := range videos {
+			sponsorArgs = sponsorArgs.Or("video_id = ?", video.VideoID)
+		}
+		sponsorArgs = sponsorArgs.Where("action_type = 'full'")
+		sponsorblock, err := database.GetAllVideoSponsoBlock(sponsorArgs)
+		if err == nil {
+			for i, video := range videos {
+				for _, sponsor := range sponsorblock {
+					if sponsor.ActionType != "full" {
+						continue
+					}
+					if video.VideoID == sponsor.VideoID {
+						videos[i].SponsorTag = sponsor.Category
+					}
+				}
+			}
+		}
+
 		// Round views adding K for thousands and M for millions
 		for i, video := range videos {
 			videos[i].Views = general.FormatViews(video.Views)

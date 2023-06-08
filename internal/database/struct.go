@@ -51,6 +51,7 @@ type Video struct {
 	AgeRestricted bool
 	Updated       bool
 	MimeType      string
+	SponsorTag    string
 }
 
 type SponsorBlock struct {

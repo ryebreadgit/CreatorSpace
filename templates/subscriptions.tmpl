@@ -37,12 +37,20 @@
 				<img src="/api/media/{{.VideoID}}/thumbnail" alt="{{.Title}}">
 			</a>
 			<div class="image-overlay">
-				{{if not .Watched}}
-				<span class="checkmark small-overlay" onclick="sendCompletedRequestAlert('{{.VideoID}}', '{{.Title}}')">
-					<svg viewBox="0 0 24 24">
-						<path fill-rule="evenodd" d="M6.72 13.278l-3.457-3.428a.562.562 0 0 1 0-.794l.909-.903a.552.552 0 0 1 .782 0L7 10.76l6.14-6.08a.552.552 0 0 1 .782 0l.908.903a.562.562 0 0 1 0 .794l-6.69 6.638a.564.564 0 0 1-.393.164.564.564 0 0 1-.393-.164z"/>
-					</svg>
-				</span>
+				<div class="mark-watched">
+					{{if not .Watched}}
+						<span class="checkmark small-overlay" onclick="sendCompletedRequestAlert('{{.VideoID}}', '{{.Title}}')">
+							<svg viewBox="0 0 24 24">
+								<path fill-rule="evenodd" d="M6.72 13.278l-3.457-3.428a.562.562 0 0 1 0-.794l.909-.903a.552.552 0 0 1 .782 0L7 10.76l6.14-6.08a.552.552 0 0 1 .782 0l.908.903a.562.562 0 0 1 0 .794l-6.69 6.638a.564.564 0 0 1-.393.164.564.564 0 0 1-.393-.164z"/>
+							</svg>
+						</span>
+					{{end}}
+				</div>
+				{{if .SponsorTag}}
+					<span class="sponsor-tag small-overlay tag-{{.SponsorTag}}">
+						<img src="/assets/img/PlayerStartIconSponsorBlocker.svg">
+						<span class="tag-text">{{.SponsorTag}}</span>
+					</span>
 				{{end}}
 			</div>
 		</div>

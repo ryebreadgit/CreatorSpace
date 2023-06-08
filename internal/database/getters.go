@@ -97,6 +97,16 @@ func GetVideoSponsorBlock(video string, db *gorm.DB) ([]SponsorBlock, error) {
 	return sponsorblock, nil
 }
 
+func GetAllVideoSponsoBlock(db *gorm.DB) ([]SponsorBlock, error) {
+	// get all sponsorblock
+	var sponsorblock []SponsorBlock
+	err := db.Find(&sponsorblock).Error
+	if err != nil {
+		return nil, err
+	}
+	return sponsorblock, nil
+}
+
 // GetVideoCommentsPaginated function to get comments from video paginated
 func GetVideoCommentsPaginated(video string, db *gorm.DB, page int) []Comment {
 	// get comments from video
