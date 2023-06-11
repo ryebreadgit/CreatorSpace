@@ -358,6 +358,11 @@ func updateVideoMetadata(videoID string) error {
 			return err
 		}
 	}
+
+	// Check if video availability is 'skip', if so, skip the video
+	if video.Availability == "skip" {
+		return nil
+	}
 	// create a copy of our original video
 	originalVideo := video
 	// Update the video metadata in the database
