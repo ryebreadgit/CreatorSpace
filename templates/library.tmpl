@@ -239,18 +239,7 @@
         let baseUrl = window.location.origin + window.location.pathname;
         let searchParams = new URLSearchParams(window.location.search);
 
-        let page = 0;
-        {{if .NextPage}}
-            page = {{.NextPage}} - 1;
-        {{else if .PrevPage}}
-            page = {{.PrevPage}} + 1;
-        {{end}}
-
-        if (page) {
-            searchParams.set('page', page);
-        } else {
-            searchParams.delete('page');
-        }
+		searchParams.set('page', 1);
 
         if (filter) {
             searchParams.set('filter', filter);
