@@ -76,6 +76,11 @@ func apiDownloadVideo(c *gin.Context) {
 			return
 		}
 
+		// Check width and height, if vertical and duration is 60 seconds or less, set video type to short
+		if metadata.Width < metadata.Height && metadata.Duration <= 60 {
+			downloadItem.VideoType = "short"
+		}
+
 		creator, err := database.GetCreator(metadata.ChannelID, db)
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": err.Error()})
