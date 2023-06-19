@@ -765,6 +765,15 @@ func updateVideoMetadata(videoID string) error {
 			return fmt.Errorf("channel title is empty")
 		}
 
+		// If VideoType is empty, set it to "video". If the video is 60 seconds or less, and vertical, set it to "short"
+		if video.VideoType == "" {
+			if info.Duration <= 60 && (info.Height > info.Width) {
+				video.VideoType = "short"
+			} else {
+				video.VideoType = "video"
+			}
+		}
+
 		err = database.UpdateVideo(video, db)
 		if err != nil {
 			return err
