@@ -60,16 +60,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 			filter = "all"
 		}
 
-		filterList := map[string]string{
-			"all":         "",
-			"public":      "availability = 'available'",
-			"live":        "availability = 'live' OR video_type = 'Twitch'",
-			"notlive":     "availability != 'live' AND video_type != 'Twitch'",
-			"twitch":      "video_type = 'Twitch'",
-			"unlisted":    "availability = 'unlisted'",
-			"private":     "availability = 'private' OR availability = 'unavailable'",
-			"unavailable": "availability = 'unavailable' OR availability = 'private' OR availability = 'unlisted'",
-		}
+		filterList := getFilterList()
 
 		if filter != "" {
 			// check if filter is valid
