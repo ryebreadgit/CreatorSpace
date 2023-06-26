@@ -235,8 +235,14 @@
         vidsrc = '/api/media/{{ .Video.VideoID }}'
     }
     let player = videojs('vid-player', {
-        controls: true,
+        {{if eq .Video.VideoType "short"}}
+        loop: true,
+        autoplay: true,
+        {{else}}
+        loop: false,
         autoplay: false,
+        {{end}}
+        controls: true,
         preload: 'auto',
         sources: [{
             src: vidsrc,
@@ -246,9 +252,6 @@
         vhc: {
             hlsExpiration: 5
         }
-        {{if eq .Video.VideoType "short"}}
-        ,loop: true
-        {{end}}
     }
     });
 
