@@ -88,6 +88,7 @@ func GetDatabase() (*gorm.DB, error) {
 	task = append(task, Tasking{TaskName: "GetMissingVideoIDsQuick", Interval: 5, Epoch: 0})
 	task = append(task, Tasking{TaskName: "UpdateYouTubeMetadata", Interval: 180, Epoch: 0})
 	task = append(task, Tasking{TaskName: "DownloadYouTubeVideo", Interval: 5, Epoch: 0})
+	task = append(task, Tasking{TaskName: "CorrectUserProgress", Interval: 360, Epoch: 0})
 
 	// for each task check if it exists in database and if not insert it
 	var dbcount int64
