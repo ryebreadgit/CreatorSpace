@@ -7,7 +7,7 @@ import (
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 )
 
-func CorrectUserProgress() error {
+func correctUserProgress() error {
 	// get all users
 	users, err := database.GetUsers(db)
 	if err != nil {

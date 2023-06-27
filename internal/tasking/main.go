@@ -64,7 +64,7 @@ func task_DownloadYouTubeVideo(args ...interface{}) error {
 	return downloadYouTubeVideos(settings, db)
 }
 func task_CorrectUserProgress(args ...interface{}) error {
-	return CorrectUserProgress()
+	return correctUserProgress()
 }
 
 func InitTasking() {
