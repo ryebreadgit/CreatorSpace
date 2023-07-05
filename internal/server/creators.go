@@ -61,14 +61,7 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 			sort = "newest"
 		}
 
-		sortList := map[string]string{
-			"newest":     "published_at DESC, id DESC",
-			"oldest":     "published_at ASC, id ASC",
-			"mostviews":  "CAST(views AS int) DESC, id DESC",
-			"leastviews": "CAST(views AS int) ASC, id ASC",
-			"mostlikes":  "CAST(likes AS int) DESC, id DESC",
-			"leastlikes": "CAST(likes AS int) ASC, id ASC",
-		}
+		sortList := getSortList()
 
 		if sort != "" {
 			// check if sort is valid

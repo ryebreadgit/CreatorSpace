@@ -82,14 +82,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 			sort = "newest"
 		}
 
-		sortList := map[string]string{
-			"newest":     "published_at DESC, created_at DESC, id DESC",
-			"oldest":     "published_at ASC, created_at ASC, id ASC",
-			"mostviews":  "CAST(views AS int) DESC, created_at DESC, id DESC",
-			"leastviews": "CAST(views AS int) ASC, created_at ASC, id ASC",
-			"mostlikes":  "CAST(likes AS int) DESC, created_at DESC, id DESC",
-			"leastlikes": "CAST(likes AS int) ASC, created_at ASC, id ASC",
-		}
+		sortList := getSortList()
 
 		if sort != "" {
 			// check if sort is valid
@@ -104,7 +97,17 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 			sortQuery = sortList[sort]
 		}
 
-		vidargs := db.Select("title", "video_id", "likes", "views", "channel_title", "channel_id", "published_at", "description", "length", "video_type", "availability").Limit(20).Offset((pageInt - 1) * 20)
+		subargs := db.Select("video_id", "channel_id")
+
+		// get watched videos from database
+		watchedVideos, err := database.GetPlaylistByUserID(user, "Completed Videos", db)
+		if err != nil {
+			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
+				"ret": 404,
+				"err": "Unable to get watched videos",
+			})
+			return
+		}
 
 		// Get the user's subscriptions
 		userSubscriptions, err := database.GetPlaylistByUserID(user, "Subscriptions", db)
@@ -120,9 +123,9 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 		if len(userSubscriptions) > 0 {
 			for _, sub := range userSubscriptions {
 				if filterQuery != "" {
-					vidargs = vidargs.Or(filterQuery).Where("channel_id = ?", sub)
+					subargs = subargs.Or(filterQuery).Where("channel_id = ?", sub)
 				} else {
-					vidargs = vidargs.Or("channel_id = ?", sub)
+					subargs = subargs.Or("channel_id = ?", sub)
 				}
 			}
 		} else {
@@ -132,6 +135,56 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 				"err": "No subscriptions found",
 			})
 			return
+		}
+
+		subVids, err := database.GetAllVideos(subargs)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{
+				"ret": http.StatusInternalServerError,
+				"err": fmt.Sprintf("Error getting videos: %v", err),
+			})
+			return
+		}
+
+		if len(subVids) == 0 {
+			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
+				"ret": 404,
+				"err": "No videos found",
+			})
+			return
+		}
+
+		subVideoIDs := make([]string, len(subVids))
+		for i, video := range subVids {
+			subVideoIDs[i] = video.VideoID
+		}
+
+		// Get video information from database
+		vidargs := db.Select("title", "video_id", "likes", "views", "channel_title", "channel_id", "published_at", "description", "length", "video_type", "availability").Limit(20).Offset((pageInt - 1) * 20)
+		// check if there is a next page, even if there's 20 videos, there might not be a next page
+
+		if filter == "watched" {
+			// only show videos in watchedVideos
+			if len(watchedVideos) > 0 {
+				vidargs = vidargs.Where("video_id IN (?)", intersection(subVideoIDs, watchedVideos))
+			} else {
+				// No watched videos found
+				c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
+					"ret": 404,
+					"err": "No watched videos found",
+				})
+				return
+			}
+		} else if filter == "notwatched" {
+			// remove videos in watchedVideos
+			if len(watchedVideos) > 0 {
+				vidargs = vidargs.Where("video_id IN (?)", difference(subVideoIDs, watchedVideos))
+			} else {
+				// All videos are unwatched
+				vidargs = vidargs.Where("video_id IN (?)", subVideoIDs)
+			}
+		} else {
+			vidargs = vidargs.Where("video_id IN (?)", subVideoIDs)
 		}
 
 		if sortQuery != "" {
@@ -156,16 +209,6 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		if len(videos) == 0 {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "No videos found",
-			})
-			return
-		}
-
-		// check if there is a next page, even if there's 20 videos, there might not be a next page
-
 		nextPageFound := false
 		if len(videos) == 20 {
 			tmp, err := database.GetAllVideos(db.Select("video_id").Order("published_at DESC").Limit(1).Offset(pageInt * 20))
@@ -180,20 +223,6 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 			if len(video.Description) > 250 {
 				videos[i].Description = video.Description[:247] + "..."
 			}
-		}
-
-		// get user watched videos, checking user from jwt token
-
-		// get jwt token from cookie
-
-		// get watched videos from database
-		watchedVideos, err := database.GetPlaylistByUserID(user, "Completed Videos", db)
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Unable to get watched videos",
-			})
-			return
 		}
 
 		if len(watchedVideos) > 0 {
