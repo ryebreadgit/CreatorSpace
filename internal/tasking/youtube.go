@@ -553,9 +553,6 @@ func updateVideoMetadata(videoID string) error {
 			if string(newSubsJSON) != video.SubtitlePath {
 				// replace the youtube default path
 				video.SubtitlePath = strings.ReplaceAll(string(newSubsJSON), settings.BaseYouTubePath, "")
-
-				video.SubtitlePath, err = general.SanitizeFilePath(video.SubtitlePath)
-				video.SubtitlePath = strings.ReplaceAll(video.SubtitlePath, settings.BaseYouTubePath, "")
 				if err != nil {
 					return err
 				}
