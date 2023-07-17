@@ -20,28 +20,45 @@ WORKDIR /go/CreatorSpace/cmd
 ENV CGO_ENABLED=1
 
 # Build the application
-RUN go get && go build -o ../CreatorSpace
+RUN go get && go build -o ../cs
 
 # Stage 2: Final stage
 FROM alpine:latest AS final
 
+# Create the user inside the Docker image
+ARG UID=1000
+ARG GID=1000
+
+RUN addgroup -g $GID -S csgroup && \
+    adduser -u $UID -S csuser -G csgroup
+
 RUN apk update && apk add --no-cache wget
 RUN apk add --no-cache python3 py3-pip ffmpeg
+RUN mkdir /CreatorSpace && chown csuser:csgroup /CreatorSpace
+
+# Change to the new user in the Docker image
+USER csuser
+
+# Add pip binaries to PATH
+ENV PATH="/home/csuser/.local/bin:${PATH}"
+
+# Install python dependencies
 RUN pip3 install --upgrade pip
 RUN pip3 install yt-dlp
 
-WORKDIR /
+# Change the working directory /CreatorSpace
+WORKDIR /CreatorSpace/
 
 # Set the environment variable
 ENV GIN_MODE=release
 
 # Copy the binary from the build stage
-COPY --from=build /go/CreatorSpace/CreatorSpace .
+COPY --from=build /go/CreatorSpace/cs ./cs
 
 # Copy the templates, config, and static folders
-COPY --from=build /go/CreatorSpace/templates /templates
-COPY --from=build /go/CreatorSpace/config /config
-COPY --from=build /go/CreatorSpace/static /static
+COPY --from=build /go/CreatorSpace/templates ./templates
+COPY --from=build /go/CreatorSpace/config ./config
+COPY --from=build /go/CreatorSpace/static ./static
 
 # Set the entrypoint
-ENTRYPOINT ["/CreatorSpace"]
+ENTRYPOINT ["/CreatorSpace/cs"]
