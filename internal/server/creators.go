@@ -39,16 +39,7 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 			filter = "all"
 		}
 
-		filterList := map[string]string{
-			"all":         "",
-			"public":      "availability = 'available'",
-			"live":        "availability = 'live' OR video_type = 'Twitch'",
-			"notlive":     "availability != 'live' AND video_type != 'Twitch'",
-			"twitch":      "video_type = 'Twitch'",
-			"unlisted":    "availability = 'unlisted'",
-			"private":     "availability = 'private' OR availability = 'unavailable'",
-			"unavailable": "availability = 'unavailable' OR availability = 'private' OR availability = 'unlisted'",
-		}
+		filterList := getFilterList()
 
 		if filter != "" {
 			// check if filter is valid
@@ -70,14 +61,7 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 			sort = "newest"
 		}
 
-		sortList := map[string]string{
-			"newest":     "published_at DESC, id DESC",
-			"oldest":     "published_at ASC, id ASC",
-			"mostviews":  "CAST(views AS int) DESC, id DESC",
-			"leastviews": "CAST(views AS int) ASC, id ASC",
-			"mostlikes":  "CAST(likes AS int) DESC, id DESC",
-			"leastlikes": "CAST(likes AS int) ASC, id ASC",
-		}
+		sortList := getSortList()
 
 		if sort != "" {
 			// check if sort is valid
@@ -272,6 +256,26 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 						}
 						// calculate percentage as string using fmt
 						videos[i].Progress = fmt.Sprintf("%.2f", (tempProg/float64(secLength))*100)
+					}
+				}
+			}
+		}
+
+		// Get all sponsorblock from db here action_type = 'full'
+		sponsorArgs := db.Select("video_id", "category", "action_type")
+		for _, video := range videos {
+			sponsorArgs = sponsorArgs.Or("video_id = ?", video.VideoID)
+		}
+		sponsorArgs = sponsorArgs.Where("action_type = 'full'")
+		sponsorblock, err := database.GetAllVideoSponsoBlock(sponsorArgs)
+		if err == nil {
+			for i, video := range videos {
+				for _, sponsor := range sponsorblock {
+					if sponsor.ActionType != "full" {
+						continue
+					}
+					if video.VideoID == sponsor.VideoID {
+						videos[i].SponsorTag = sponsor.Category
 					}
 				}
 			}

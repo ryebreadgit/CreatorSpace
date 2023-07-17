@@ -137,9 +137,14 @@ func downloadThumbnail(thumbUrl string, oldThumbnailPath string, videoID string)
 				fmt.Printf("Error comparing hash distance: %v\n", err)
 			}
 
-			if distance == 0 {
+			// if image is 95% similar, return
+			const distanceLimit = 5
+
+			if distance < distanceLimit {
 				_ = os.Remove(tmpimg)
 				return "", fmt.Errorf("thumbnails are the same")
+			} else {
+				fmt.Printf("Thumbnails for %v are only %v%% similar, getting new image\n", videoID, 100-distance)
 			}
 		}
 	}
@@ -358,6 +363,11 @@ func updateVideoMetadata(videoID string) error {
 			return err
 		}
 	}
+
+	// Check if video availability is 'skip', if so, skip the video
+	if video.Availability == "skip" {
+		return nil
+	}
 	// create a copy of our original video
 	originalVideo := video
 	// Update the video metadata in the database
@@ -548,9 +558,6 @@ func updateVideoMetadata(videoID string) error {
 			if string(newSubsJSON) != video.SubtitlePath {
 				// replace the youtube default path
 				video.SubtitlePath = strings.ReplaceAll(string(newSubsJSON), settings.BaseYouTubePath, "")
-
-				video.SubtitlePath, err = general.SanitizeFilePath(video.SubtitlePath)
-				video.SubtitlePath = strings.ReplaceAll(video.SubtitlePath, settings.BaseYouTubePath, "")
 				if err != nil {
 					return err
 				}
@@ -760,6 +767,15 @@ func updateVideoMetadata(videoID string) error {
 			return fmt.Errorf("channel title is empty")
 		}
 
+		// If VideoType is empty, set it to "video". If the video is 60 seconds or less, and vertical, set it to "short"
+		if video.VideoType == "" {
+			if info.Duration <= 60 && (info.Height > info.Width) {
+				video.VideoType = "short"
+			} else {
+				video.VideoType = "video"
+			}
+		}
+
 		err = database.UpdateVideo(video, db)
 		if err != nil {
 			return err
@@ -820,6 +836,42 @@ func updateAllVideoMetadata() error {
 		return err
 	}
 	var ret error
+
+	// Get all creators from the database with the platform of YouTube
+	creators, err := database.GetAllCreators(db.Where("platform = ?", "YouTube"))
+	if err != nil {
+		return err
+	}
+
+	// For each creator, update the metadata
+	for _, creator := range creators {
+		// if creator id is an int, skip it as this is a non-youtube creator
+		_, err := strconv.Atoi(creator.ChannelID)
+		if err == nil {
+			continue
+		}
+
+		err = updateCreatorMetadata(creator.ChannelID)
+		if err != nil {
+			ret = err
+			fmt.Printf("Error updating creator %v: %v\n", creator.Name, err)
+			continue
+		}
+		files, err := os.ReadDir("./data/tmp")
+		if err != nil {
+			return err
+		}
+
+		for _, file := range files {
+			if strings.HasPrefix(file.Name(), creator.ChannelID) {
+				err = os.Remove(fmt.Sprintf("./data/tmp/%v", file.Name()))
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
 	// For each video, update the metadata
 	for _, video := range videos {
 		// if video id is an int, skip it as this is a twitch video
@@ -866,6 +918,165 @@ func GetCreatorMetadata(creatorID string) (database.YoutubePlaylistStruct, error
 		return database.YoutubePlaylistStruct{}, err
 	}
 	return data, nil
+}
+
+func updateCreatorMetadata(creatorID string) error {
+	// Get the creator from the database
+	creator, err := database.GetCreator(creatorID, db)
+	if err != nil {
+		return err
+	}
+
+	// Get the creator metadata from YouTube
+	info, err := GetCreatorMetadata(creatorID)
+	if err != nil {
+		return err
+	}
+
+	// Check if the creator has changed, if so update the database
+	changes := false
+	silentChanges := false
+
+	if creator.Name != info.Uploader {
+		fmt.Printf("Creator name changed from %v to %v\n", creator.Name, info.Uploader)
+		creator.Name = info.Uploader
+		changes = true
+	}
+	if creator.Description != info.Description {
+		fmt.Printf("Creator description changed from %v to %v\n", creator.Description, info.Description)
+		creator.Description = info.Description
+		changes = true
+	}
+	if creator.Subscribers != strconv.Itoa(info.ChannelFollowerCount) {
+		//fmt.Printf("Creator subscribers changed from %v to %v\n", creator.Subscribers, info.ChannelFollowerCount) //debug logging
+		creator.Subscribers = strconv.Itoa(info.ChannelFollowerCount)
+		silentChanges = true
+	}
+
+	// Check images for changes
+
+	var thumbUrl string
+	var bannerUrl string
+	var setBanner bool
+	var setThumb bool
+	// Get uncropped thumbnail and banner
+	for _, thumb := range info.Thumbnails {
+		if thumb.URL == "" || setBanner || setThumb {
+			continue
+		}
+		if thumb.ID == "avatar_uncropped" {
+			thumbUrl = thumb.URL
+			setThumb = true
+		}
+
+		if thumb.ID == "banner_uncropped" {
+			bannerUrl = thumb.URL
+		}
+	}
+
+	if thumbUrl != "" {
+		var oldThumbPath string
+		// Get the old thumbnail path
+		if creator.ThumbnailPath != "" {
+			oldThumbPath = fmt.Sprintf("%v/%v", settings.BaseYouTubePath, creator.ThumbnailPath)
+		} else {
+			oldThumbPath = fmt.Sprintf("%v/%v/avatar.png", settings.BaseYouTubePath, filepath.Dir(creator.FilePath))
+		}
+		// Download thumbnail
+		newThumbPath, err := downloadThumbnail(thumbUrl, oldThumbPath, creator.ChannelID)
+		if err != nil && !strings.Contains(err.Error(), "thumbnails are the same") {
+			return err
+		} else if err != nil && strings.Contains(err.Error(), "thumbnails are the same") {
+			err = nil
+			newThumbPath = ""
+		}
+
+		if newThumbPath != "" && creator.ThumbnailPath != newThumbPath {
+			fmt.Printf("Creator thumbnail changed from %v to %v\n", creator.ThumbnailPath, newThumbPath)
+			creator.ThumbnailPath = strings.ReplaceAll(newThumbPath, settings.BaseYouTubePath, "")
+			changes = true
+		}
+	}
+
+	if bannerUrl != "" {
+		var oldBannerPath string
+		// Get the old banner path
+		if creator.BannerPath != "" {
+			oldBannerPath = fmt.Sprintf("%v/%v", settings.BaseYouTubePath, creator.BannerPath)
+		} else {
+			oldBannerPath = fmt.Sprintf("%v/%v/banner.png", settings.BaseYouTubePath, filepath.Dir(creator.FilePath))
+		}
+		// Download banner
+		newBannerPath, err := downloadThumbnail(bannerUrl, oldBannerPath, creator.ChannelID)
+		if err != nil && !strings.Contains(err.Error(), "thumbnails are the same") {
+			return err
+		} else if err != nil && strings.Contains(err.Error(), "thumbnails are the same") {
+			err = nil
+			newBannerPath = ""
+		}
+
+		if newBannerPath != "" && creator.BannerPath != newBannerPath {
+			fmt.Printf("Creator banner changed from %v to %v\n", creator.BannerPath, newBannerPath)
+			creator.BannerPath = strings.ReplaceAll(newBannerPath, settings.BaseYouTubePath, "")
+			changes = true
+		}
+
+	}
+
+	if changes {
+		fmt.Printf("Updating creator metadata for %v\n", creator.Name)
+
+		// Save data to file as indented json
+		jsonData, err := json.MarshalIndent(info, "", "  ")
+		if err != nil {
+			return err
+		}
+
+		// Update the metadata path
+		metaPath := fmt.Sprintf("%v/%v", settings.BaseYouTubePath, creator.FilePath)
+
+		// Add .00n before .json
+		var metaNum int
+		for {
+			// Check if the file exists
+			tempPath, err := general.SanitizeFilePath(fmt.Sprintf("%v.%03d.json", strings.ReplaceAll(metaPath, ".json", ""), metaNum))
+			if err != nil {
+				return err
+			}
+			_, err = os.Stat(tempPath)
+			if err != nil {
+				// Set metaPath to the new path
+				metaPath = tempPath
+				break
+			}
+			metaNum++
+		}
+
+		// save to metaPath
+		err = os.WriteFile(metaPath, jsonData, 0644)
+		if err != nil {
+			return err
+		}
+
+		// Update the metadata path in the database
+		creator.FilePath = strings.ReplaceAll(metaPath, settings.BaseYouTubePath, "")
+
+		// Update the creator in the database
+		err = database.UpdateCreator(creator, db)
+		if err != nil {
+			return err
+		}
+	} else if silentChanges {
+		// Update the creator in the database
+		err = database.UpdateCreator(creator, db)
+		if err != nil {
+			return err
+		}
+	} else {
+		fmt.Printf("Creator %v has not changed\n", creator.Name)
+	}
+
+	return nil
 }
 
 func getNewCreator(creatorID string) (database.Creator, error) {

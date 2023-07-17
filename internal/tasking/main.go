@@ -52,7 +52,7 @@ func task_getMissingVideoIDs(args ...interface{}) error {
 	return getMissingVideoIDs(settings, 0, db)
 }
 
-func GetMissingVideoIDsQuick(args ...interface{}) error {
+func task_getMissingVideoIDsQuick(args ...interface{}) error {
 	return getMissingVideoIDs(settings, 3, db)
 }
 
@@ -62,6 +62,9 @@ func task_updateAllVideoMetadata(args ...interface{}) error {
 
 func task_DownloadYouTubeVideo(args ...interface{}) error {
 	return downloadYouTubeVideos(settings, db)
+}
+func task_CorrectUserProgress(args ...interface{}) error {
+	return correctUserProgress()
 }
 
 func InitTasking() {
@@ -123,7 +126,17 @@ func InitTasking() {
 					Name:     t.TaskName,
 					Epoch:    t.Epoch,
 					Interval: t.Interval * time.Minute,
-					Task:     GetMissingVideoIDsQuick,
+					Task:     task_getMissingVideoIDsQuick,
+					Args:     []interface{}{settings, db},
+				})
+			}
+
+			if t.TaskName == "CorrectUserProgress" {
+				tasks = append(tasks, &Task{
+					Name:     t.TaskName,
+					Epoch:    t.Epoch,
+					Interval: t.Interval * time.Minute,
+					Task:     task_CorrectUserProgress,
 					Args:     []interface{}{settings, db},
 				})
 			}

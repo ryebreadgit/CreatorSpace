@@ -155,7 +155,7 @@ hr {
     text-align: center;
 }
 
-#video-list li .thumbnail-box img {
+#vid-img {
     width: 100%;
 }
 
@@ -212,25 +212,92 @@ hr {
 .image-overlay {
   position: absolute;
   top: 0;
-  left: 0;
-  opacity: 0;
+  right: 0;
   transition: opacity 0.3s, box-shadow 0.3s;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  width: 100%;
 }
 
-.image-container:hover .image-overlay {
+
+.image-container:hover .image-overlay .mark-watched {
   opacity: 1;
 }
 
-.image-overlay:hover .checkmark {
+.image-overlay .mark-watched .checkmark:hover {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 1);
   background-image: linear-gradient(to bottom, rgba(0, 128, 0, 1), rgba(0, 104, 0, 1));
 }
 
+.image-overlay .mark-watched {
+  opacity: 0;
+}
+
+
+.image-overlay .sponsor-tag img {
+  width: 20px;
+  height: 20px;
+  margin-left: -1px;
+  transition: opacity 0.3s, box-shadow 0.3s;
+  vertical-align: middle;
+}
+
+.image-overlay .sponsor-tag .sponsor-icon {
+  width: 20px;
+  height: 20px;
+  margin-left: 5px;
+  transition: fill 0.3s; 
+}
+
+.image-overlay .sponsor-tag {
+  margin: 3px;
+  position: relative;
+  display: inline-block;
+  border-radius: 5px;
+  padding: 2px 5px;
+  overflow: hidden;
+  transition: width 0.3s;
+  width: 28px; /* width of your icon plus any padding */
+  height: 28px; /* adjust this to your needs */
+  line-height: 21px; /* adjust this to your needs */
+  /* circle */
+  border-radius: 50%;
+}
+
+
+.image-overlay .sponsor-tag:hover {
+  width: auto; /* expand to reveal text */
+  border-radius: 0;
+}
+
+.image-overlay .sponsor-tag .tag-text {
+  font-size: 0.75rem;
+  font-weight: bold;
+  opacity: 0;
+  transition: opacity 0.3s 0.3s; /* delay the opacity transition to match the container's width transition */
+}
+
+.image-overlay .sponsor-tag:hover .tag-text {
+  opacity: 1;
+}
+
+.image-overlay .sponsor-tag.tag-sponsor {
+  background-color: #00ff00; /* green */
+}
+
+.image-overlay .sponsor-tag.tag-selfpromo {
+  background-color: #FFA500;  /* orange */
+}
+
+.image-overlay .sponsor-tag.tag-exclusive_access {
+  background-color: #0000ff;  /* blue */
+}
+
+
 .checkmark {
+  transition: opacity 0.3s;
+  float: right;
   position: absolute;
   top: 10px;
-  left: 10px;
+  right: 10px;
   width: 24px;
   height: 24px;
   background-image: linear-gradient(to bottom, rgba(0, 128, 0, 0.5), rgba(0, 104, 0, 0.35));
@@ -250,7 +317,7 @@ hr {
   height: 16px;
 }
 
-.small-overlay {
+.checkmark.small-overlay {
   width: 14px;
   height: 14px;
 }
@@ -333,10 +400,6 @@ hr {
         width: 100%;
         padding: 10px;
         text-align: center;
-      }
-    
-      #video-list li .thumbnail-box img {
-        width: 100%;
       }
 
     #about-creator {

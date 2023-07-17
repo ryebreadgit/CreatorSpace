@@ -60,6 +60,12 @@ func SanitizeFilePath(fp string) (string, error) {
 		id := fileName[strings.LastIndex(fileName, "(")+1:]
 		id = id[:strings.LastIndex(id, ")")]
 
+		// Get all extensions after ) in filepath
+		tempExt := fp[strings.LastIndex(fp, ")")+1:]
+		if len(tempExt) != 0 && tempExt[0] == '.' {
+			fileExt = tempExt
+		}
+
 		safeFilePath = fmt.Sprintf("%v/%v%v", filepath.Dir(fp), id, fileExt)
 	}
 

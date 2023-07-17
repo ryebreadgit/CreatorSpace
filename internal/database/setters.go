@@ -407,3 +407,15 @@ func UpdatePlaylist(playlist Playlist, db *gorm.DB) error {
 	}
 	return nil
 }
+
+func UpdateCreator(creator Creator, db *gorm.DB) error {
+	// open database and check if creator exists, if not, create it
+	if !ifChannelExists(creator.ChannelID, db) {
+		return errors.New("record does not exist")
+	}
+	err := db.Model(&creator).Where("channel_id=?", creator.ChannelID).Updates(creator).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}

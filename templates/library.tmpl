@@ -25,6 +25,8 @@
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="filterDropdown">
                         <li><a class="dropdown-item" href="javascript:void(0)" data-value="all">All</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="video">Video</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="short">Short</a></li>
                         <li><a class="dropdown-item" href="javascript:void(0)" data-value="public">Public</a></li>
                         <li><a class="dropdown-item" href="javascript:void(0)" data-value="unlisted">Unlisted</a></li>
                         <li><a class="dropdown-item" href="javascript:void(0)" data-value="private">Private</a></li>
@@ -93,12 +95,20 @@
                                     <img id="vid-img" src="/api/media/{{.VideoID}}/thumbnail" alt="{{.Title}}">
                                 </a>
                                 <div class="image-overlay">
-                                    {{if not .Watched}}
-                                    <span class="checkmark" onclick="sendCompletedRequestAlert('{{.VideoID}}', '{{.Title}}')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path fill-rule="evenodd" d="M6.72 13.278l-3.457-3.428a.562.562 0 0 1 0-.794l.909-.903a.552.552 0 0 1 .782 0L7 10.76l6.14-6.08a.552.552 0 0 1 .782 0l.908.903a.562.562 0 0 1 0 .794l-6.69 6.638a.564.564 0 0 1-.393.164.564.564 0 0 1-.393-.164z"/>
-                                        </svg>
-                                    </span>
+                                    <div class="mark-watched">
+                                        {{if not .Watched}}
+                                            <span class="checkmark small-overlay" onclick="sendCompletedRequestAlert('{{.VideoID}}', '{{.Title}}')">
+                                                <svg viewBox="0 0 24 24">
+                                                    <path fill-rule="evenodd" d="M6.72 13.278l-3.457-3.428a.562.562 0 0 1 0-.794l.909-.903a.552.552 0 0 1 .782 0L7 10.76l6.14-6.08a.552.552 0 0 1 .782 0l.908.903a.562.562 0 0 1 0 .794l-6.69 6.638a.564.564 0 0 1-.393.164.564.564 0 0 1-.393-.164z"/>
+                                                </svg>
+                                            </span>
+                                        {{end}}
+                                    </div>
+                                    {{if .SponsorTag}}
+                                        <span class="sponsor-tag small-overlay tag-{{.SponsorTag}}">
+                                            <img src="/assets/img/PlayerStartIconSponsorBlocker.svg">
+                                            <span class="tag-text">{{.SponsorTag}}</span>
+                                        </span>
                                     {{end}}
                                 </div>
                             </div>
@@ -179,10 +189,22 @@
         xhr.send();
 		// Get the image container and add <span class="watched-text"></span>
 		let imageContainer = document.querySelector(`img[src="/api/media/${video_id}/thumbnail"]`).parentElement.parentElement;
-		let watchedText = document.createElement('span');
+		
+        // Remove in-progress-text and in-progress-bkg if they exist
+        let thumbBox = imageContainer.parentElement;
+        let inProgressText = thumbBox.querySelector('.in-progress-text');
+        let inProgressBkg = thumbBox.querySelector('.in-progress-bkg');
+        if (inProgressText) {
+            inProgressText.style.display = 'none'
+        }
+        if (inProgressBkg) {
+            inProgressBkg.style.display = 'none'
+        }
+        
+        let watchedText = document.createElement('span');
 		watchedText.classList.add('watched-text');
 		imageContainer.appendChild(watchedText);
-        alert(`Successfully marked ${video_title} as watched!`);
+        //alert(`Successfully marked ${video_title} as watched!`); //Adding watched-text instead
 		// Get the checkmark from imageContainer and hide it
 		let checkmark = imageContainer.querySelector('.checkmark');
 		checkmark.style.display = 'none';
@@ -219,18 +241,7 @@
         let baseUrl = window.location.origin + window.location.pathname;
         let searchParams = new URLSearchParams(window.location.search);
 
-        let page = 0;
-        {{if .NextPage}}
-            page = {{.NextPage}} - 1;
-        {{else if .PrevPage}}
-            page = {{.PrevPage}} + 1;
-        {{end}}
-
-        if (page) {
-            searchParams.set('page', page);
-        } else {
-            searchParams.delete('page');
-        }
+		searchParams.set('page', 1);
 
         if (filter) {
             searchParams.set('filter', filter);

@@ -105,8 +105,8 @@ func ParseToken(token string, secret string) (*jwt.Token, error) {
 
 // Set the token in the header
 func SetToken(c *gin.Context, token string) {
-	// 24 hour expiration
-	c.SetCookie("jwt-token", token, 86400, "/", "", false, true)
+	// 7 day expiration
+	c.SetCookie("jwt-token", token, 86400*7, "/", "", false, true)
 }
 
 // Delete the token from the header
@@ -244,7 +244,7 @@ func CreateToken(user string) (string, error) {
 		"role":     userdata.AccountType,
 		"iss":      "creatorspace",                            // issuer
 		"iat":      time.Now().Unix(),                         // issued at
-		"exp":      time.Now().Add(time.Hour * 24 * 3).Unix(), // 24 * 3 hour expiration time = 3 day expiration
+		"exp":      time.Now().Add(time.Hour * 24 * 7).Unix(), // 24 * 7 hour expiration time = 7 day expiration
 		"ref":      time.Now().Add(time.Hour * 1).Unix(),      // 1 hour refresh time
 	})
 

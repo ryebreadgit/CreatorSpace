@@ -4,6 +4,11 @@ services:
     build:
       context: https://github.com/ryebreadgit/CreatorSpace.git
       dockerfile: Dockerfile
+      args:
+        # Uncomment the following lines to specify a UID and GID
+        # UID: ${UID}
+        # GID: ${GID}
+    image: creatorspace:latest
     restart: unless-stopped
     ports:
       - 8080:8080

@@ -235,8 +235,14 @@
         vidsrc = '/api/media/{{ .Video.VideoID }}'
     }
     let player = videojs('vid-player', {
-        controls: true,
+        {{if eq .Video.VideoType "short"}}
+        loop: true,
+        autoplay: true,
+        {{else}}
+        loop: false,
         autoplay: false,
+        {{end}}
+        controls: true,
         preload: 'auto',
         sources: [{
             src: vidsrc,
@@ -246,9 +252,6 @@
         vhc: {
             hlsExpiration: 5
         }
-        {{if eq .Video.VideoType "short"}}
-        ,loop: true
-        {{end}}
     }
     });
 
@@ -629,14 +632,6 @@ theaterModeButton.addEventListener('click', function () {
             }
             comment.innerHTML = commentText;
         }
-    }
-
-    function sendCompletedRequestAlert(video_id, video_title) {
-        let xhr = new XMLHttpRequest();
-        let user_id = "{{.UserID}}";
-        xhr.open("POST", `/api/user/${user_id}/progress/${video_id}/complete`, true);
-        xhr.send();
-        alert(`Successfully marked ${video_title} as watched!`);
     }
 
 </script>
