@@ -95,7 +95,11 @@ func (f *Formatter) Format(entry *logrus.Entry) ([]byte, error) {
 }
 
 func InitLogging() {
-	var _ = os.Mkdir("./data/log/", os.ModePerm)
+	var err = os.MkdirAll("./data/log/", os.ModePerm)
+	if err != nil {
+		logrus.SetOutput(os.Stderr)
+		logrus.Fatal(err)
+	}
 	filename := filepath.Base(os.Args[0])
 	filename = strings.ReplaceAll(filename, filepath.Ext(filename), "")
 	file, err := os.OpenFile("./data/log/"+filename+".log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
