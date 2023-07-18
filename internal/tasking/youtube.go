@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -159,8 +160,7 @@ func downloadThumbnail(thumbUrl string, oldThumbnailPath string, videoID string)
 		// Remove ALL extensions
 		for {
 			ext := filepath.Ext(baseThumb)
-			// I know this looks dumb, I tried to just kill all extensions but it, on rare occasions, also include the . in the filename. And sometimes not. So here we are.
-			if ext == ".json" || ext == ".mp4" || ext == ".ts" || ext == ".jpg" || ext == ".png" || ext == ".webp" || strings.Contains(ext, ".00") || strings.Contains(ext, ".01") || strings.Contains(ext, ".02") {
+			if ext == ".json" || ext == ".mp4" || ext == ".ts" || ext == ".jpg" || ext == ".png" || ext == ".webp" || regexp.MustCompile(`\.\d{3}|\.\w{3}`).MatchString(ext) {
 				// remove extension
 				baseThumb = strings.TrimSuffix(baseThumb, ext)
 			} else {
@@ -704,7 +704,7 @@ func updateVideoMetadata(videoID string) error {
 			for {
 				ext := filepath.Ext(baseMeta)
 				// I know this looks dumb, I tried to just kill all extensions but it, on rare occasions, also include the . in the filename. And sometimes not. So here we are.
-				if ext == ".json" || ext == ".mp4" || ext == ".ts" || ext == ".jpg" || ext == ".png" || ext == ".webp" || strings.Contains(ext, ".00") || strings.Contains(ext, ".01") || strings.Contains(ext, ".02") {
+				if ext == ".json" || ext == ".mp4" || ext == ".ts" || ext == ".jpg" || ext == ".png" || ext == ".webp" || regexp.MustCompile(`\.\d{3}|\.\w{3}`).MatchString(ext) {
 					// remove extension
 					baseMeta = strings.TrimSuffix(baseMeta, ext)
 				} else {
@@ -1034,12 +1034,25 @@ func updateCreatorMetadata(creatorID string) error {
 
 		// Update the metadata path
 		metaPath := fmt.Sprintf("%v/%v", settings.BaseYouTubePath, creator.FilePath)
+		metaParent := filepath.Dir(metaPath)
 
 		// Add .00n before .json
 		var metaNum int
 		for {
+			basePath := filepath.Base(metaPath)
+
+			for {
+				ext := filepath.Ext(basePath)
+				if ext == ".json" || regexp.MustCompile(`\.\d{3}|\.\w{3}`).MatchString(ext) {
+					// remove extension
+					basePath = strings.TrimSuffix(basePath, ext)
+				} else {
+					break
+				}
+			}
+
 			// Check if the file exists
-			tempPath, err := general.SanitizeFilePath(fmt.Sprintf("%v.%03d.json", strings.ReplaceAll(metaPath, ".json", ""), metaNum))
+			tempPath, err := general.SanitizeFilePath(fmt.Sprintf("%v.%03d.json", filepath.Join(metaParent, basePath), metaNum))
 			if err != nil {
 				return err
 			}
