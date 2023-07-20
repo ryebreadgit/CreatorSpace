@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
@@ -86,7 +87,11 @@ func apiDownloadVideo(c *gin.Context) {
 			c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": err.Error()})
 			return
 		} else if err == nil {
-			cname, err = general.SanitizeFileName(creator.Name)
+			// creator.FilePath = "/${creator_name}/${creator_name}.json", pull the creator name from json name.
+			tmpslc := strings.Split(creator.FilePath, "/")
+			tmpname := tmpslc[len(tmpslc)-2]
+
+			cname, err = general.SanitizeFileName(tmpname)
 			if err != nil {
 				c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": err.Error()})
 				return
