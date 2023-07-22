@@ -744,7 +744,7 @@ func updateVideoMetadata(videoID string) error {
 					return err
 				}
 				// update the video metadata path and remove the base youtube path
-				newPath = strings.ReplaceAll(video.MetadataPath, settings.BaseYouTubePath, "")
+				newPath = strings.ReplaceAll(newPath, settings.BaseYouTubePath, "")
 
 				video.MetadataPath = newPath
 
@@ -1190,6 +1190,9 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 	if err != nil {
 		return database.Creator{}, err
 	}
+
+	// Update the metadata path in the database
+	creator.FilePath = strings.ReplaceAll(metaPath, settings.BaseYouTubePath, "")
 
 	// Insert creator intor database
 	err = database.InsertCreator(creator, db)
