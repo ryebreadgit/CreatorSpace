@@ -994,7 +994,7 @@ func updateCreatorMetadata(creatorID string) error {
 		if newThumbPath != "" && creator.ThumbnailPath != newThumbPath {
 			fmt.Printf("Creator thumbnail changed from %v to %v\n", creator.ThumbnailPath, newThumbPath)
 			creator.ThumbnailPath = strings.ReplaceAll(newThumbPath, settings.BaseYouTubePath, "")
-			changes = true
+			silentChanges = true
 		}
 	}
 
@@ -1018,7 +1018,7 @@ func updateCreatorMetadata(creatorID string) error {
 		if newBannerPath != "" && creator.BannerPath != newBannerPath {
 			fmt.Printf("Creator banner changed from %v to %v\n", creator.BannerPath, newBannerPath)
 			creator.BannerPath = strings.ReplaceAll(newBannerPath, settings.BaseYouTubePath, "")
-			changes = true
+			silentChanges = true
 		}
 
 	}
