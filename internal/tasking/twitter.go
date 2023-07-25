@@ -46,7 +46,7 @@ func updateCreatorTweets(handle string, tweetlimit int) error {
 	}
 
 	// Get the creator, or create if it doesn't exist
-	creator, err := database.GetAllCreators(db.Where("name = ? AND platform = ?", handle, "twitter"))
+	creator, err := database.GetAllCreators(db.Where("name = ? AND platform = ?", handle, "Twitter"))
 	if err != nil && err.Error() != "record not found" {
 		log.Error(err)
 		return err
@@ -65,7 +65,7 @@ func updateCreatorTweets(handle string, tweetlimit int) error {
 
 		newcreator.Name = profile.Username
 		newcreator.AltName = profile.Name
-		newcreator.Platform = "twitter"
+		newcreator.Platform = "Twitter"
 		newcreator.FilePath = filepath.Join(basePath, handle+".json")
 		newcreator.BannerPath = filepath.Join(basePath, "banner.jpg")
 		newcreator.ThumbnailPath = filepath.Join(basePath, "avatar.jpg")
@@ -279,103 +279,115 @@ func downloadTweets(tweet *twitterscraper.Tweet, fp string) ([]database.Tweet, e
 
 	// Check if tweet is a reply
 	if tweet.IsReply {
-		scraper := twitterscraper.New()
-		err := scraper.LoginOpenAccount()
+		// Check db for tweet
+		_, err := database.GetTweetByTweetID(tweet.InReplyToStatusID, db)
 		if err != nil {
-			log.Error(err)
-			return nil, err
-		}
-		// Download parent tweet
-		replytweet, err := scraper.GetTweet(tweet.InReplyToStatusID)
-		if err != nil {
-			log.Warnf("Unable to get tweet %v: %v", tweet.InReplyToStatusID, err)
-			// Add to download queue
-			err = database.InsertDownloadQueueItem(database.DownloadQueue{
-				VideoID:      tweet.InReplyToStatusID,
-				VideoType:    "twitter",
-				DownloadPath: fp,
-				Source:       "twitter",
-				Requester:    "system",
-				Approved:     true,
-			}, db)
+			scraper := twitterscraper.New()
+			err := scraper.LoginOpenAccount()
 			if err != nil {
 				log.Error(err)
 				return nil, err
 			}
-		} else {
-			replies, err := downloadTweets(replytweet, fp)
+			// Download parent tweet
+			replytweet, err := scraper.GetTweet(tweet.InReplyToStatusID)
 			if err != nil {
-				return nil, err
+				log.Warnf("Unable to get tweet %v: %v", tweet.InReplyToStatusID, err)
+				// Add to download queue
+				err = database.InsertDownloadQueueItem(database.DownloadQueue{
+					VideoID:      tweet.InReplyToStatusID,
+					VideoType:    "tweet",
+					DownloadPath: fp,
+					Source:       "twitter",
+					Requester:    "system",
+					Approved:     true,
+				}, db)
+				if err != nil {
+					log.Error(err)
+					return nil, err
+				}
+			} else {
+				replies, err := downloadTweets(replytweet, fp)
+				if err != nil {
+					return nil, err
+				}
+				retTweets = append(retTweets, replies...)
 			}
-			retTweets = append(retTweets, replies...)
 		}
 	}
 
 	// Check if tweet is a quote
 	if tweet.IsQuoted {
-		scraper := twitterscraper.New()
-		err := scraper.LoginOpenAccount()
+		// Check db for tweet
+		_, err := database.GetTweetByTweetID(tweet.QuotedStatusID, db)
 		if err != nil {
-			log.Error(err)
-			return nil, err
-		}
-		// Download parent tweet
-		replytweet, err := scraper.GetTweet(tweet.QuotedStatusID)
-		if err != nil {
-			log.Warnf("Unable to get tweet %v: %v", tweet.QuotedStatusID, err)
-			// Add to download queue
-			err = database.InsertDownloadQueueItem(database.DownloadQueue{
-				VideoID:      tweet.QuotedStatusID,
-				VideoType:    "twitter",
-				DownloadPath: fp,
-				Source:       "twitter",
-				Requester:    "system",
-				Approved:     true,
-			}, db)
+			scraper := twitterscraper.New()
+			err := scraper.LoginOpenAccount()
 			if err != nil {
 				log.Error(err)
 				return nil, err
 			}
-		} else {
-			replies, err := downloadTweets(replytweet, fp)
+			// Download parent tweet
+			replytweet, err := scraper.GetTweet(tweet.QuotedStatusID)
 			if err != nil {
-				return nil, err
+				log.Warnf("Unable to get tweet %v: %v", tweet.QuotedStatusID, err)
+				// Add to download queue
+				err = database.InsertDownloadQueueItem(database.DownloadQueue{
+					VideoID:      tweet.QuotedStatusID,
+					VideoType:    "tweet",
+					DownloadPath: fp,
+					Source:       "twitter",
+					Requester:    "system",
+					Approved:     true,
+				}, db)
+				if err != nil {
+					log.Error(err)
+					return nil, err
+				}
+			} else {
+				replies, err := downloadTweets(replytweet, fp)
+				if err != nil {
+					return nil, err
+				}
+				retTweets = append(retTweets, replies...)
 			}
-			retTweets = append(retTweets, replies...)
 		}
 	}
 
 	// Check if tweet is a retweet
 	if tweet.IsRetweet {
-		// Download parent tweet
-		scraper := twitterscraper.New()
-		err := scraper.LoginOpenAccount()
+		// Check db for tweet
+		_, err := database.GetTweetByTweetID(tweet.RetweetedStatusID, db)
 		if err != nil {
-			log.Error(err)
-			return nil, err
-		}
-		replytweet, err := scraper.GetTweet(tweet.RetweetedStatusID)
-		if err != nil {
-			log.Warnf("Unable to get tweet %v: %v", tweet.RetweetedStatusID, err)
-			// Add to download queue
-			err = database.InsertDownloadQueueItem(database.DownloadQueue{
-				VideoID:      tweet.RetweetedStatusID,
-				VideoType:    "twitter",
-				DownloadPath: fp,
-				Source:       "twitter",
-				Requester:    "system",
-				Approved:     true,
-			}, db)
+			// Download parent tweet
+			scraper := twitterscraper.New()
+			err := scraper.LoginOpenAccount()
 			if err != nil {
 				log.Error(err)
 				return nil, err
 			}
-		} else {
-			replies, err := downloadTweets(replytweet, fp)
+			replytweet, err := scraper.GetTweet(tweet.RetweetedStatusID)
 			if err != nil {
-				return nil, err
+				log.Warnf("Unable to get tweet %v: %v", tweet.RetweetedStatusID, err)
+				// Add to download queue
+				err = database.InsertDownloadQueueItem(database.DownloadQueue{
+					VideoID:      tweet.RetweetedStatusID,
+					VideoType:    "tweet",
+					DownloadPath: fp,
+					Source:       "twitter",
+					Requester:    "system",
+					Approved:     true,
+				}, db)
+				if err != nil {
+					log.Error(err)
+					return nil, err
+				}
+			} else {
+				replies, err := downloadTweets(replytweet, fp)
+				if err != nil {
+					return nil, err
+				}
+				retTweets = append(retTweets, replies...)
 			}
-			retTweets = append(retTweets, replies...)
 		}
 	}
 

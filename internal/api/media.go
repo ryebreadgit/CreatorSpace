@@ -37,6 +37,8 @@ func apiMedia(c *gin.Context) {
 	// Check if twitch or youtube
 	if vidData.VideoType == "Twitch" {
 		basePath = settings.BaseTwitchPath
+	} else if vidData.VideoType == "Twitter" {
+		basePath = settings.BaseTwitterPath
 	} else {
 		basePath = settings.BaseYouTubePath
 	}
@@ -150,6 +152,8 @@ func getVideoThumbnailPath(videoID string) (string, error) {
 	var basePath string
 	if vidData.VideoType == "Twitch" {
 		basePath = settings.BaseTwitchPath
+	} else if vidData.VideoType == "Twitter" {
+		basePath = settings.BaseTwitterPath
 	} else {
 		basePath = settings.BaseYouTubePath
 	}
@@ -216,6 +220,8 @@ func getCreatorThumbnailPath(creatorID string) (string, error) {
 	var basePath string
 	if creatorData.Platform == "Twitch" {
 		basePath = settings.BaseTwitchPath
+	} else if creatorData.Platform == "Twitter" {
+		basePath = settings.BaseTwitterPath
 	} else {
 		basePath = settings.BaseYouTubePath
 	}
@@ -237,7 +243,7 @@ func getCreatorThumbnailPath(creatorID string) (string, error) {
 		if creatorData.Platform == "Twitch" {
 			return "/assets/img/defaults/avatars/twitch_avatar.svg", nil
 		} else if creatorData.Platform == "Twitter" {
-			return "/assets/img/defaults/avatars/twitch_avatar.svg", nil
+			return "/assets/img/defaults/avatars/twitter_avatar.svg", nil
 		} else {
 			return "/assets/img/defaults/avatars/youtube_avatar.svg", nil
 		}
@@ -323,6 +329,8 @@ func apiCreatorBanner(c *gin.Context) {
 	var basePath string
 	if creatorData.Platform == "Twitch" {
 		basePath = settings.BaseTwitchPath
+	} else if creatorData.Platform == "Twitter" {
+		basePath = settings.BaseTwitterPath
 	} else {
 		basePath = settings.BaseYouTubePath
 	}
