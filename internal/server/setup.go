@@ -33,6 +33,7 @@ func SetupDatabase() {
 		settings := database.Settings{
 			BaseYouTubePath:  c.PostForm("BaseYouTubePath"),
 			BaseTwitchPath:   c.PostForm("BaseTwitchPath"),
+			BaseTwitterPath:  c.PostForm("BaseTwitterPath"),
 			DatabaseType:     c.PostForm("DatabaseType"),
 			DatabasePath:     c.PostForm("DatabasePath"),
 			DatabaseHost:     c.PostForm("DatabaseHost"),

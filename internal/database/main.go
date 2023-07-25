@@ -79,12 +79,16 @@ func GetDatabase() (*gorm.DB, error) {
 	db.AutoMigrate(&Tasking{})
 	db.AutoMigrate(&DownloadQueue{})
 	db.AutoMigrate(&Playlist{})
+	db.AutoMigrate(&Tweet{})
 
 	// insert tasks if they don't exist
 	var task []Tasking
 	// append tasks
 	// task = append(task, Tasking{TaskName: "SyncLocalWithDB", Interval: 20, Epoch: 0}) // Move to fixed function, should only be one time
 	task = append(task, Tasking{TaskName: "GetMissingVideoIDs", Interval: 60, Epoch: 0})
+	task = append(task, Tasking{TaskName: "GetMissingVideoIDsQuick", Interval: 5, Epoch: 0})
+	task = append(task, Tasking{TaskName: "UpdateTweets", Interval: 60, Epoch: 0})
+	task = append(task, Tasking{TaskName: "UpdateTweetsQuick", Interval: 5, Epoch: 0})
 	task = append(task, Tasking{TaskName: "GetMissingVideoIDsQuick", Interval: 5, Epoch: 0})
 	task = append(task, Tasking{TaskName: "UpdateYouTubeMetadata", Interval: 180, Epoch: 0})
 	task = append(task, Tasking{TaskName: "DownloadYouTubeVideo", Interval: 5, Epoch: 0})

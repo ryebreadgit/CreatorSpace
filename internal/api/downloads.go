@@ -103,6 +103,11 @@ func apiDownloadVideo(c *gin.Context) {
 		downloadItem.DownloadPath = fmt.Sprintf("%s/%s/videos/%s", settings.BaseYouTubePath, cname, videoid)
 	}
 
+	if vidtype == "twitter" {
+		downloadItem.Source = "twitter"
+		downloadItem.DownloadPath = fmt.Sprintf("%s/%s", settings.BaseTwitterPath, videoid)
+	}
+
 	// Add video to download queue
 	err = database.InsertDownloadQueueItem(downloadItem, db)
 	if err != nil {

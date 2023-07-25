@@ -89,10 +89,24 @@ func downloadThumbnail(thumbUrl string, oldThumbnailPath string, videoID string)
 		extension = "jpg"
 	case "image/png":
 		extension = "png"
-	case "image/gif":
-		extension = "gif"
 	case "image/webp":
 		extension = "webp"
+	case "image/gif":
+		extension = "gif"
+	case "image/bmp":
+		extension = "bmp"
+	case "image/tiff":
+		extension = "tiff"
+	case "video/mp4":
+		extension = "mp4"
+	case "video/quicktime":
+		extension = "mov"
+	case "video/x-msvideo":
+		extension = "avi"
+	case "video/x-matroska":
+		extension = "mkv"
+	case "video/webm":
+		extension = "webm"
 	default:
 		return "", fmt.Errorf("unknown content type: %v", res.Header.Get("Content-Type"))
 	}
@@ -111,7 +125,7 @@ func downloadThumbnail(thumbUrl string, oldThumbnailPath string, videoID string)
 
 	// Compare the thumbnails
 
-	if oldThumbnailPath != "" {
+	if oldThumbnailPath != "" && extension != "mp4" {
 		img1, err := loadImage(tmpimg)
 		if err != nil {
 			_ = os.Remove(tmpimg)

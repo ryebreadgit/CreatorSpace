@@ -383,3 +383,30 @@ func GetPlaylistsByUserID(userID string, db *gorm.DB) ([]Playlist, error) {
 	}
 	return playlists, nil
 }
+
+func GetTweet(db *gorm.DB) ([]Tweet, error) {
+	var tweets []Tweet
+	err := db.Find(&tweets).Error
+	if err != nil {
+		return nil, err
+	}
+	return tweets, nil
+}
+
+func GetTweetByTweetID(tweetID string, db *gorm.DB) (Tweet, error) {
+	var tweet Tweet
+	err := db.Where("tweet_id = ?", tweetID).First(&tweet).Error
+	if err != nil {
+		return tweet, err
+	}
+	return tweet, nil
+}
+
+func GetAllTweetsByUserID(userID string, db *gorm.DB) ([]Tweet, error) {
+	var tweets []Tweet
+	err := db.Where("user_id = ?", userID).Find(&tweets).Error
+	if err != nil {
+		return nil, err
+	}
+	return tweets, nil
+}

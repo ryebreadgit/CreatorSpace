@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	twitterscraper "github.com/n0madic/twitter-scraper"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/tasking"
 )
@@ -28,6 +29,8 @@ func getDownloadPage(c *gin.Context) {
 		url = fmt.Sprintf("https://www.youtube.com/user/%s/shorts", videoid)
 	case "streams":
 		url = fmt.Sprintf("https://www.youtube.com/channel/%s/streams", videoid)
+	case "twitter":
+		url = fmt.Sprintf("https://twitter.com/%s", videoid)
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid video type"})
 		return
@@ -75,6 +78,23 @@ func getDownloadPage(c *gin.Context) {
 		if data.Thumbnail == "" && len(creatorMetadata.Thumbnails) > 0 {
 			data.Thumbnail = creatorMetadata.Thumbnails[0].URL
 		}
+	} else if vidtype == "twitter" {
+		scraper := twitterscraper.New()
+		err := scraper.LoginOpenAccount()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
+			return
+		}
+
+		profile, err := scraper.GetProfile(videoid)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
+			return
+		}
+
+		data.Title = profile.Name
+		data.Thumbnail = strings.ReplaceAll(profile.Avatar, "_normal", "")
+		data.Description = profile.Biography
 	} else {
 		data.Title = videoid
 		data.Thumbnail = "https://i.ytimg.com/vi/" + videoid + "/hqdefault.jpg"
@@ -85,7 +105,6 @@ func getDownloadPage(c *gin.Context) {
 		"VideoName":   data.Title,
 		"Thumbnail":   data.Thumbnail,
 		"Description": data.Description,
-		"Platform":    "YouTube",
 		"ID":          videoid,
 		"Type":        vidtype,
 		"ServerPath":  settings.ServerPath,

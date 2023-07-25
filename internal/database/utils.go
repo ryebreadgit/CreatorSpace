@@ -269,3 +269,22 @@ func getVideoLength(filePath string) (string, error) {
 	return strconv.FormatFloat(seconds, 'f', 0, 64), nil
 
 }
+
+func ifTweetExists(id string, db *gorm.DB) bool {
+	// check if id exists
+	var t Tweet
+
+	if err := db.Select("tweet_id").Where("tweet_id = ?", id).First(&t).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Debugf("tweet_id record #{id} does not exist")
+		} else {
+			log.Errorf("Error, unable to get tweet_id record #{id} record due to error: %v", err)
+			return true
+		}
+	}
+	if t.TweetID != "" {
+		return true
+	} else {
+		return false
+	}
+}

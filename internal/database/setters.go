@@ -419,3 +419,24 @@ func UpdateCreator(creator Creator, db *gorm.DB) error {
 	}
 	return nil
 }
+
+func InsertTweet(tweet Tweet, db *gorm.DB) error {
+	// open database and check if tweet exists, if not, create it
+	if !ifTweetExists(tweet.TweetID, db) {
+		db.Create(&tweet)
+		return nil
+	}
+	return errors.New("record already exists")
+}
+
+func UpdateTweet(tweet Tweet, db *gorm.DB) error {
+	// open database and check if tweet exists, if not, create it
+	if !ifTweetExists(tweet.TweetID, db) {
+		return errors.New("record does not exist")
+	}
+	err := db.Model(&tweet).Where("tweet_id=?", tweet.TweetID).Updates(tweet).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}

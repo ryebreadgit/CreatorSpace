@@ -13,6 +13,7 @@ type Creator struct {
 	ID             int `gorm:"primaryKey"`
 	ChannelID      string
 	Name           string
+	AltName        string
 	Description    string
 	VideoIDs       string
 	FilePath       string
@@ -52,6 +53,32 @@ type Video struct {
 	Updated       bool
 	MimeType      string
 	SponsorTag    string
+}
+
+type Tweet struct {
+	gorm.Model
+	ID              int `gorm:"primaryKey"`
+	TweetID         string
+	ConversationID  string
+	UserID          string
+	Username        string
+	UserDisplayName string
+	Epoch           int64
+	IsQuote         bool
+	QuoteID         string
+	IsReply         bool
+	InReplyToID     string
+	IsRetweet       bool
+	RetweetID       string
+	IsPin           bool
+	Likes           int
+	ReplyCount      int
+	RetweetCount    int
+	Photos          string
+	Videos          string
+	Text            string
+	URLs            string
+	FilePath        string
 }
 
 type SponsorBlock struct {
@@ -113,6 +140,7 @@ type Settings struct {
 	ID               int `gorm:"primaryKey"`
 	BaseYouTubePath  string
 	BaseTwitchPath   string
+	BaseTwitterPath  string
 	DatabasePath     string
 	DatabaseType     string
 	DatabaseHost     string
