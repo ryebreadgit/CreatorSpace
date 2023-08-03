@@ -440,3 +440,19 @@ func UpdateTweet(tweet Tweet, db *gorm.DB) error {
 	}
 	return nil
 }
+
+func UpdateDownloadQueueItem(item DownloadQueue, altVidID string, db *gorm.DB) error {
+	// open database and check if item exists, if not, create it
+	vidID := item.VideoID
+	if !ifDownloadQueueItemExists(vidID, item.VideoType, db) {
+		vidID = altVidID
+		if !ifDownloadQueueItemExists(vidID, item.VideoType, db) {
+			return errors.New("record does not exist")
+		}
+	}
+	err := db.Model(&item).Where("video_id=? AND video_type=?", vidID, item.VideoType).Updates(item).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}

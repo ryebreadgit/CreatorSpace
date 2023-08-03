@@ -158,7 +158,7 @@ func InitTasking() {
 					Epoch:    t.Epoch,
 					Interval: t.Interval * time.Minute,
 					Task:     task_UpdateTweets,
-					Args:     []interface{}{3200},
+					Args:     []interface{}{100},
 				})
 			}
 
@@ -168,7 +168,7 @@ func InitTasking() {
 					Epoch:    t.Epoch,
 					Interval: t.Interval * time.Minute,
 					Task:     task_UpdateTweets,
-					Args:     []interface{}{15},
+					Args:     []interface{}{5},
 				})
 			}
 		}

@@ -288,3 +288,22 @@ func ifTweetExists(id string, db *gorm.DB) bool {
 		return false
 	}
 }
+
+func ifDownloadQueueItemExists(id string, vidType string, db *gorm.DB) bool {
+	// check if id exists
+	var d DownloadQueue
+
+	if err := db.Select("video_id").Where("video_id = ? AND video_type = ?", id, vidType).First(&d).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Debugf("video_id record #{id} does not exist")
+		} else {
+			log.Errorf("Error, unable to get video_id record #{id} record due to error: %v", err)
+			return true
+		}
+	}
+	if d.VideoID != "" {
+		return true
+	} else {
+		return false
+	}
+}

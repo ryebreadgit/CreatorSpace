@@ -21,24 +21,27 @@ func UpdateTwitterCreators(tweetLimit int) error {
 		return err
 	}
 
-	// Setting tweet limit to 3200 if over as this is the max for the api
-	if tweetLimit > 3200 {
-		tweetLimit = 3200
+	// Setting max tweet limit to 3200 (100 now, thanks Elon...)
+	if tweetLimit > 100 {
+		tweetLimit = 100
 	}
 
 	// Get twitter handle from video_id
 	for _, item := range queue {
 		// Get twitter handle from video_id
-		updateCreatorTweets(item.VideoID, tweetLimit)
+		updateCreatorTweets(item.VideoID, tweetLimit, item)
 	}
 
 	return nil
 
 }
 
-func updateCreatorTweets(handle string, tweetlimit int) error {
+func updateCreatorTweets(handle string, tweetlimit int, dlqueueItem database.DownloadQueue) error {
 	// Get twitter handle from creator
 	scraper := twitterscraper.New()
+	scraper.SetSearchMode(twitterscraper.SearchLatest)
+	scraper.WithReplies(true)
+	scraper.WithDelay(2) // 2 second delay between requests to avoid rate limiting
 	err := scraper.LoginOpenAccount()
 	if err != nil {
 		log.Error(err)
@@ -61,80 +64,97 @@ func updateCreatorTweets(handle string, tweetlimit int) error {
 			return err
 		}
 
-		basePath := filepath.Join(settings.BaseTwitterPath, handle)
-
-		newcreator.Name = profile.Username
-		newcreator.AltName = profile.Name
-		newcreator.Platform = "Twitter"
-		newcreator.FilePath = filepath.Join(basePath, handle+".json")
-		newcreator.BannerPath = filepath.Join(basePath, "banner.jpg")
-		newcreator.ThumbnailPath = filepath.Join(basePath, "avatar.jpg")
-		newcreator.Description = profile.Biography
-		newcreator.Subscribers = fmt.Sprintf("%d", profile.FollowersCount)
-		newcreator.ChannelID = profile.UserID
-
-		// Make directories
-		err = os.MkdirAll(basePath, os.ModePerm)
-		if err != nil {
+		// Check for existing creator
+		creator, err = database.GetAllCreators(db.Where("channel_id = ?", profile.UserID))
+		if err != nil && err.Error() != "record not found" {
 			log.Error(err)
 			return err
-		}
+		} else if (err != nil && err.Error() == "record not found") || len(creator) == 0 {
+			// No existing creator, create new
 
-		if profile.Banner != "" {
-			// Download banner
-			bannerPath, err := downloadThumbnail(profile.Banner, newcreator.BannerPath, "banner.jpg")
+			basePath := filepath.Join(settings.BaseTwitterPath, profile.Username)
+
+			newcreator.Name = profile.Username
+			newcreator.AltName = profile.Name
+			newcreator.Platform = "Twitter"
+			newcreator.FilePath = filepath.Join(basePath, profile.Username+".json")
+			newcreator.BannerPath = filepath.Join(basePath, "banner.jpg")
+			newcreator.ThumbnailPath = filepath.Join(basePath, "avatar.jpg")
+			newcreator.Description = profile.Biography
+			newcreator.Subscribers = fmt.Sprintf("%d", profile.FollowersCount)
+			newcreator.ChannelID = profile.UserID
+
+			// Make directories
+			err = os.MkdirAll(basePath, os.ModePerm)
 			if err != nil {
 				log.Error(err)
 				return err
 			}
 
-			newcreator.BannerPath = bannerPath
-		} else {
-			newcreator.BannerPath = ""
-		}
+			if profile.Banner != "" {
+				// Download banner
+				bannerPath, err := downloadThumbnail(profile.Banner, newcreator.BannerPath, "banner.jpg")
+				if err != nil {
+					log.Error(err)
+					return err
+				}
 
-		if profile.Avatar != "" {
-			// Download thumbnail
-			thumbnailPath, err := downloadThumbnail(strings.ReplaceAll(profile.Avatar, "_normal", ""), newcreator.ThumbnailPath, "avatar.jpg")
+				newcreator.BannerPath = bannerPath
+			} else {
+				newcreator.BannerPath = ""
+			}
+
+			if profile.Avatar != "" {
+				// Download thumbnail
+				thumbnailPath, err := downloadThumbnail(strings.ReplaceAll(profile.Avatar, "_normal", ""), newcreator.ThumbnailPath, "avatar.jpg")
+				if err != nil {
+					log.Error(err)
+					return err
+				}
+
+				newcreator.ThumbnailPath = thumbnailPath
+			} else {
+				newcreator.ThumbnailPath = ""
+			}
+
+			// Save json to FilePath
+			creatorjson, err := json.MarshalIndent(profile, "", "  ")
 			if err != nil {
 				log.Error(err)
 				return err
 			}
 
-			newcreator.ThumbnailPath = thumbnailPath
-		} else {
-			newcreator.ThumbnailPath = ""
+			err = os.WriteFile(newcreator.FilePath, creatorjson, 0644)
+			if err != nil {
+				log.Error(err)
+				return err
+			}
+
+			// Remove twitter path from paths
+			newcreator.FilePath = strings.ReplaceAll(newcreator.FilePath, settings.BaseTwitterPath, "")
+			newcreator.BannerPath = strings.ReplaceAll(newcreator.BannerPath, settings.BaseTwitterPath, "")
+			newcreator.ThumbnailPath = strings.ReplaceAll(newcreator.ThumbnailPath, settings.BaseTwitterPath, "")
+
+			// Update download queue item with the new handle
+			dlqueueItem.VideoID = newcreator.Name
+			err = database.UpdateDownloadQueueItem(dlqueueItem, handle, db)
+			if err != nil {
+				log.Error(err)
+				return err
+			}
+
+			// Add creator to database
+			err = database.InsertCreator(*newcreator, db)
+			if err != nil {
+				log.Error(err)
+				return err
+			}
+
+			creator = []database.Creator{}
+			creator = append(creator, *newcreator)
+
+			log.Info("Created new twitter creator: " + newcreator.Name)
 		}
-
-		// Save json to FilePath
-		creatorjson, err := json.MarshalIndent(profile, "", "  ")
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-
-		err = os.WriteFile(newcreator.FilePath, creatorjson, 0644)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-
-		// Remove twitter path from paths
-		newcreator.FilePath = strings.ReplaceAll(newcreator.FilePath, settings.BaseTwitterPath, "")
-		newcreator.BannerPath = strings.ReplaceAll(newcreator.BannerPath, settings.BaseTwitterPath, "")
-		newcreator.ThumbnailPath = strings.ReplaceAll(newcreator.ThumbnailPath, settings.BaseTwitterPath, "")
-
-		// Add creator to database
-		err = database.InsertCreator(*newcreator, db)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-
-		creator = []database.Creator{}
-		creator = append(creator, *newcreator)
-
-		log.Info("Created new twitter creator: " + newcreator.Name)
 
 	}
 
@@ -143,7 +163,7 @@ func updateCreatorTweets(handle string, tweetlimit int) error {
 	basePath := filepath.Join(settings.BaseTwitterPath, creator[0].Name)
 	tweetsPath := filepath.Join(basePath, "tweets")
 
-	for tweet := range scraper.WithReplies(true).GetTweets(context.Background(), creator[0].Name, tweetlimit) {
+	for tweet := range scraper.GetTweets(context.Background(), creator[0].Name, tweetlimit) {
 		if tweet.Error != nil {
 			log.Error(tweet.Error)
 			continue
@@ -168,6 +188,8 @@ func updateCreatorTweets(handle string, tweetlimit int) error {
 		}
 		log.Debugf("Downloaded tweet: %v", tweet.ID)
 	}
+
+	scraper.Logout()
 
 	return nil
 }
@@ -202,7 +224,6 @@ func downloadTweets(tweet *twitterscraper.Tweet, fp string) ([]database.Tweet, e
 	dbtweet.QuoteID = tweet.QuotedStatusID
 	dbtweet.IsPin = tweet.IsPin
 	dbtweet.Likes = tweet.Likes
-	dbtweet.URLs = strings.Join(tweet.URLs, ",")
 	dbtweet.ReplyCount = tweet.Replies
 	dbtweet.RetweetCount = tweet.Retweets
 
@@ -265,8 +286,15 @@ func downloadTweets(tweet *twitterscraper.Tweet, fp string) ([]database.Tweet, e
 		log.Error(err)
 		return nil, err
 	}
+
+	urlsJson, err := json.Marshal(tweet.URLs)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
 	dbtweet.Photos = string(photosJson)
 	dbtweet.Videos = string(videosJson)
+	dbtweet.URLs = string(urlsJson)
 
 	// Add tweet to database
 	err = database.InsertTweet(dbtweet, db)
@@ -312,6 +340,7 @@ func downloadTweets(tweet *twitterscraper.Tweet, fp string) ([]database.Tweet, e
 				}
 				retTweets = append(retTweets, replies...)
 			}
+			scraper.Logout()
 		}
 	}
 
@@ -350,6 +379,7 @@ func downloadTweets(tweet *twitterscraper.Tweet, fp string) ([]database.Tweet, e
 				}
 				retTweets = append(retTweets, replies...)
 			}
+			scraper.Logout()
 		}
 	}
 
@@ -388,6 +418,7 @@ func downloadTweets(tweet *twitterscraper.Tweet, fp string) ([]database.Tweet, e
 				}
 				retTweets = append(retTweets, replies...)
 			}
+			scraper.Logout()
 		}
 	}
 

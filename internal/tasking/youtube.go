@@ -936,7 +936,7 @@ func GetCreatorMetadata(creatorID string) (database.YoutubePlaylistStruct, error
 
 func updateCreatorMetadata(creatorID string) error {
 	// Get the creator from the database
-	creator, err := database.GetCreator(creatorID, db)
+	creator, err := database.GetCreator(creatorID, db.Where("platform = ?", "YouTube"))
 	if err != nil {
 		return err
 	}
