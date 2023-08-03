@@ -550,7 +550,7 @@ func updateVideoMetadata(videoID string) error {
 	}
 
 	// if subtitles path is missing but the video has subtitles, download the subtitles
-	if video.SubtitlePath == "" && (info.Subtitles.En != nil || info.Subtitles.Es != nil || info.Subtitles.De != nil || info.Subtitles.Fr != nil) {
+	if video.SubtitlePath == "" && len(info.Subtitles) > 0 {
 		// Download subtitles
 		if !updateVidMeta {
 			// set the input subtitle path to the ${settings.BaseYouTubePath}/${video.FilePath}/../subtitles/${video.FilePath base name without extension}/
@@ -665,7 +665,7 @@ func updateVideoMetadata(videoID string) error {
 		}
 
 		// Update video subtitles if they are missing
-		if video.SubtitlePath == "" && (info.Subtitles.En != nil || info.Subtitles.EnUS != nil || info.Subtitles.EnGB != nil || info.Subtitles.De != nil || info.Subtitles.Es != nil || info.Subtitles.Fr != nil) {
+		if video.SubtitlePath == "" && len(info.Subtitles) > 0 {
 			// Download subtitles
 			// set the input subtitle path to the ${settings.BaseYouTubePath}/${video.FilePath}/../subtitles/${video.FilePath base name without extension}/
 			inputSubPath, err := general.SanitizeFilePath(filepath.Join(settings.BaseYouTubePath, filepath.Dir(video.FilePath), "../metadata/subtitles", strings.TrimSuffix(filepath.Base(video.FilePath), filepath.Ext(video.FilePath))))
@@ -1347,18 +1347,18 @@ func downloadComments(videoID string) (string, error) {
 	return sanitizedCommentPath, nil
 }
 
-func subDownload(subFile string, url string, ext string) error {
+func subDownload(subFile string, url string, ext string) (string, error) {
 
 	// Create the directory if it doesn't exist
 	err := os.MkdirAll(filepath.Dir(subFile), 0755)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 	// Make the request
 	resp, err := http.Get(url)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 
@@ -1367,13 +1367,13 @@ func subDownload(subFile string, url string, ext string) error {
 	// Read the body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// save file as-is
 	err = os.WriteFile(subFile, body, 0644)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Unmarshal the json to interface
@@ -1381,109 +1381,57 @@ func subDownload(subFile string, url string, ext string) error {
 	err = json.Unmarshal(body, &data)
 	if err != nil {
 		// if invalid json, return
-		return nil
+		return subFile, nil
 	}
 
 	// Marshal the json to string
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Write the json to the file
 	err = os.WriteFile(subFile, jsonData, 0644)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return subFile, nil
 
-}
-
-func _dlSubtitle(subData []database.YouTubeApiVideoInfoStructSub, lang string, subtitlePath string) (string, error) {
-	var retSub string
-	for _, sub := range subData {
-		if sub.URL == "" {
-			continue
-		}
-		// if the language is not set, set it to unknown
-		if lang == "" {
-			lang = "und"
-		}
-		// Set the subFile path to ${settings.YouTubeBasePath}/${subtitlePath}/${subtitlePath last path name}.{lang}.{videoData.Subtitles.De.Ext}
-		subFile, err := general.SanitizeFilePath(fmt.Sprintf("%v/%v.%v.%v", subtitlePath, filepath.Base(subtitlePath), lang, sub.Ext))
-		if err != nil {
-			return "", err
-		}
-
-		err = subDownload(subFile, sub.URL, sub.Ext)
-		if err != nil {
-			return "", err
-		}
-		// if vtt set retSub to subFile. This overrides previous languages.
-		if sub.Ext == "vtt" {
-			retSub = strings.ReplaceAll(subFile, settings.BaseYouTubePath, "")
-		}
-	}
-	return retSub, nil
 }
 
 // download subtitles from database.YoutubeVideo.Subtitles
 func downloadSubtitles(subtitlePath string, videoData *database.YouTubeVideoInfoStruct) ([]database.VidSubtitle, error) {
 	var subList []database.VidSubtitle
 
-	if videoData.Subtitles.En != nil {
-		// Download the subtitles
-		retSub, err := _dlSubtitle(videoData.Subtitles.En, "en", subtitlePath)
-		if err != nil {
-			return subList, err
+	for lang, subType := range videoData.Subtitles {
+		if subType == nil || lang == "live_chat" { // Skip live chat as it's not formatted correctly and will be added as part of YT Live support
+			continue
 		}
-		subList = append(subList, database.VidSubtitle{Language: "en", LanguageText: "English", FilePath: retSub})
-	}
 
-	if videoData.Subtitles.EnUS != nil {
-		// Download the subtitles
-		retSub, err := _dlSubtitle(videoData.Subtitles.EnUS, "en-US", subtitlePath)
-		if err != nil {
-			return subList, err
-		}
-		subList = append(subList, database.VidSubtitle{Language: "en-US", LanguageText: "English (US)", FilePath: retSub})
-	}
+		for _, sub := range subType {
 
-	if videoData.Subtitles.EnGB != nil {
-		// Download the subtitles
-		retSub, err := _dlSubtitle(videoData.Subtitles.EnGB, "en-GB", subtitlePath)
-		if err != nil {
-			return subList, err
-		}
-		subList = append(subList, database.VidSubtitle{Language: "en-GB", LanguageText: "English (UK)", FilePath: retSub})
-	}
+			// if the language is not set, set it to unknown
+			if lang == "" {
+				lang = "und"
+			}
+			// Set the subFile path to ${settings.YouTubeBasePath}/${subtitlePath}/${subtitlePath last path name}.{lang}.{videoData.Subtitles.De.Ext}
+			subFile, err := general.SanitizeFilePath(fmt.Sprintf("%v/%v.%v.%v", subtitlePath, filepath.Base(subtitlePath), lang, sub.Ext))
+			if err != nil {
+				fmt.Printf("Error sanitizing subtitle path: %v\n", err)
+				continue
+			}
 
-	if videoData.Subtitles.Es != nil {
-		// Download the subtitles
-		retSub, err := _dlSubtitle(videoData.Subtitles.Es, "es", subtitlePath)
-		if err != nil {
-			return subList, err
+			_, err = subDownload(subFile, sub.URL, sub.Ext)
+			if err != nil {
+				fmt.Printf("Error downloading subtitle: %v\n", err)
+				continue
+			}
+			if sub.Ext == "vtt" {
+				subList = append(subList, database.VidSubtitle{Language: lang, LanguageText: sub.Name, FilePath: strings.ReplaceAll(subFile, settings.BaseYouTubePath, "")})
+			}
 		}
-		subList = append(subList, database.VidSubtitle{Language: "es", LanguageText: "Español", FilePath: retSub})
-	}
 
-	if videoData.Subtitles.De != nil {
-		// Download the subtitles
-		retSub, err := _dlSubtitle(videoData.Subtitles.De, "de", subtitlePath)
-		if err != nil {
-			return subList, err
-		}
-		subList = append(subList, database.VidSubtitle{Language: "de", LanguageText: "Deutsch", FilePath: retSub})
-	}
-
-	if videoData.Subtitles.Fr != nil {
-		// Download the subtitles
-		retSub, err := _dlSubtitle(videoData.Subtitles.Fr, "fr", subtitlePath)
-		if err != nil {
-			return subList, err
-		}
-		subList = append(subList, database.VidSubtitle{Language: "fr", LanguageText: "Français", FilePath: retSub})
 	}
 
 	// if sublist isn't empty, log the download
