@@ -32,5 +32,6 @@ func main() {
 
 func init() {
 	_ = os.MkdirAll("./data/log/", os.ModePerm)
+	_ = os.RemoveAll("./data/tmp/")
 	_ = os.MkdirAll("./data/tmp/", os.ModePerm)
 }
