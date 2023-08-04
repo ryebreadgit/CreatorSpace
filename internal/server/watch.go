@@ -68,7 +68,7 @@ func page_watch(db *gorm.DB) gin.HandlerFunc {
 
 		// get video comments, only get the first 25.
 
-		comments, err := database.GetVideoComments(videoid, db.Select("comment_id", "author", "text", "time_parsed", "votes", "parent_comment_id").Order("votes DESC").Where("parent_comment_id = ?", "").Limit(25))
+		comments, err := database.GetVideoComments(videoid, db.Select("comment_id", "author", "author_id", "text", "time_parsed", "votes", "parent_comment_id").Order("votes DESC").Where("parent_comment_id = ?", "").Limit(25))
 
 		if err != nil {
 			comments = nil
