@@ -399,7 +399,7 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 	query = query.Order("published_at DESC")
 	query = query.Order("views DESC")
 	query = query.Order("likes DESC")
-	query = query.Limit(3000)
+	query = query.Limit(3500)
 	err = query.Find(&recommendations).Error
 	if err != nil {
 		return nil, errors.New("error fetching recommendations")
@@ -426,6 +426,10 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 	commonWordsMap := make(map[string]bool)
 	commonWords := []string{
 		"a", "an", "the", "and", "or", "but", "for", "nor", "so", "yet", "as", "at", "by", "in", "from", "into", "of", "on", "we", "is", "you", "he", "she", "it", "they", "me", "him", "her", "us", "them", "my", "your", "our", "we", "best",
+		"to", "with", "that", "this", "these", "those", "his", "hers", "its", "theirs", "mine", "yours", "ours", "theirs", "i", "am", "are", "was", "were", "be", "been", "being", "have", "has", "had", "do", "does", "did", "done", "will", "would", "shall", "should", "may", "might", "must", "can", "could",
+		"about", "above", "across", "after", "against", "along", "among", "around", "at", "before", "behind", "below", "beneath", "beside", "between", "beyond", "down", "during", "except", "for", "from", "inside", "into", "near", "off", "on", "onto", "outside", "over", "past", "since", "through", "throughout", "till", "to", "toward", "under", "underneath", "until", "up", "upon", "with", "within", "without",
+		// Clickbait terms will be counted as common
+		"shocking", "you won't believe", "amazing", "secret", "revealed", "incredible", "ind-blowing", "unbelievable", "must-see", "jaw-dropping", "mind-boggling", "mind-bending", "epic", "awesome", "unreal", "insane", "crazy", "wild", "ridiculous", "hilarious", "funny", "lol", "wtf", "omg", "wow", "fail", "fails", "huge", "free", "crack", "pirate", "piracy",
 	}
 	for _, word := range commonWords {
 		commonWordsMap[word] = true
@@ -458,31 +462,29 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 
 		// If the video is from the same creator, give it a little boost
 		if rec.ChannelID == currentVideo.ChannelID {
-			score += 4.5
+			score += 2.5
 		}
 
 		// If the video type is the same, give it a little boost
 		if rec.VideoType == currentVideo.VideoType {
-			score += 3.5
+			score += 4
 		}
 
 		// If the video is not available, give it a boost
 		if rec.Availability != "available" {
 			if currentVideo.Availability != "available" {
-				score += 3
-			} else {
-				// still a lil boost for fun since these aren't available publically anymore. Give a little more chance for those to be seen.
-				score += 1.5
+				score += 2
 			}
 		}
 
 		// If the video title has similar words to the current video, add 1 point
 		titleWords := strings.Split(currentVideo.Title, " ")
 		for i, word := range titleWords {
+			word = strings.ToLower(word)
 			if commonWordsMap[word] {
 				continue
 			}
-			if strings.Contains(rec.Title, word) {
+			if strings.Contains(strings.ToLower(rec.Title), word) {
 				// give more weight to the first half of the title
 				if i < len(titleWords)/2 {
 					score += 1
@@ -493,16 +495,17 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 
 		// Do the same for description
 		for _, word := range strings.Split(rec.Description, " ") {
+			word = strings.ToLower(word)
 			if commonWordsMap[word] {
 				continue
 			}
-			if strings.Contains(currentVideo.Description, word) {
+			if strings.Contains(strings.ToLower(currentVideo.Description), word) {
 				score += 1.5
 			}
 
 			// Check if word contains the video id, if so give it a boost
 			if strings.Contains(word, videoID) {
-				score += 5
+				score += 8
 			}
 		}
 
@@ -537,15 +540,10 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 
 		// If the video id is in the watched list, minus points
 		if watchedVidsMap[rec.VideoID] {
-			score -= 4
+			score -= 7.5
 		}
 
-		// If the video has the same id, set to 0 points
-		if rec.VideoID == currentVideo.VideoID {
-			score = 0
-		}
-
-		if score != 0 {
+		if score > 0 && rec.VideoID != currentVideo.VideoID {
 			scoredRecommendations = append(scoredRecommendations, videoScore{video: rec, score: score})
 		}
 	}
@@ -579,14 +577,10 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 		topReccs = append(topReccs, scoredRecommendations[i])
 	}
 
-	/* Screw it, let chaos reign
-
 	// Sort topReccs by score
 	sort.Slice(topReccs, func(i, j int) bool {
 		return topReccs[i].score > topReccs[j].score
 	})
-
-	*/
 
 	var topRecommendations []database.Video
 	for _, recc := range topReccs {
