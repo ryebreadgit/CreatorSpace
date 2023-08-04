@@ -148,11 +148,11 @@
             <br />
             <span class="creator-link">
             {{if eq .Creator.Platform "Twitch"}}
-                <a href="https://www.twitch.tv/videos/{{ .Video.VideoID }}" target="_blank">View Video on Twitch</a>
+                <a href="https://www.twitch.tv/videos/{{ .Video.VideoID }}" target="_blank" id="vid-orig">View Video on Twitch</a>
                 | 
                 <a href="https://www.twitch.tv/{{ .Creator.Name }}" target="_blank">View Creator on Twitch</a>
             {{else}}
-                <a href="https://www.youtube.com/watch?v={{ .Video.VideoID }}" target="_blank">View Video on YouTube</a>
+                <a href="https://www.youtube.com/watch?v={{ .Video.VideoID }}" target="_blank" id="vid-orig">View Video on YouTube</a>
                 | 
                 <a href="https://www.youtube.com/channel/{{ .Creator.ChannelID }}" target="_blank">View Creator on YouTube</a>
             {{end}}
@@ -496,19 +496,22 @@ theaterModeButton.addEventListener('click', function () {
     let lastTime = 0;
     let completed = false;
     let ignoreTimeupdate = false;
+    let vidType = ""
+    let vidID = "{{.Video.VideoID}}";
+    {{if eq .Creator.Platform "Twitch"}}
+    vidType = "Twitch";
+    {{else}}
+    vidType = "YouTube";
+    {{end}}
     {{if .Video.Watched}}
         completed = true;
     {{end}}
+    
     // keep track of user's current time
     player.on('timeupdate', function () {
 
         // ignore if player is paused
         if (player.paused()) {
-            return;
-        }
-
-        // Ignore if we've already watched this video
-        if (completed) {
             return;
         }
 
@@ -521,6 +524,21 @@ theaterModeButton.addEventListener('click', function () {
 
         // only update every 5 seconds, round to nearest 5 seconds and if it has been less than 0.1 seconds since the last update, ignore
         if (Math.abs(curTime - lastTime) < 5 && Math.abs(curTime - lastTime) > 0.1) {
+            return;
+        }
+
+        // Update the original video link to the current time
+        let origVid = document.getElementById("vid-orig");
+        if (origVid) {
+            if (vidType == "Twitch") {
+                origVid.href = `https://www.twitch.com/videos/${vidID}?t=${Math.floor(curTime)}s`
+            } else {
+                origVid.href = `https://www.youtube.com/watch?v=${vidID}&t=${Math.floor(curTime)}s`
+            }
+        }
+
+        // Ignore if we've already watched this video
+        if (completed) {
             return;
         }
 
