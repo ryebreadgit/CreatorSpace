@@ -1317,6 +1317,7 @@ func downloadComments(videoID string) (string, error) {
 		newComment.VideoID = videoID
 		newComment.Text = comment.Text
 		newComment.Author = comment.Author
+		newComment.AuthorID = comment.AuthorID
 		newComment.Votes = strconv.Itoa(comment.LikeCount)
 		newComment.TimeParsed = float64(comment.Timestamp)
 		newComment.TimeString = comment.TimeText

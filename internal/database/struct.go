@@ -104,6 +104,7 @@ type Comment struct {
 	VideoID         string
 	Text            string
 	Author          string
+	AuthorID        string
 	Heart           bool
 	TimeParsed      float64 `json:"time_parsed"`
 	TimeString      string
