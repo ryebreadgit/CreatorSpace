@@ -412,6 +412,31 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 
 	var scoredRecommendations []videoScore
 
+	// Store the categories and tags of the current video in a map
+	currentCategoriesMap := make(map[string]bool)
+	currentTagsMap := make(map[string]bool)
+	for _, category := range currentCategories {
+		currentCategoriesMap[category] = true
+	}
+	for _, tag := range currentTags {
+		currentTagsMap[tag] = true
+	}
+
+	// Store the common words in a map
+	commonWordsMap := make(map[string]bool)
+	commonWords := []string{
+		"a", "an", "the", "and", "or", "but", "for", "nor", "so", "yet", "as", "at", "by", "in", "from", "into", "of", "on", "we", "is", "you", "he", "she", "it", "they", "me", "him", "her", "us", "them", "my", "your", "our", "we", "best",
+	}
+	for _, word := range commonWords {
+		commonWordsMap[word] = true
+	}
+
+	// Use a map to store the watched videos
+	watchedVidsMap := make(map[string]bool)
+	for _, vid := range watchedVids {
+		watchedVidsMap[vid] = true
+	}
+
 	for _, rec := range recommendations {
 		var recCategories, recTags []string
 		json.Unmarshal([]byte(rec.Categories), &recCategories)
@@ -419,14 +444,14 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 
 		score := 0.0
 
+		// Check if the recommendation has any of the current video's categories or tags
 		for _, cat := range recCategories {
-			if general.StringInSlice(currentCategories, cat) {
+			if currentCategoriesMap[cat] {
 				score += 2
 			}
 		}
-
 		for _, tag := range recTags {
-			if general.StringInSlice(currentTags, tag) {
+			if currentTagsMap[tag] {
 				score += 2
 			}
 		}
@@ -451,39 +476,28 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 			}
 		}
 
-		commonWords := []string{
-			"a", "an", "the", "and", "or", "but", "for", "nor", "so", "yet", "as", "at", "by", "in", "from", "into", "of", "on", "we", "is", "you", "he", "she", "it", "they", "me", "him", "her", "us", "them", "my", "your", "our", "we", "best",
-		}
-
 		// If the video title has similar words to the current video, add 1 point
-		for i, word := range strings.Split(currentVideo.Title, " ") {
-			var commonWord bool
-			if general.StringInSlice(commonWords, word) {
-				commonWord = true
+		titleWords := strings.Split(currentVideo.Title, " ")
+		for i, word := range titleWords {
+			if commonWordsMap[word] {
+				continue
 			}
-			titleDat := strings.Split(rec.Title, " ")
-			if general.StringInSlice(titleDat, word) {
+			if strings.Contains(rec.Title, word) {
 				// give more weight to the first half of the title
-				if i < len(titleDat)/2 {
+				if i < len(titleWords)/2 {
 					score += 1
 				}
-
-				if commonWord {
-					score += 1
-				} else {
-					score += 3
-				}
+				score += 3
 			}
 		}
 
 		// Do the same for description
 		for _, word := range strings.Split(rec.Description, " ") {
-			if general.StringInSlice(strings.Split(currentVideo.Description, " "), word) {
-				if general.StringInSlice(commonWords, word) {
-					score += 0.3
-				} else {
-					score += 1.5
-				}
+			if commonWordsMap[word] {
+				continue
+			}
+			if strings.Contains(currentVideo.Description, word) {
+				score += 1.5
 			}
 
 			// Check if word contains the video id, if so give it a boost
@@ -522,7 +536,7 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 		score -= math.Log10(float64(time.Since(publishedAt).Hours()))
 
 		// If the video id is in the watched list, minus points
-		if general.StringInSlice(watchedVids, rec.VideoID) {
+		if watchedVidsMap[rec.VideoID] {
 			score -= 4
 		}
 
