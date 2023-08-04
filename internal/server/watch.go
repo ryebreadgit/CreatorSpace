@@ -109,6 +109,19 @@ func page_watch(db *gorm.DB) gin.HandlerFunc {
 			comments[i].Votes = general.FormatViews(comment.Votes)
 		}
 
+		// Move comments by the poster to the top
+		if comments != nil {
+			for i := 0; i < len(comments); i++ {
+				if comments[i].AuthorID == creator.ChannelID {
+					temp := comments[i]
+					for j := i; j > 0; j-- {
+						comments[j], comments[j-1] = comments[j-1], comments[j]
+					}
+					comments[0] = temp
+				}
+			}
+		}
+
 		mimeType := mime.TypeByExtension(video.FilePath)
 		if mimeType == "" {
 			mimeType = "video/mp4"
