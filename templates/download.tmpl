@@ -79,7 +79,7 @@
         var channelID = document.getElementById("channel-id").value;
         var shortsID = document.getElementById("shorts-id").value;
         var playlistID = document.getElementById("playlist-id").value;
-        var twitterID = document.getElementById("twitter-id").value;
+        //var twitterID = document.getElementById("twitter-id").value;
 
         if (videoID != "") {
             window.location.href = "/download/video/" + videoID;
@@ -89,9 +89,9 @@
             window.location.href = "/download/shorts/" + shortsID;
         } else if (playlistID != "") {
             window.location.href = "/download/playlist/" + playlistID;
-        } else if (twitterID != "") {
+        }/* else if (twitterID != "") {
             window.location.href = "/download/twitter/" + twitterID;
-        } else {
+        }*/ else {
             alert("Please enter a valid ID");
         }
     }
