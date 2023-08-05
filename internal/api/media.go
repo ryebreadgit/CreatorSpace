@@ -23,6 +23,12 @@ import (
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
 )
 
+var r *rand.Rand
+
+func init() {
+	r = rand.New(rand.NewSource(time.Now().UnixNano()))
+}
+
 func apiMedia(c *gin.Context) {
 
 	video := c.Param("video_id")
@@ -585,7 +591,6 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 
 	// Get 10 random reccs and sort by score
 	var topReccs []videoScore
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	// Shuffle scoredRecommendations
 	r.Shuffle(len(scoredRecommendations), func(i, j int) {
 		scoredRecommendations[i], scoredRecommendations[j] = scoredRecommendations[j], scoredRecommendations[i]
