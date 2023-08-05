@@ -322,7 +322,9 @@ func apiCreatorBanner(c *gin.Context) {
 	creatorid := c.Param("creator")
 	creatorData, err := database.GetCreator(creatorid, db)
 	if err != nil {
-		c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": err.Error()})
+		// return with default banner
+		c.Redirect(http.StatusTemporaryRedirect, "/assets/img/defaults/banners/youtube_banner.svg")
+		c.Abort()
 		return
 	}
 
