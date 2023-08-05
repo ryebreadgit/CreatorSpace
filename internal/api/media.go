@@ -391,7 +391,7 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 	var recommendations []database.Video
 
 	// Fetch videos with the same categories or from the same creator
-	query := db.Select("title", "video_id", "likes", "views", "channel_title", "channel_id", "published_at", "length", "video_type", "availability", "categories", "tags")
+	query := db.Select("title", "description", "video_id", "likes", "views", "channel_title", "channel_id", "published_at", "length", "video_type", "availability", "categories", "tags")
 	query = query.Where("video_id != ?", videoID)
 	for _, category := range currentCategories {
 		query = query.Or("categories LIKE ?", "%"+category+"%")
@@ -414,16 +414,6 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 
 	var scoredRecommendations []videoScore
 
-	// Store the categories and tags of the current video in a map
-	currentCategoriesMap := make(map[string]bool)
-	currentTagsMap := make(map[string]bool)
-	for _, category := range currentCategories {
-		currentCategoriesMap[category] = true
-	}
-	for _, tag := range currentTags {
-		currentTagsMap[tag] = true
-	}
-
 	// Store the common words in a map
 	commonWordsMap := make(map[string]bool)
 	commonWords := []string{
@@ -437,10 +427,52 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 		commonWordsMap[word] = true
 	}
 
+	// Store the categories and tags of the current video in a map
+	currentCategoriesMap := make(map[string]bool)
+	currentTagsMap := make(map[string]bool)
+	for _, category := range currentCategories {
+		currentCategoriesMap[category] = true
+	}
+	for _, tag := range currentTags {
+		currentTagsMap[tag] = true
+	}
+
 	// Use a map to store the watched videos
 	watchedVidsMap := make(map[string]bool)
 	for _, vid := range watchedVids {
 		watchedVidsMap[vid] = true
+	}
+
+	// Store the words in the current video's title in a map
+	vidTitleMap := make(map[string]bool)
+	for _, word := range strings.Split(currentVideo.Title, " ") {
+		word := strings.ToLower(word)
+		if commonWordsMap[word] {
+			continue
+		}
+		vidTitleMap[word] = true
+	}
+
+	// Store the words in the current video's description in a map
+	vidDescMap := make(map[string]bool)
+	currentVideo.Description = strings.ReplaceAll(currentVideo.Description, "\n", " ")
+	for _, word := range strings.Split(currentVideo.Description, " ") {
+		word := strings.ToLower(word)
+		if commonWordsMap[word] {
+			continue
+		}
+		if len(word) <= 8 && strings.Contains(word, ":") { // Ignores timestamps
+			_, err := strconv.Atoi(strings.ReplaceAll(word, ":", ""))
+			if err == nil {
+				continue
+			}
+		}
+		vidDescMap[word] = true
+	}
+
+	curViewc, err := strconv.Atoi(currentVideo.Views)
+	if err != nil {
+		curViewc = 0
 	}
 
 	for _, rec := range recommendations {
@@ -453,18 +485,18 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 		// Check if the recommendation has any of the current video's categories or tags
 		for _, cat := range recCategories {
 			if currentCategoriesMap[cat] {
-				score += 2
+				score += 3
 			}
 		}
 		for _, tag := range recTags {
 			if currentTagsMap[tag] {
-				score += 2
+				score += 3
 			}
 		}
 
 		// If the video is from the same creator, give it a little boost
 		if rec.ChannelID == currentVideo.ChannelID {
-			score += 2.5
+			score += 2
 		}
 
 		// If the video type is the same, give it a little boost
@@ -473,41 +505,37 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 		}
 
 		// If the video is not available, give it a boost
-		if rec.Availability != "available" {
-			if currentVideo.Availability != "available" {
-				score += 2
-			}
+		if rec.Availability != "available" && currentVideo.Availability != "available" {
+			score += 3
+		}
+
+		var recTitleMap = make(map[string]bool)
+		// split title into words
+		for _, word := range strings.Split(rec.Title, " ") {
+			recTitleMap[strings.ToLower(word)] = true
 		}
 
 		// If the video title has similar words to the current video, add 1 point
-		titleWords := strings.Split(currentVideo.Title, " ")
-		for i, word := range titleWords {
-			word = strings.ToLower(word)
-			if commonWordsMap[word] {
-				continue
-			}
-			if strings.Contains(strings.ToLower(rec.Title), word) {
-				// give more weight to the first half of the title
-				if i < len(titleWords)/2 {
-					score += 1
-				}
+		for word := range vidTitleMap {
+			if recTitleMap[word] {
 				score += 3
 			}
 		}
 
 		// Do the same for description
-		for _, word := range strings.Split(rec.Description, " ") {
-			word = strings.ToLower(word)
-			if commonWordsMap[word] {
-				continue
-			}
-			if strings.Contains(strings.ToLower(currentVideo.Description), word) {
-				score += 1.5
-			}
 
-			// Check if word contains the video id, if so give it a boost
-			if strings.Contains(word, videoID) {
-				score += 8
+		// replace return characters with spaces
+		rec.Description = strings.ReplaceAll(rec.Description, "\n", " ")
+
+		var recDescWordsMap = make(map[string]bool)
+		// split description into words
+		for _, word := range strings.Split(rec.Description, " ") {
+			recDescWordsMap[strings.ToLower(word)] = true
+		}
+
+		for word := range vidDescMap {
+			if recDescWordsMap[word] {
+				score += 1
 			}
 		}
 
@@ -515,11 +543,6 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 		viewc, err := strconv.Atoi(rec.Views)
 		if err != nil {
 			viewc = 0
-		}
-
-		curViewc, err := strconv.Atoi(currentVideo.Views)
-		if err != nil {
-			curViewc = 0
 		}
 
 		if viewc > 0 && curViewc > 0 {
@@ -542,7 +565,7 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 
 		// If the video id is in the watched list, minus points
 		if watchedVidsMap[rec.VideoID] {
-			score -= 7.5
+			score -= 12.5
 		}
 
 		if score > 0 && rec.VideoID != currentVideo.VideoID {
