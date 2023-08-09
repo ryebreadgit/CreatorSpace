@@ -55,24 +55,37 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 
 		// check filter
 		var filterQuery string
-		filter := c.Query("filter")
-		if filter == "" {
-			filter = "all"
-		}
-
 		filterList := getFilterList()
+		allFilters, ok := c.GetQueryArray("filter")
+		if !ok {
+			allFilters = []string{"all"}
+		}
+		watchFilter := 0
 
-		if filter != "" {
-			// check if filter is valid
-			if _, ok := filterList[filter]; !ok {
-				// Give invalid filter error
-				c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-					"ret": 404,
-					"err": "Invalid filter type",
-				})
-				return
+		for i, filter := range allFilters {
+			if filter == "watched" {
+				watchFilter = 1
+				continue
+			} else if filter == "notwatched" {
+				watchFilter = 2
+				continue
 			}
-			filterQuery = filterList[filter]
+			if filter != "" {
+				// check if filter is valid
+				if _, ok := filterList[filter]; !ok {
+					// Give invalid filter error
+					c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
+						"ret": 404,
+						"err": "Invalid filter type: " + filter,
+					})
+					return
+				}
+				if i == 0 {
+					filterQuery = filterList[filter]
+				} else {
+					filterQuery = filterQuery + " OR " + filterList[filter]
+				}
+			}
 		}
 
 		// check sort
@@ -163,7 +176,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 		vidargs := db.Select("title", "video_id", "likes", "views", "channel_title", "channel_id", "published_at", "description", "length", "video_type", "availability").Limit(20).Offset((pageInt - 1) * 20)
 		// check if there is a next page, even if there's 20 videos, there might not be a next page
 
-		if filter == "watched" {
+		if watchFilter == 1 {
 			// only show videos in watchedVideos
 			if len(watchedVideos) > 0 {
 				vidargs = vidargs.Where("video_id IN (?)", intersection(subVideoIDs, watchedVideos))
@@ -175,7 +188,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 				})
 				return
 			}
-		} else if filter == "notwatched" {
+		} else if watchFilter == 2 {
 			// remove videos in watchedVideos
 			if len(watchedVideos) > 0 {
 				vidargs = vidargs.Where("video_id IN (?)", difference(subVideoIDs, watchedVideos))
@@ -321,9 +334,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 			ret["PrevPage"] = pageInt - 1
 		}
 
-		if filter != "" {
-			ret["Filter"] = filter
-		}
+		ret["Filter"] = allFilters[0]
 		if sort != "" {
 			ret["Sort"] = sort
 		}
