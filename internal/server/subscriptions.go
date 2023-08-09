@@ -62,7 +62,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 		}
 		watchFilter := 0
 
-		for i, filter := range allFilters {
+		for _, filter := range allFilters {
 			if filter == "watched" {
 				watchFilter = 1
 				continue
@@ -80,10 +80,10 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 					})
 					return
 				}
-				if i == 0 {
+				if filterQuery == "" {
 					filterQuery = filterList[filter]
 				} else {
-					filterQuery = filterQuery + " OR " + filterList[filter]
+					filterQuery = filterQuery + " AND " + filterList[filter]
 				}
 			}
 		}
