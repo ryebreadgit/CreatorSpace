@@ -265,18 +265,6 @@
     });
     {{ end }}
 
-    // iterate over all sponsorBlock segments, if segments overlap, check if they're the same category and merge them if so
-    for (let i = 0; i < sponsorBlock.length; i++) {
-        for (let j = i + 1; j < sponsorBlock.length; j++) {
-            if (sponsorBlock[i]['segmentEnd'] >= sponsorBlock[j]['segmentStart']) {
-                if (sponsorBlock[i]['category'] == sponsorBlock[j]['category']) {
-                    sponsorBlock[i]['segmentEnd'] = sponsorBlock[j]['segmentEnd'];
-                    sponsorBlock.splice(j, 1);
-                }
-            }
-        }
-    }
-
     // If sponsorBlock segments were found, log them to the console
 
     if (sponsorBlock.length == 0) {
