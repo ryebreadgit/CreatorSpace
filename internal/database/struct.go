@@ -508,14 +508,23 @@ type YouTubeApiVideoInfoStructSub struct {
 }
 
 type SponsorBlockRawApi struct {
-	Category      string    `json:"category"`
-	ActionType    string    `json:"actionType"`
-	Segment       []float64 `json:"segment"`
-	UUID          string    `json:"UUID"`
-	VideoDuration float64   `json:"videoDuration"`
-	Locked        int       `json:"locked"`
-	Votes         int       `json:"votes"`
-	Description   string    `json:"description"`
+	SegmentCount int `json:"segmentCount"`
+	Page         int `json:"page"`
+	Segments     []struct {
+		UUID          string  `json:"UUID"`
+		TimeSubmitted int64   `json:"timeSubmitted"`
+		StartTime     float64 `json:"startTime"`
+		EndTime       float64 `json:"endTime"`
+		Category      string  `json:"category"`
+		ActionType    string  `json:"actionType"`
+		Votes         int     `json:"votes"`
+		Views         int     `json:"views"`
+		Locked        int     `json:"locked"`
+		Hidden        int     `json:"hidden"`
+		ShadowHidden  int     `json:"shadowHidden"`
+		UserID        string  `json:"userID"`
+		Description   string  `json:"description"`
+	} `json:"segments"`
 }
 
 type YoutubePlaylistStruct struct {

@@ -1451,7 +1451,7 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 	}
 
 	// Download the sponsorblock segments
-	sponsorUrl := fmt.Sprintf("https://sponsor.ajay.app/api/skipSegments?videoID=%v", videoID)
+	sponsorUrl := fmt.Sprintf("https://sponsor.ajay.app/api/searchSegments?videoID=%v", videoID)
 	resp, err := http.Get(sponsorUrl)
 	if err != nil {
 		return "", err
@@ -1472,7 +1472,7 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 	}
 
 	// unmarshall body into json
-	var segments []database.SponsorBlockRawApi
+	var segments database.SponsorBlockRawApi
 	err = json.Unmarshal(body, &segments)
 	if err != nil {
 		fmt.Printf("Error unmarshalling sponsorblock segments for video id '%v': %v\n", videoID, err)
@@ -1489,8 +1489,10 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 
 	changes := false
 
+	var segmentsToAdd []database.SponsorBlock
+
 	// Loop through the segments and add them to the database if they don't exist
-	for _, segment := range segments {
+	for _, segment := range segments.Segments {
 		// Check if the segment is in the database
 		var inDb bool
 		for _, dbSegment := range dbSegments {
@@ -1501,26 +1503,94 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 		}
 
 		// If the segment is not in the database, add it
-		if !inDb {
+		if !inDb && segment.Votes >= 0 {
 			var newSegment database.SponsorBlock
 
 			newSegment.SegmentID = segment.UUID
 			newSegment.VideoID = videoID
 			newSegment.Category = segment.Category
-			newSegment.SegmentStart = segment.Segment[0]
-			newSegment.SegmentEnd = segment.Segment[1]
+			newSegment.SegmentStart = segment.StartTime
+			newSegment.SegmentEnd = segment.EndTime
 			newSegment.Votes = segment.Votes
 			newSegment.SegmentID = segment.UUID
 			newSegment.FilePath = strings.ReplaceAll(sponsorBlockPath, settings.BaseYouTubePath, "")
 			newSegment.ActionType = segment.ActionType
 
-			err = database.InsertSponsorBlock(newSegment, db)
-			if err != nil {
-				return "", err
-			}
-			fmt.Printf("Added sponsorblock segment %v to database for video %v (%v)\n", segment.UUID, videoID, segment.Category)
-			changes = true
+			segmentsToAdd = append(segmentsToAdd, newSegment)
 		}
+	}
+
+	if len(segmentsToAdd) == 0 {
+		return "", nil
+	}
+
+	// Sort by score
+	sort.Slice(segmentsToAdd, func(i, j int) bool {
+		return segmentsToAdd[i].Votes > segmentsToAdd[j].Votes
+	})
+
+	var segTimeMap = make(map[float64][]float64)
+	for _, segment := range segmentsToAdd {
+		segTimeMap[segment.SegmentStart] = append(segTimeMap[segment.SegmentStart], segment.SegmentEnd)
+		segTimeMap[segment.SegmentStart] = append(segTimeMap[segment.SegmentStart], float64(segment.Votes))
+
+	}
+
+	var segsToRemove []database.SponsorBlock
+	for _, segment := range segmentsToAdd {
+		// Check if the segment overlaps with any other segments
+		for _, seg := range segTimeMap {
+			if segment.Votes < 0 {
+				// Remove the segment
+				segsToRemove = append(segsToRemove, database.SponsorBlock{SegmentID: segment.SegmentID})
+			} else if segment.SegmentStart > seg[0] && segment.SegmentEnd < seg[0] {
+				// Overlaps, check which one has more votes
+				if segment.Votes > int(seg[1]) {
+					// segment has more votes, remove the other segment
+					segsToRemove = append(segsToRemove, database.SponsorBlock{SegmentID: segment.SegmentID})
+				} else {
+					// segment has less votes, remove the segment
+					segsToRemove = append(segsToRemove, database.SponsorBlock{SegmentID: segment.SegmentID})
+				}
+			}
+		}
+	}
+
+	// Do the same for the segments in the database
+	for _, segment := range dbSegments {
+		// Check if the segment overlaps with any existing segments
+		for _, seg := range segTimeMap {
+			if segment.SegmentStart > seg[0] && segment.SegmentEnd < seg[0] {
+				// Overlaps, check which one has more votes
+				if segment.Votes > int(seg[1]) {
+					// segment has more votes, remove the other segment
+					segsToRemove = append(segsToRemove, segment)
+				} else {
+					// segment has less votes, remove the segment
+					segsToRemove = append(segsToRemove, segment)
+				}
+			}
+		}
+	}
+
+	// Remove the segments
+	for _, segment := range segsToRemove {
+		for i, seg := range segmentsToAdd {
+			if seg.SegmentID == segment.SegmentID {
+				segmentsToAdd = append(segmentsToAdd[:i], segmentsToAdd[i+1:]...)
+				break
+			}
+		}
+	}
+
+	// Add the segments to the database
+	for _, newSegment := range segmentsToAdd {
+		err = database.InsertSponsorBlock(newSegment, db)
+		if err != nil {
+			return "", err
+		}
+		fmt.Printf("Added sponsorblock segment %v to database for video %v (%v)\n", newSegment.SegmentID, videoID, newSegment.Category)
+		changes = true
 	}
 
 	// Get all segments in the database for the video, delete any that aren't in our new list
@@ -1532,9 +1602,17 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 	for _, dbSegment := range dbSegments {
 		// Check if the segment is in the new list
 		var inNewList bool
-		for _, segment := range segments {
+		for _, segment := range segments.Segments {
 			if dbSegment.SegmentID == segment.UUID {
 				inNewList = true
+				break
+			}
+		}
+
+		// Check if segment is in delete list, if so set inNewList to false
+		for _, segment := range segsToRemove {
+			if dbSegment.SegmentID == segment.SegmentID {
+				inNewList = false
 				break
 			}
 		}
