@@ -1540,10 +1540,7 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 	for _, segment := range segmentsToAdd {
 		// Check if the segment overlaps with any other segments
 		for _, seg := range segTimeMap {
-			if segment.Votes < 0 {
-				// Remove the segment
-				segsToRemove = append(segsToRemove, database.SponsorBlock{SegmentID: segment.SegmentID})
-			} else if segment.SegmentStart > seg[0] && segment.SegmentEnd < seg[0] {
+			if segment.SegmentStart > seg[0] && segment.SegmentEnd < seg[0] {
 				// Overlaps, check which one has more votes
 				if segment.Votes > int(seg[1]) {
 					// segment has more votes, remove the other segment
