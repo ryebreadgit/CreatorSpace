@@ -281,14 +281,17 @@ hr {
 
 .image-overlay .sponsor-tag.tag-sponsor {
   background-color: #00ff00; /* green */
+  float: left;
 }
 
 .image-overlay .sponsor-tag.tag-selfpromo {
   background-color: #FFA500;  /* orange */
+  float: left;
 }
 
 .image-overlay .sponsor-tag.tag-exclusive_access {
   background-color: #0000ff;  /* blue */
+  float: left;
 }
 
 
