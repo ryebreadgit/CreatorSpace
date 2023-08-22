@@ -184,6 +184,18 @@ func SignupUser(user User, db *gorm.DB) error {
 	return insertUser(user, db)
 }
 
+func UpdateUser(user User, db *gorm.DB) error {
+	// open database and check if user exists, if not, create it
+	if !ifUserExists(user.UserID, db) {
+		return errors.New("record does not exist")
+	}
+	err := db.Model(&user).Where("user_id=?", user.UserID).Updates(user).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func UpdateUserProgress(userID string, progressJsonString string, db *gorm.DB) error {
 
 	// Get the user's progress videos playlist.

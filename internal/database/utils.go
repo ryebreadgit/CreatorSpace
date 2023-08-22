@@ -307,3 +307,22 @@ func ifDownloadQueueItemExists(id string, vidType string, db *gorm.DB) bool {
 		return false
 	}
 }
+
+func ifUserExists(id string, db *gorm.DB) bool {
+	// check if id exists
+	var u User
+
+	if err := db.Select("user_id").Where("user_id = ?", id).First(&u).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Debugf("user_id record #{id} does not exist")
+		} else {
+			log.Errorf("Error, unable to get user_id record #{id} record due to error: %v", err)
+			return true
+		}
+	}
+	if u.UserID != "" {
+		return true
+	} else {
+		return false
+	}
+}

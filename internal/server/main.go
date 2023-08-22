@@ -84,20 +84,7 @@ func Run() {
 		c.HTML(http.StatusOK, "home.tmpl", gin.H{})
 	})
 
-	r.GET("/account", func(c *gin.Context) {
-		// parse the jwt token and get the user id
-		user, err := jwttoken.GetUserFromToken(c)
-		if err != nil {
-			c.HTML(http.StatusUnauthorized, "error.tmpl", gin.H{
-				"ret": 401,
-				"err": "Unauthorized",
-			})
-			return
-		}
-		c.HTML(http.StatusOK, "account.tmpl", gin.H{
-			"User": user,
-		})
-	})
+	r.GET("/account", get_account(db))
 
 	r.GET("/creators/:creator", page_creators_creator(db))
 

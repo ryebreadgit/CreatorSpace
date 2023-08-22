@@ -94,6 +94,8 @@ func Routes(route *gin.Engine) {
 
 			user.POST("/:user_id/subscriptions/:creator_id", apiAddSubscription)
 			user.DELETE("/:user_id/subscriptions/:creator_id", apiRemoveSubscription)
+
+			user.PATCH("/:user_id/password", apiUpdatePassword)
 		}
 
 		yt := api.Group("/youtube")

@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	jwttoken "github.com/ryebreadgit/CreatorSpace/internal/jwt"
+	log "github.com/sirupsen/logrus"
 )
 
 func apiUpdateWatchTime(c *gin.Context) {
@@ -801,6 +802,154 @@ func apiRemoveSubscription(c *gin.Context) {
 		"ret": 200,
 		"data": gin.H{
 			"message": "Added subscription",
+		},
+	})
+}
+
+func apiUpdatePassword(c *gin.Context) {
+	var isAdmin bool
+	reqUser := c.Param("user_id")
+	// get the token from the header
+	token, err := jwttoken.GetToken(c)
+	if err != nil {
+		c.AbortWithStatusJSON(401, gin.H{
+			"ret": 401,
+			"err": "No token provided",
+		})
+
+		c.Abort()
+		return
+	}
+
+	// parse the token
+	parsedToken, err := jwttoken.ParseToken(token, settings.JwtSecret)
+	if err != nil {
+		c.AbortWithStatusJSON(401, gin.H{
+			"ret": 401,
+			"err": "Invalid token signature",
+		})
+
+		c.Abort()
+		return
+	}
+
+	// get the user id from the token
+	userId := parsedToken.Claims.(jwt.MapClaims)["user_id"].(string)
+
+	// Get user from database
+	curUser, err := database.GetUserByID(userId, db.Select("user_id", "account_type"))
+	if err != nil {
+		c.AbortWithStatusJSON(500, gin.H{
+			"ret": 500,
+			"err": "Error getting user",
+		})
+		c.Abort()
+		return
+	}
+
+	if curUser.AccountType == "admin" {
+		isAdmin = true
+	}
+
+	// Check if request user is the same as the user in the token
+	if reqUser != userId {
+		// check token is admin from account_type in token
+		if !isAdmin {
+			c.AbortWithStatusJSON(401, gin.H{
+				"ret": 401,
+				"err": "Unauthorized",
+			})
+
+			c.Abort()
+			return
+		}
+	}
+
+	// Get user from database
+	user, err := database.GetUserByID(userId, db.Select("user_id", "password"))
+	if err != nil {
+		c.AbortWithStatusJSON(500, gin.H{
+			"ret": 500,
+			"err": "Error getting user",
+		})
+		c.Abort()
+		return
+	}
+
+	// parse json
+	bodyAsByteArray, _ := io.ReadAll(c.Request.Body)
+	// convert json to array { oldPassword, newPassword }
+	var passwords struct{ OldPassword, NewPassword string }
+	err = json.Unmarshal(bodyAsByteArray, &passwords)
+	if err != nil {
+		c.AbortWithStatusJSON(400, gin.H{
+			"ret": 400,
+			"err": "Invalid request body",
+		})
+		c.Abort()
+		return
+	}
+
+	// check if passwords is empty
+	if passwords.NewPassword == "" {
+		c.AbortWithStatusJSON(400, gin.H{
+			"ret": 400,
+			"err": "Password is empty",
+		})
+
+		c.Abort()
+		return
+	}
+
+	// check if old password is correct
+	if !database.CheckPasswordHash(passwords.OldPassword, user.Password) {
+		if !isAdmin || (isAdmin && reqUser == userId) {
+			c.AbortWithStatusJSON(400, gin.H{
+				"ret": 400,
+				"err": "Old password is incorrect",
+			})
+
+			c.Abort()
+			return
+		}
+	}
+
+	// hash the new password
+	hashedPassword, err := database.HashPassword(passwords.NewPassword)
+	if err != nil {
+		c.AbortWithStatusJSON(500, gin.H{
+			"ret": 500,
+			"err": "Error hashing password",
+		})
+		c.Abort()
+		return
+	}
+
+	// update the user's password
+	user.Password = hashedPassword
+	err = database.UpdateUser(user, db)
+	if err != nil {
+		c.AbortWithStatusJSON(500, gin.H{
+			"ret": 500,
+			"err": "Error updating password",
+		})
+		c.Abort()
+		return
+	}
+
+	// Revoke jwt token
+	jwttoken.DeleteToken(c)
+
+	if reqUser != userId {
+		log.Warn("Admin " + userId + " updated the password for user " + reqUser)
+	} else {
+		log.Info("User " + userId + " updated their password")
+	}
+
+	c.JSON(200, gin.H{
+		"ret": 200,
+		"data": gin.H{
+			"message": "Password updated",
 		},
 	})
 }
