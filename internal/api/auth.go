@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	jwttoken "github.com/ryebreadgit/CreatorSpace/internal/jwt"
@@ -68,11 +70,16 @@ func apiUserLogout(c *gin.Context) (string, error) {
 // apiUserSignup create a new user. Use SignupUser function from database package
 func apiUserSignup(c *gin.Context) (string, error) {
 	// get user from db
-	var user = database.User{}
+	var user = database.User{AccountType: "user"}
 	err := c.ShouldBind(&user)
 	if err != nil {
 		return "", err
 	}
+
+	if !settings.OpenRegister {
+		return "", fmt.Errorf("registration is closed")
+	}
+
 	err = database.SignupUser(user, db)
 	if err != nil {
 		return "", err
