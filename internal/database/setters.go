@@ -181,6 +181,11 @@ func SignupUser(user User, db *gorm.DB) error {
 		user.AccountType = "user"
 	}
 
+	if user.SponsorBlockCategories == "" {
+		user.SponsorBlockCategories = "sponsor"
+		user.SponsorBlockEnabled = true
+	}
+
 	return insertUser(user, db)
 }
 
