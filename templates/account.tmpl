@@ -55,6 +55,20 @@
                 margin-left: auto;
                 margin-right: auto;
             }
+            @media screen and (max-width: 768px) {
+                .thumbnail img {
+                    width: 50px;
+                    height: 50px;
+                    object-fit: cover;
+                    border-radius: 50%;
+                    margin: 0.5rem;
+                }
+                .sub-text {
+                    font-size: 12px;
+                    margin-bottom: 1rem;
+                    margin-top: -2rem;
+                }
+            }
         </style>
     </head>
     <body>
@@ -86,40 +100,41 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
                 <!-- Manage Subscriptions -->
                 
-                <div class="subscription">
-                    <div class="row">
-                        <div class="col-12">
-                            <h2>Manage Subscriptions</h2>
-                        </div>
+            <div class="row">
+                <div class="col-12">
+                    
+                    <div class="subscription">
+                        <h2 style="margin-top: 1rem;">Manage Subscriptions</h2>
                         {{ range $subscription := .Subscriptions }}
-                                <div class="col-12">
-                                        <div class="row align-items-center sub-item">
-                                            <div class="col-6 col-md-2">
-                                                <div class="thumbnail-box">
-                                                    <div class="image-container">
-                                                        <div class="thumbnail">
-                                                            <img src="/api/youtube/creators/{{$subscription.ChannelID}}/thumbnail" alt="{{$subscription.Name}}">
-                                                                <div class="remove-sub">
-                                                                    <span class="minus" onclick="deleteSubscription('{{$.User}}', '{{$subscription.ChannelID}}', '{{$subscription.Name}}')">
-                                                                        Unsubscribe                                                                 
-                                                                    </span>
-                                                                </div>
-                                                            </img>
+                            <div class="col-12">
+                                <div class="row align-items-center sub-item">
+                                    <div class="col-6 col-md-2">
+                                        <div class="thumbnail-box">
+                                            <div class="image-container">
+                                                <div class="thumbnail">
+                                                    <img src="/api/youtube/creators/{{$subscription.ChannelID}}/thumbnail" alt="{{$subscription.Name}}">
+                                                        <div class="remove-sub">
+                                                            <span class="minus" onclick="deleteSubscription('{{$.User}}', '{{$subscription.ChannelID}}', '{{$subscription.Name}}')">
+                                                                Unsubscribe                                                                 
+                                                            </span>
                                                         </div>
-                                                    </div>
+                                                    </img>
                                                 </div>
                                             </div>
-                                            
-                                            <div class="col-12 col-md-8">
-                                                <span>{{$subscription.Name}}</span>
-                                                    | 
-                                                <span>{{$subscription.ChannelID}}</span>
-                                            </div>
                                         </div>
+                                    </div>
+                                    
+                                    <div class="col-12 col-md-8 sub-text">
+                                        <span>{{$subscription.Name}}</span>
+                                            | 
+                                        <span>{{$subscription.ChannelID}}</span>
+                                    </div>
                                 </div>
+                            </div>
                         {{ end }}
                     </div>
                 </div>
