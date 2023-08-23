@@ -110,8 +110,6 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 			sortQuery = sortList[sort]
 		}
 
-		subargs := db.Select("video_id", "channel_id")
-
 		// get watched videos from database
 		watchedVideos, err := database.GetPlaylistByUserID(user, "Completed Videos", db)
 		if err != nil {
@@ -131,6 +129,8 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 			})
 			return
 		}
+
+		subargs := db.Select("video_id", "channel_id")
 
 		// Add subscriptions to query
 		if len(userSubscriptions) > 0 {
@@ -224,7 +224,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 
 		nextPageFound := false
 		if len(videos) == 20 {
-			tmp, err := database.GetAllVideos(db.Select("video_id").Order("published_at DESC").Limit(1).Offset(pageInt * 20))
+			tmp, err := database.GetAllVideos(vidargs.Select("video_id").Limit(1).Offset(pageInt * 20))
 			if err == nil && len(tmp) > 0 {
 				nextPageFound = true
 			}

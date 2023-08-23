@@ -57,12 +57,14 @@
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="filterDropdown">
                         <li><a class="dropdown-item" href="javascript:void(0)" data-value="all">All</a></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="video">Video</a></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="short">Short</a></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="public">Public</a></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="unlisted">Unlisted</a></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="private">Private</a></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="unavailable">Unavailable</a></li>
+							<li><a class="dropdown-item" href="javascript:void(0)" data-value="video">Video</a></li>
+							<li><a class="dropdown-item" href="javascript:void(0)" data-value="short">Short</a></li>
+							<li><a class="dropdown-item" href="javascript:void(0)" data-value="watched">Watched</a></li>
+							<li><a class="dropdown-item" href="javascript:void(0)" data-value="notwatched">Not Watched</a></li>
+							<li><a class="dropdown-item" href="javascript:void(0)" data-value="public">Public</a></li>
+							<li><a class="dropdown-item" href="javascript:void(0)" data-value="unlisted">Unlisted</a></li>
+							<li><a class="dropdown-item" href="javascript:void(0)" data-value="private">Private</a></li>
+							<li><a class="dropdown-item" href="javascript:void(0)" data-value="unavailable">Unavailable</a></li>
                     </ul>
                 </div>
             </div>
@@ -157,11 +159,11 @@
 <section id="page-select">
       {{ if .PrevPage }}
       {{ if .Filter }}
-      {{ if .Sort }}
-          <a href="/creators/{{.Creator.ChannelID}}?page={{.PrevPage}}&filter={{ .Filter }}&sort={{ .Sort }}">Back Page</a>
-      {{ else }}
-          <a href="/creators/{{.Creator.ChannelID}}?page={{.PrevPage}}&filter={{ .Filter }}">Back Page</a>
-      {{ end }}
+        {{ if .Sort }}
+            <a href="/creators/{{.Creator.ChannelID}}?page={{.PrevPage}}&sort={{ .Sort }}">Back Page</a>
+        {{ else }}
+            <a href="/creators/{{.Creator.ChannelID}}?page={{.PrevPage}}">Back Page</a>
+        {{ end }}
       {{ else }}
           {{ if .Sort }}
               <a href="/creators/{{.Creator.ChannelID}}?page={{.PrevPage}}&sort={{ .Sort }}">Back Page</a>
@@ -178,9 +180,9 @@
           <span> | </span>
           {{ if .Filter }}
           {{ if .Sort }}
-              <a href="/creators/{{.Creator.ChannelID}}?page={{.NextPage}}&filter={{ .Filter }}&sort={{ .Sort }}">Next Page</a>
+              <a href="/creators/{{.Creator.ChannelID}}?page={{.NextPage}}{{ .Filter }}&sort={{ .Sort }}">Next Page</a>
           {{ else }}
-              <a href="/creators/{{.Creator.ChannelID}}?page={{.NextPage}}&filter={{ .Filter }}">Next Page</a>
+              <a href="/creators/{{.Creator.ChannelID}}?page={{.NextPage}}{{ .Filter }}">Next Page</a>
           {{ end }}
           {{ else }}
               {{ if .Sort }}

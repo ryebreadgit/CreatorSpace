@@ -31,24 +31,37 @@ func page_library(db *gorm.DB) gin.HandlerFunc {
 
 		// check filter
 		var filterQuery string
-		filter := c.Query("filter")
-		if filter == "" {
-			filter = "all"
-		}
-
 		filterList := getFilterList()
+		allFilters, ok := c.GetQueryArray("filter")
+		if !ok {
+			allFilters = []string{"all"}
+		}
+		watchFilter := 0
 
-		if filter != "" {
-			// check if filter is valid
-			if _, ok := filterList[filter]; !ok {
-				// Give invalid filter error
-				c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-					"ret": 404,
-					"err": "Invalid filter type",
-				})
-				return
+		for _, filter := range allFilters {
+			if filter == "watched" {
+				watchFilter = 1
+				continue
+			} else if filter == "notwatched" {
+				watchFilter = 2
+				continue
 			}
-			filterQuery = filterList[filter]
+			if filter != "" {
+				// check if filter is valid
+				if _, ok := filterList[filter]; !ok {
+					// Give invalid filter error
+					c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
+						"ret": 404,
+						"err": "Invalid filter type: " + filter,
+					})
+					return
+				}
+				if filterQuery == "" {
+					filterQuery = filterList[filter]
+				} else {
+					filterQuery = filterQuery + " AND " + filterList[filter]
+				}
+			}
 		}
 
 		// check sort
@@ -58,14 +71,7 @@ func page_library(db *gorm.DB) gin.HandlerFunc {
 			sort = "newest"
 		}
 
-		sortList := map[string]string{
-			"newest":     "published_at DESC, id DESC",
-			"oldest":     "published_at ASC, id ASC",
-			"mostviews":  "CAST(views AS int) DESC, id DESC",
-			"leastviews": "CAST(views AS int) ASC, id ASC",
-			"mostlikes":  "CAST(likes AS int) DESC, id DESC",
-			"leastlikes": "CAST(likes AS int) ASC, id ASC",
-		}
+		sortList := getSortList()
 
 		if sort != "" {
 			// check if sort is valid
@@ -78,49 +84,6 @@ func page_library(db *gorm.DB) gin.HandlerFunc {
 				return
 			}
 			sortQuery = sortList[sort]
-		}
-
-		vidargs := db.Select("title", "video_id", "views", "length", "published_at", "availability", "channel_id", "channel_title").Limit(25).Offset((pageInt - 1) * 25)
-		if filterQuery != "" {
-			vidargs = vidargs.Where(filterQuery)
-		}
-		if sortQuery != "" {
-			// when casting we may get non-int values, so we need to filter those out
-			if sort == "mostviews" || sort == "leastviews" {
-				vidargs = vidargs.Where("views != ''")
-				vidargs = vidargs.Where("views NOT like '%[^0-9]%'")
-			}
-			if sort == "mostlikes" || sort == "leastlikes" {
-				vidargs = vidargs.Where("likes != ''").Where("likes != 'None'")
-				vidargs = vidargs.Where("likes NOT like '%[^0-9]%'")
-			}
-			vidargs = vidargs.Order(sortQuery)
-		}
-
-		videos, err := database.GetAllVideos(vidargs)
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "No videos found",
-			})
-			return
-		}
-
-		if len(videos) == 0 {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "No videos found",
-			})
-			return
-		}
-
-		// check if there is a next page, even if there's 25 videos, there might not be a next page
-		nextPageFound := false
-		if len(videos) == 25 {
-			tmp, err := database.GetAllVideos(db.Select("video_id").Order("published_at DESC").Limit(1).Offset(pageInt * 25))
-			if err == nil && len(tmp) > 0 {
-				nextPageFound = true
-			}
 		}
 
 		// get user from jwt, parse it and get the user from the database
@@ -162,6 +125,104 @@ func page_library(db *gorm.DB) gin.HandlerFunc {
 				"err": "Unable to get watched videos",
 			})
 			return
+		}
+
+		vididquery := db.Select("video_id")
+		if filterQuery != "" {
+			vididquery = vididquery.Where(filterQuery)
+		}
+		if sortQuery != "" {
+			if sort == "mostviews" || sort == "leastviews" {
+				vididquery = vididquery.Where("views != ''")
+				vididquery = vididquery.Where("views NOT like '%[^0-9]%'")
+			}
+			if sort == "mostlikes" || sort == "leastlikes" {
+				vididquery = vididquery.Where("likes != ''").Where("likes != 'None'")
+				vididquery = vididquery.Where("likes NOT like '%[^0-9]%'")
+			}
+			vididquery = vididquery.Order(sortQuery)
+		}
+
+		// vididquery.Limit(2500).Offset((pageInt - 1) * 25
+		vidIds, err := database.GetAllVideos(vididquery)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{
+				"ret": http.StatusInternalServerError,
+				"err": fmt.Sprintf("Error getting videos: %v", err),
+			})
+			return
+		}
+
+		subVideoIDs := make([]string, len(vidIds))
+		for i, video := range vidIds {
+			subVideoIDs[i] = video.VideoID
+		}
+
+		vidargs := db.Select("title", "video_id", "views", "length", "published_at", "availability", "channel_id", "channel_title").Limit(25).Offset((pageInt - 1) * 25)
+
+		if watchFilter == 1 {
+			// only show videos in watchedVideos
+			if len(watchedVideos) > 0 {
+				vidargs = vidargs.Where("video_id IN (?)", intersection(subVideoIDs, watchedVideos))
+			} else {
+				// No watched videos found
+				c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
+					"ret": 404,
+					"err": "No watched videos found",
+				})
+				return
+			}
+		} else if watchFilter == 2 {
+			// remove videos in watchedVideos
+			if len(watchedVideos) > 0 {
+				vidargs = vidargs.Where("video_id IN (?)", difference(subVideoIDs, watchedVideos))
+			} else {
+				// All videos are unwatched
+				vidargs = vidargs.Where("video_id IN (?)", subVideoIDs)
+			}
+		} else {
+			vidargs = vidargs.Where("video_id IN (?)", subVideoIDs)
+		}
+
+		if filterQuery != "" {
+			vidargs = vidargs.Where(filterQuery)
+		}
+		if sortQuery != "" {
+			if sort == "mostviews" || sort == "leastviews" {
+				vidargs = vidargs.Where("views != ''")
+				vidargs = vidargs.Where("views NOT like '%[^0-9]%'")
+			}
+			if sort == "mostlikes" || sort == "leastlikes" {
+				vidargs = vidargs.Where("likes != ''").Where("likes != 'None'")
+				vidargs = vidargs.Where("likes NOT like '%[^0-9]%'")
+			}
+			vidargs = vidargs.Order(sortQuery)
+		}
+
+		videos, err := database.GetAllVideos(vidargs)
+		if err != nil {
+			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
+				"ret": 404,
+				"err": "No videos found",
+			})
+			return
+		}
+
+		if len(videos) == 0 {
+			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
+				"ret": 404,
+				"err": "No videos found",
+			})
+			return
+		}
+
+		// check if there is a next page, even if there's 25 videos, there might not be a next page
+		nextPageFound := false
+		if len(videos) >= 25 {
+			tmp, err := database.GetAllVideos(vidargs.Select("video_id").Limit(1).Offset(pageInt * 25))
+			if err == nil && len(tmp) > 0 {
+				nextPageFound = true
+			}
 		}
 
 		if len(watchedVideos) > 0 {
@@ -260,9 +321,8 @@ func page_library(db *gorm.DB) gin.HandlerFunc {
 		if page != "1" {
 			ret["PrevPage"] = pageInt - 1
 		}
-		if filter != "" {
-			ret["Filter"] = filter
-		}
+
+		ret["Filter"] = allFilters[0]
 		if sort != "" {
 			ret["Sort"] = sort
 		}
