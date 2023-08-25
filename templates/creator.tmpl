@@ -180,9 +180,9 @@
           <span> | </span>
           {{ if .Filter }}
           {{ if .Sort }}
-              <a href="/creators/{{.Creator.ChannelID}}?page={{.NextPage}}{{ .Filter }}&sort={{ .Sort }}">Next Page</a>
+              <a href="/creators/{{.Creator.ChannelID}}?page={{.NextPage}}&filter={{ .Filter }}&sort={{ .Sort }}">Next Page</a>
           {{ else }}
-              <a href="/creators/{{.Creator.ChannelID}}?page={{.NextPage}}{{ .Filter }}">Next Page</a>
+              <a href="/creators/{{.Creator.ChannelID}}?page={{.NextPage}}&filter={{ .Filter }}">Next Page</a>
           {{ end }}
           {{ else }}
               {{ if .Sort }}
