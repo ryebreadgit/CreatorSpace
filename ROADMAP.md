@@ -12,7 +12,8 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 - [ ] Cannot import existing library, only recommended for new setups for now
 - [ ] Video download approval is required for non-admin users but there is no approval process
 - [ ] Videos deleted from disk are not removed from library
-- [ ] Videos from 'Various Creators' are not moved to the correct creator if the creator is added later
+- [x] Videos from 'Various Creators' are not moved to the correct creator if the creator is added later
+  - [ ] Some metadata may not be moved correctly
 - [ ] Mobile layout needs to be improved
 - [ ] Needs refactoring to all hell
 
@@ -40,17 +41,12 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 - [x] User Registration
 - [x] User Login
 - [x] JWT Authentication
-- [ ] User Settings
+- [x] User Settings
 - [ ] User Management
-  - [ ] Add new users
-  - [ ] Delete existing users
-  - [ ] Modify existing users permissions
-- [ ] User Groups
-  - [ ] Create new groups
-  - [ ] Delete existing groups
-  - [ ] Modify existing groups permissions
-  - [ ] Add users to groups
-  - [ ] Remove users from groups
+  - [x] Add new users
+  - [x] Delete existing users
+  - [x] Modify existing users permissions
+  - [ ] Add UI page for user management
 
   ### Video Management
 - [x] Video Library
@@ -105,11 +101,11 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
   - [ ] Implement chat downloading
   - [ ] Fetch metadata via YT-DLP
   - [ ] Channel downloading task
-- [ ] Add support for Twitter
-  - [ ] Download tweets
-  - [ ] Download images
-  - [ ] Download videos
-  - [ ] Account downloading task
+- [x] Add support for Twitter (On hold until Twitter's API is fixed)
+  - [x] Download tweets
+  - [x] Download images
+  - [x] Download videos
+  - [x] Account downloading task
   - [ ] Hashtag downloading task
   - [ ] Tweet view page
 
