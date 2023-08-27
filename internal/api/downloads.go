@@ -63,14 +63,9 @@ func apiDownloadVideo(c *gin.Context) {
 	}
 
 	// If the video type is video get metadata. If the video creator is not in the database, set the creator id 000.
-	if vidtype == "video" || vidtype == "playlist" {
+	if vidtype == "video" {
 		var cname string
-		var vidurl string
-		if vidtype == "video" {
-			vidurl = fmt.Sprintf("https://www.youtube.com/watch?v=%s", videoid)
-		} else if vidtype == "playlist" {
-			vidurl = fmt.Sprintf("https://www.youtube.com/playlist?list=%s", videoid)
-		}
+		vidurl := fmt.Sprintf("https://www.youtube.com/watch?v=%s", videoid)
 		metadata, err := tasking.GetYouTubeMetadata(vidurl, false)
 		if err != nil {
 			c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": err.Error()})
