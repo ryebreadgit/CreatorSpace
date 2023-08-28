@@ -201,6 +201,23 @@ func UpdateUser(user User, db *gorm.DB) error {
 	return nil
 }
 
+func DeleteUser(userID string, db *gorm.DB) error {
+	// open database and check if user exists, if not, create it
+	if !ifUserExists(userID, db) {
+		return errors.New("record does not exist")
+	}
+	err := db.Delete(&User{}, "user_id = ?", userID).Error
+	if err != nil {
+		return err
+	}
+	// Delete the user's playlists
+	err = db.Delete(&Playlist{}, "user_id = ?", userID).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func UpdateUserProgress(userID string, progressJsonString string, db *gorm.DB) error {
 
 	// Get the user's progress videos playlist.

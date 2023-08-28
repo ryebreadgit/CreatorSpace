@@ -326,3 +326,7 @@ func ifUserExists(id string, db *gorm.DB) bool {
 		return false
 	}
 }
+
+func GetValidUserTypes() []string {
+	return []string{"admin", "user", "api"}
+}

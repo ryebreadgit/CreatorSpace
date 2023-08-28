@@ -167,7 +167,6 @@ type User struct {
 	UserID      string
 	Username    string
 	Password    string
-	Email       string
 	AccountType string
 
 	// User settings

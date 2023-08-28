@@ -74,3 +74,31 @@ func setUserMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func isAdminMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userData, exists := c.Get("user")
+		if !exists {
+			c.HTML(http.StatusUnauthorized, "error.tmpl", gin.H{
+				"ret": 401,
+				"err": "Unauthorized",
+			})
+			c.Abort()
+			return
+		}
+
+		user := userData.(database.User)
+
+		if user.AccountType != "admin" {
+			c.HTML(http.StatusUnauthorized, "error.tmpl", gin.H{
+				"ret": 401,
+				"err": "Unauthorized",
+			})
+			c.Abort()
+			return
+		}
+
+		// Continue with the next handler in the chain
+		c.Next()
+	}
+}

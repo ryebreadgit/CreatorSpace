@@ -807,7 +807,6 @@ func apiRemoveSubscription(c *gin.Context) {
 }
 
 func apiUpdatePassword(c *gin.Context) {
-	var isAdmin bool
 	reqUser := c.Param("user_id")
 	// get the token from the header
 	token, err := jwttoken.GetToken(c)
@@ -836,33 +835,15 @@ func apiUpdatePassword(c *gin.Context) {
 	// get the user id from the token
 	userId := parsedToken.Claims.(jwt.MapClaims)["user_id"].(string)
 
-	// Get user from database
-	curUser, err := database.GetUserByID(userId, db.Select("user_id", "account_type"))
-	if err != nil {
-		c.AbortWithStatusJSON(500, gin.H{
-			"ret": 500,
-			"err": "Error getting user",
-		})
-		c.Abort()
-		return
-	}
-
-	if curUser.AccountType == "admin" {
-		isAdmin = true
-	}
-
 	// Check if request user is the same as the user in the token
 	if reqUser != userId {
-		// check token is admin from account_type in token
-		if !isAdmin {
-			c.AbortWithStatusJSON(401, gin.H{
-				"ret": 401,
-				"err": "Unauthorized",
-			})
+		c.AbortWithStatusJSON(401, gin.H{
+			"ret": 401,
+			"err": "Unauthorized",
+		})
 
-			c.Abort()
-			return
-		}
+		c.Abort()
+		return
 	}
 
 	// Get user from database
@@ -903,15 +884,13 @@ func apiUpdatePassword(c *gin.Context) {
 
 	// check if old password is correct
 	if !database.CheckPasswordHash(passwords.OldPassword, user.Password) {
-		if !isAdmin || (isAdmin && reqUser == userId) {
-			c.AbortWithStatusJSON(400, gin.H{
-				"ret": 400,
-				"err": "Old password is incorrect",
-			})
+		c.AbortWithStatusJSON(400, gin.H{
+			"ret": 400,
+			"err": "Old password is incorrect",
+		})
 
-			c.Abort()
-			return
-		}
+		c.Abort()
+		return
 	}
 
 	// hash the new password

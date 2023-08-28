@@ -125,6 +125,9 @@ func Run() {
 
 	r.GET("/watch/:video_id", page_watch(db))
 
+	r.Use(isAdminMiddleware())
+	r.GET("/user-management", page_user_management(db))
+
 	// share all files in static folder to /assets
 
 	port := os.Getenv("PORT")

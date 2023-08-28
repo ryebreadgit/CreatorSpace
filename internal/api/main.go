@@ -131,6 +131,18 @@ func Routes(route *gin.Engine) {
 			auth.POST("/register", wrapper(apiUserSignup))
 		}
 
+		admin := api.Group("/admin")
+		{
+			admin.Use(jwttoken.JwtMiddleware())
+			admin.Use(AdminMiddleware())
+			admin.GET("/users", apiGetAllUsers)
+			admin.POST("/users", apiCreateUser)
+			admin.GET("/users/:user_id", apiGetUser)
+			admin.DELETE("/users/:user_id", apiDeleteUser)
+			admin.PATCH("/users/:user_id/password", apiUpdateUserPassword)
+			admin.PATCH("/users/:user_id/role", apiUpdateUserRole)
+		}
+
 	}
 }
 
