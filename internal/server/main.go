@@ -78,10 +78,22 @@ func Run() {
 	// require jwt token for all below routes
 	r.Use(notLoggedInMiddleware(db))
 	r.Use(jwttoken.JwtMiddleware())
+	r.Use(setUserMiddleware())
 	// reroute only 401 errors to login page
 
 	r.GET("/home", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "home.tmpl", gin.H{})
+		userData, exists := c.Get("user")
+		if !exists {
+			// Redirect to login
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
+			c.Abort()
+			return
+		}
+
+		user := userData.(database.User)
+		c.HTML(http.StatusOK, "home.tmpl", gin.H{
+			"User": user,
+		})
 	})
 
 	r.GET("/account", get_account(db))
@@ -95,7 +107,18 @@ func Run() {
 	r.GET("/subscriptions", page_subscriptions(db))
 
 	r.GET("/download", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "download.tmpl", gin.H{})
+		userData, exists := c.Get("user")
+		if !exists {
+			// Redirect to login
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
+			c.Abort()
+			return
+		}
+
+		user := userData.(database.User)
+		c.HTML(http.StatusOK, "download.tmpl", gin.H{
+			"User": user,
+		})
 	})
 
 	r.GET("/download/:video_type/:video_id/", getDownloadPage)

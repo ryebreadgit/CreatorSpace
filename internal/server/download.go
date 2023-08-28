@@ -16,6 +16,16 @@ func getDownloadPage(c *gin.Context) {
 	videoid := c.Param("video_id")
 	vidtype := c.Param("video_type")
 
+	userData, exists := c.Get("user")
+	if !exists {
+		// Redirect to login
+		c.Redirect(http.StatusTemporaryRedirect, "/login")
+		c.Abort()
+		return
+	}
+
+	user := userData.(database.User)
+
 	// get youtube metadata for video id
 	var url string
 	switch vidtype {
@@ -108,6 +118,7 @@ func getDownloadPage(c *gin.Context) {
 		"ID":          videoid,
 		"Type":        vidtype,
 		"ServerPath":  settings.ServerPath,
+		"User":        user,
 	})
 
 }

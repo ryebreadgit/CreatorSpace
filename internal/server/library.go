@@ -6,10 +6,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
-	jwttoken "github.com/ryebreadgit/CreatorSpace/internal/jwt"
 	"gorm.io/gorm"
 )
 
@@ -86,39 +84,18 @@ func page_library(db *gorm.DB) gin.HandlerFunc {
 			sortQuery = sortList[sort]
 		}
 
-		// get user from jwt, parse it and get the user from the database
-		token, err := jwttoken.GetToken(c)
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Unable to get token",
-			})
+		userData, exists := c.Get("user")
+		if !exists {
+			// Redirect to login
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
+			c.Abort()
 			return
 		}
 
-		parsedToken, err := jwttoken.ParseToken(token, settings.JwtSecret)
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Unable to parse token",
-			})
-			return
-		}
-
-		// get user_id from parsed token using jwt package
-		claims, ok := parsedToken.Claims.(jwt.MapClaims)
-		if !ok {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Unable to get claims",
-			})
-			return
-		}
-
-		user := claims["user_id"].(string)
+		user := userData.(database.User)
 
 		// get watched videos from database
-		watchedVideos, err := database.GetPlaylistByUserID(user, "Completed Videos", db)
+		watchedVideos, err := database.GetPlaylistByUserID(user.UserID, "Completed Videos", db)
 		if err != nil {
 			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
 				"ret": 404,
@@ -237,7 +214,7 @@ func page_library(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		// get video progress
-		allProg, err := database.GetAllVideoProgress(user, db)
+		allProg, err := database.GetAllVideoProgress(user.UserID, db)
 		if err != nil {
 			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
 				"ret": 404,
@@ -310,7 +287,7 @@ func page_library(db *gorm.DB) gin.HandlerFunc {
 
 		ret := gin.H{
 			"Videos":     videos,
-			"UserID":     user,
+			"User":       user,
 			"ServerPath": settings.ServerPath,
 		}
 

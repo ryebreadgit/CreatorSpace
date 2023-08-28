@@ -18,7 +18,7 @@
 	<meta property="og:image" content="/api/youtube/creators/{{.Creator.ChannelID}}/thumbnail">
 </head>
 <body>
-{{template "navbar.tmpl" }}
+{{template "navbar.tmpl" .}}
 
 <div class="image-header">
     <img src="/api/youtube/creators/{{.Creator.ChannelID}}/banner" alt="Creator Banner Image">
@@ -230,7 +230,7 @@
         descriptionText.innerHTML = description;
     }
     
-var user_id = '{{.UserID}}'; // Replace with the actual user ID
+var user_id = '{{.User.UserID }}'; // Replace with the actual user ID
 var creator_id = '{{.Creator.ChannelID}}'; // Replace with the actual creator ID
 var creator_title = '{{.Creator.Name}}'; // Replace with the actual creator title
 
@@ -281,7 +281,7 @@ var creator_title = '{{.Creator.Name}}'; // Replace with the actual creator titl
 
     function sendCompletedRequestAlert(video_id, video_title, data) {
         let xhr = new XMLHttpRequest();
-        let user_id = "{{.UserID}}";
+        let user_id = "{{.User.UserID}}";
         xhr.open("POST", `/api/user/${user_id}/progress/${video_id}/complete`, true);
         xhr.send();
 		// Get the image container and add <span class="watched-text"></span>

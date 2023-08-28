@@ -7,25 +7,24 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
-	jwttoken "github.com/ryebreadgit/CreatorSpace/internal/jwt"
 	"gorm.io/gorm"
 )
 
 func get_account(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		// parse the jwt token and get the user id
-		user, err := jwttoken.GetUserFromToken(c)
-		if err != nil {
-			c.HTML(http.StatusUnauthorized, "error.tmpl", gin.H{
-				"ret": 401,
-				"err": "Unauthorized",
-			})
+		userData, exists := c.Get("user")
+		if !exists {
+			// Redirect to login
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
+			c.Abort()
 			return
 		}
 
+		user := userData.(database.User)
+
 		// Get the user's subscriptions
-		subs, err := database.GetPlaylistByUserID(user, "Subscriptions", db)
+		subs, err := database.GetPlaylistByUserID(user.UserID, "Subscriptions", db)
 		if err != nil {
 			c.AbortWithStatusJSON(500, gin.H{
 				"ret": 500,

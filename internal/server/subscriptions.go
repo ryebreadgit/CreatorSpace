@@ -6,37 +6,23 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
-	jwttoken "github.com/ryebreadgit/CreatorSpace/internal/jwt"
 	"gorm.io/gorm"
 )
 
 func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		cookie, err := c.Cookie("jwt-token")
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Error getting token",
-			})
+		userData, exists := c.Get("user")
+		if !exists {
+			// Redirect to login
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
+			c.Abort()
 			return
 		}
 
-		// parse jwt token
-		parsedToken, err := jwttoken.ParseToken(cookie, settings.JwtSecret)
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Error parsing token",
-			})
-			return
-		}
-
-		claims := parsedToken.Claims.(jwt.MapClaims)
-		user := claims["user_id"].(string)
+		user := userData.(database.User)
 
 		page := c.Query("page")
 
@@ -111,7 +97,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		// get watched videos from database
-		watchedVideos, err := database.GetPlaylistByUserID(user, "Completed Videos", db)
+		watchedVideos, err := database.GetPlaylistByUserID(user.UserID, "Completed Videos", db)
 		if err != nil {
 			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
 				"ret": 404,
@@ -121,7 +107,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		// Get the user's subscriptions
-		userSubscriptions, err := database.GetPlaylistByUserID(user, "Subscriptions", db)
+		userSubscriptions, err := database.GetPlaylistByUserID(user.UserID, "Subscriptions", db)
 		if err != nil {
 			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
 				"ret": 404,
@@ -250,7 +236,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		// get video progress
-		allProg, err := database.GetAllVideoProgress(user, db)
+		allProg, err := database.GetAllVideoProgress(user.UserID, db)
 		if err != nil {
 			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
 				"ret": 404,
@@ -322,7 +308,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 
 		ret := gin.H{
 			"Videos":     videos,
-			"UserID":     user,
+			"User":       user,
 			"ServerPath": settings.ServerPath,
 		}
 

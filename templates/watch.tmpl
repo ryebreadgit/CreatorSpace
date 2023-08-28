@@ -27,7 +27,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-{{template "navbar.tmpl" }}
+{{template "navbar.tmpl" .}}
 
 {{define "comment"}}
     <div class="comment">
@@ -424,7 +424,7 @@ theaterModeButton.addEventListener('click', function () {
 
     function updateSponsorblockSettings(data) {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/user/{{.UserID}}/sponsorblock');
+        xhr.open('POST', '/api/user/{{.User.UserID}}/sponsorblock');
         // data expecting PostForm("sponsorblockEnabled")
         xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
         xhr.send("sponsorblockEnabled=" + data);
@@ -475,7 +475,7 @@ theaterModeButton.addEventListener('click', function () {
 
     function sendCompletedRequest() {
         let xhr = new XMLHttpRequest();
-        let user_id = "{{.UserID}}";
+        let user_id = "{{.User.UserID}}";
         let video_id = "{{.Video.VideoID}}";
         xhr.open("POST", `/api/user/${user_id}/progress/${video_id}/complete`, true);
         xhr.send();
@@ -544,7 +544,7 @@ theaterModeButton.addEventListener('click', function () {
 
         // send request to server to update the user's progress for the current video. /api/user/${user_id}/progress/${video_id} is a POST request that takes in the video ID and the current time of the video
         let xhr = new XMLHttpRequest();
-        let user_id = "{{.UserID}}";
+        let user_id = "{{.User.UserID}}";
         let video_id = "{{.Video.VideoID}}";
         xhr.open("POST", `/api/user/${user_id}/progress/${video_id}`, true);
 

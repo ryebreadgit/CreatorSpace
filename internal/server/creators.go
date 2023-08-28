@@ -8,10 +8,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
-	jwttoken "github.com/ryebreadgit/CreatorSpace/internal/jwt"
 	"gorm.io/gorm"
 )
 
@@ -89,39 +87,18 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 			sortQuery = sortList[sort]
 		}
 
-		// get user from jwt, parse it and get the user from the database
-		token, err := jwttoken.GetToken(c)
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Unable to get token",
-			})
+		userData, exists := c.Get("user")
+		if !exists {
+			// Redirect to login
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
+			c.Abort()
 			return
 		}
 
-		parsedToken, err := jwttoken.ParseToken(token, settings.JwtSecret)
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Unable to parse token",
-			})
-			return
-		}
-
-		// get user_id from parsed token using jwt package
-		claims, ok := parsedToken.Claims.(jwt.MapClaims)
-		if !ok {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Unable to get claims",
-			})
-			return
-		}
-
-		user := claims["user_id"].(string)
+		user := userData.(database.User)
 
 		// get watched videos from database
-		watchedVideos, err := database.GetPlaylistByUserID(user, "Completed Videos", db)
+		watchedVideos, err := database.GetPlaylistByUserID(user.UserID, "Completed Videos", db)
 		if err != nil {
 			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
 				"ret": 404,
@@ -288,7 +265,7 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 		subscribed := false
 
 		// Get user subscriptions and check if user is subscribed to creator
-		subscriptions, err := database.GetPlaylistByUserID(user, "Subscriptions", db)
+		subscriptions, err := database.GetPlaylistByUserID(user.UserID, "Subscriptions", db)
 		if err != nil {
 			subscriptions = []string{}
 		}
@@ -300,7 +277,7 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		// get video progress
-		allProg, err := database.GetAllVideoProgress(user, db)
+		allProg, err := database.GetAllVideoProgress(user.UserID, db)
 		if err != nil {
 			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
 				"ret": 404,
@@ -396,7 +373,7 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 			"Videos":         videos,
 			"Creator":        creator,
 			"LinkedAccounts": linkedaccs,
-			"UserID":         user,
+			"User":           user,
 			"Subscribed":     subscribed,
 			"ServerPath":     settings.ServerPath,
 		}
@@ -444,8 +421,19 @@ func page_creators(db *gorm.DB) gin.HandlerFunc {
 			return strings.ToLower(baseFiles[i].Name) < strings.ToLower(baseFiles[j].Name)
 		})
 
+		userData, exists := c.Get("user")
+		if !exists {
+			// Redirect to login
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
+			c.Abort()
+			return
+		}
+
+		user := userData.(database.User)
+
 		c.HTML(http.StatusOK, "creators.tmpl", gin.H{
 			"files": baseFiles,
+			"User":  user,
 		})
 	}
 }

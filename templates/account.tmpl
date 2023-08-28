@@ -72,7 +72,7 @@
         </style>
     </head>
     <body>
-        {{ template "navbar.tmpl" }}
+        {{ template "navbar.tmpl" . }}
         <div class="container">
             <!-- have options for changing password and manage subscriptions -->
             <div class="row">
@@ -96,7 +96,7 @@
                             <input type="password" class="form-control" id="confirm-password" name="confirm-password" required>
                         </div>
                         <div class="col-12 text-center mt-3">
-                            <button type="button" class="btn btn-primary" onclick="submitPassword('{{$.User}}')">Change Password</button>
+                            <button type="button" class="btn btn-primary" onclick="submitPassword('{{$.User.UserID}}')">Change Password</button>
                         </div>
                     </div>
                 </div>
@@ -118,7 +118,7 @@
                                                 <div class="thumbnail">
                                                     <img src="/api/youtube/creators/{{$subscription.ChannelID}}/thumbnail" alt="{{$subscription.Name}}">
                                                         <div class="remove-sub">
-                                                            <span class="minus" onclick="deleteSubscription('{{$.User}}', '{{$subscription.ChannelID}}', '{{$subscription.Name}}')">
+                                                            <span class="minus" onclick="deleteSubscription('{{$.User.UserID}}', '{{$subscription.ChannelID}}', '{{$subscription.Name}}')">
                                                                 Unsubscribe                                                                 
                                                             </span>
                                                         </div>

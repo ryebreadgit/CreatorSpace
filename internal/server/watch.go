@@ -8,11 +8,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/ryebreadgit/CreatorSpace/internal/api"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
-	jwttoken "github.com/ryebreadgit/CreatorSpace/internal/jwt"
 	"gorm.io/gorm"
 )
 
@@ -130,39 +128,23 @@ func page_watch(db *gorm.DB) gin.HandlerFunc {
 		video.MimeType = mimeType
 
 		// get video progress for current user
-		// get jwt token from cookie
-
-		unparsedToken, err := c.Cookie("jwt-token")
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Token not found",
-			})
+		userData, exists := c.Get("user")
+		if !exists {
+			// Redirect to login
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
 			c.Abort()
 			return
 		}
 
-		parsedToken, err := jwttoken.ParseToken(unparsedToken, settings.JwtSecret)
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Token not found",
-			})
-			c.Abort()
-			return
-		}
+		user := userData.(database.User)
 
-		// get user_id from token
-		claims := parsedToken.Claims.(jwt.MapClaims)
-		user := claims["user_id"].(string)
-
-		vidProgress, err := database.GetVideoProgress(videoid, user, db)
+		vidProgress, err := database.GetVideoProgress(videoid, user.UserID, db)
 		if err != nil {
 			vidProgress = "0"
 		}
 
 		// get sponsorblockenabled and sponsorblockcategories for current user
-		sponsorblockEnabled, sponsorblockCategories, err := database.GetSponsorBlockSettings(user, db)
+		sponsorblockEnabled, sponsorblockCategories, err := database.GetSponsorBlockSettings(user.UserID, db)
 		if err != nil {
 			sponsorblockEnabled = false
 			sponsorblockCategories = ""
@@ -179,7 +161,7 @@ func page_watch(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		// get watched videos from database
-		watchedVideos, err := database.GetPlaylistByUserID(user, "Completed Videos", db)
+		watchedVideos, err := database.GetPlaylistByUserID(user.UserID, "Completed Videos", db)
 		if err != nil {
 			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
 				"ret": 404,
@@ -213,7 +195,7 @@ func page_watch(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		// get video progress
-		allProg, err := database.GetAllVideoProgress(user, db)
+		allProg, err := database.GetAllVideoProgress(user.UserID, db)
 		if err != nil {
 			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
 				"ret": 404,
@@ -271,7 +253,7 @@ func page_watch(db *gorm.DB) gin.HandlerFunc {
 			"SponsorBlockCategories": sponsorblockCategories,
 			"Comments":               comments,
 			"Progress":               vidProgress,
-			"UserID":                 user,
+			"User":                   user,
 			"Subtitles":              subtitles,
 			"Recommendations":        recs,
 			"ServerPath":             settings.ServerPath,
