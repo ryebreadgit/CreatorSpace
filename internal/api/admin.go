@@ -87,6 +87,8 @@ func apiCreateUser(c *gin.Context) {
 		return
 	}
 
+	log.Warn("Admin '" + userdata.UserID + "' created user '" + userdata.UserID + "'")
+
 	// Return the user
 	c.JSON(200, gin.H{"ret": 200, "data": userdata})
 }
