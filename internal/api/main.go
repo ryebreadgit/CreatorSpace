@@ -69,12 +69,12 @@ func Routes(route *gin.Engine) {
 				c.JSON(200, gin.H{"ret": 200, "data": retData})
 			})
 
-			// TODO - finish trancoding
+			/* TODO - finish trancoding
 
 			media.GET("/:video_id/manifest.m3u8", streamTranscodedVideo)
 			media.GET("/transcoding/video/:uuid/manifest.m3u8", ServeHLSManifest)
 			media.GET("/transcoding/video/:uuid/:chunk_name", ServeVideoChunk)
-
+			*/
 		}
 
 		downloads := api.Group("/downloads")
