@@ -46,7 +46,7 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
   - [x] Add new users
   - [x] Delete existing users
   - [x] Modify existing users permissions
-  - [ ] Add UI page for user management
+  - [x] Add UI page for user management
 
   ### Video Management
 - [x] Video Library
@@ -122,13 +122,13 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 - [ ] Add filters for search results
 - [ ] Improve search result sorting and presentation
 
-### Library Sharing
+### Library Sharing (?)
 
-- [ ] Allow users to share and sync their libraries with other users via udp holepunch
+- [ ] Allow users to share and sync their libraries with other users via udp holepunch or p2p
 - [ ] Allow users to download videos from other users' libraries if enabled
 - [ ] Allow users to watch videos from other users' libraries from within their own library
 
-### Mobile Application
+### Mobile Application (?)
 
 - [ ] Design and implement a mobile application for CreatorSpace
 - [ ] Ensure feature parity with the web platform

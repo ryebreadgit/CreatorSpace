@@ -51,6 +51,17 @@ func apiGetAllUsers(c *gin.Context) {
 		return
 	}
 
+	// For each user get full info
+	for i, user := range users {
+		role, err := database.GetUserByID(user.UserID, db)
+		if err != nil {
+			c.JSON(500, gin.H{"ret": 500, "err": err.Error()})
+			return
+		}
+		role.Password = ""
+		users[i] = role
+	}
+
 	// Return the users
 	c.JSON(200, gin.H{"ret": 200, "data": users})
 }
