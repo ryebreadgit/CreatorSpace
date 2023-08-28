@@ -1086,7 +1086,11 @@ func updateCreatorMetadata(creatorID string) error {
 		}
 
 		// Update the metadata path in the database
-		creator.FilePath = strings.ReplaceAll(metaPath, settings.BaseYouTubePath, "")
+		// Sanitize path
+		creator.FilePath, err = general.SanitizeFilePath(strings.ReplaceAll(metaPath, settings.BaseYouTubePath, ""))
+		if err != nil {
+			return err
+		}
 
 		// Update the creator in the database
 		err = database.UpdateCreator(creator, db)
@@ -1138,11 +1142,10 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 	thumbPath := fmt.Sprintf("%v/avatar.png", creatorPath)
 	bannerPath := fmt.Sprintf("%v/banner.png", creatorPath)
 
-	creator.FilePath, err = general.SanitizeFilePath(metaPath)
+	creator.FilePath, err = general.SanitizeFilePath(strings.ReplaceAll(metaPath, settings.BaseYouTubePath, ""))
 	if err != nil {
 		return database.Creator{}, err
 	}
-	creator.FilePath = strings.ReplaceAll(creator.FilePath, settings.BaseYouTubePath, "")
 
 	var thumbUrl string
 	var bannerUrl string
@@ -1206,7 +1209,10 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 	}
 
 	// Update the metadata path in the database
-	creator.FilePath = strings.ReplaceAll(metaPath, settings.BaseYouTubePath, "")
+	creator.FilePath, err = general.SanitizeFilePath(strings.ReplaceAll(metaPath, settings.BaseYouTubePath, ""))
+	if err != nil {
+		return database.Creator{}, err
+	}
 
 	// Insert creator intor database
 	err = database.InsertCreator(creator, db)
