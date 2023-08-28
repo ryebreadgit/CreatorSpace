@@ -57,8 +57,10 @@ func SetupDatabase() {
 			settings.BaseYouTubePath = settings.BaseYouTubePath[:len(settings.BaseYouTubePath)-1]
 		}
 
-		if settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "/" || settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "\\" {
-			settings.BaseTwitchPath = settings.BaseTwitchPath[:len(settings.BaseTwitchPath)-1]
+		if settings.BaseTwitchPath != "" {
+			if settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "/" || settings.BaseTwitchPath[len(settings.BaseTwitchPath)-1:] == "\\" {
+				settings.BaseTwitchPath = settings.BaseTwitchPath[:len(settings.BaseTwitchPath)-1]
+			}
 		}
 
 		// Sanitize BaseYouTubePath and BaseTwitchPath
