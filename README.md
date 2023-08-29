@@ -57,11 +57,34 @@
 
 ## Getting Started
 
-### Pre-built Binaries
+### Prerequisites
+
+- [Python](https://python.org/)
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+- [FFmpeg](https://ffmpeg.org/)
+
+Python is required for yt-dlp, which is used for downloading videos and metadata. FFmpeg is required for transcoding which is not currently implemented but will be in the future.
+
+### Installation
+
+#### Docker Compose
+
+The easiest way to get started is to use the provided [docker-compose.yml](./docker-compose.yml) file. This will automatically download and configure all of the required dependencies.
+
+1. Download the [docker-compose.yml](./docker-compose.yml) file
+2. Modify volume paths "/path/to/appdata/" and "/path/to/downloads/" to your desired locations
+3. Modify db environment variables to your desired values, these must be input in the setup wizard
+4. Run the following command
+    ```shell
+    docker-compose up -d
+    ```
+5. Open the application in your browser at http://localhost:8080
+
+#### Pre-built Binaries
 
 You can download the pre-built binaries directly from the [releases](https://github.com/ryebreadgit/CreatorSpace/releases/latest) section. Available for Windows, macOS, and Linux.
 
-### Build Instructions
+#### Build Instructions
 
 If you prefer to build the application yourself:
 

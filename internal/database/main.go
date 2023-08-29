@@ -79,6 +79,7 @@ func GetDatabase() (*gorm.DB, error) {
 	db.AutoMigrate(&Tasking{})
 	db.AutoMigrate(&DownloadQueue{})
 	db.AutoMigrate(&Playlist{})
+	db.AutoMigrate(&Tweet{})
 
 	// insert tasks if they don't exist
 	var task []Tasking
@@ -86,9 +87,13 @@ func GetDatabase() (*gorm.DB, error) {
 	// task = append(task, Tasking{TaskName: "SyncLocalWithDB", Interval: 20, Epoch: 0}) // Move to fixed function, should only be one time
 	task = append(task, Tasking{TaskName: "GetMissingVideoIDs", Interval: 60, Epoch: 0})
 	task = append(task, Tasking{TaskName: "GetMissingVideoIDsQuick", Interval: 5, Epoch: 0})
+	// We're disabling Twitter for now, since the api changes there have been issues with updated tweets without auth. Looking into future options. Sad.
+	//task = append(task, Tasking{TaskName: "UpdateTweets", Interval: 60, Epoch: 0})
+	//task = append(task, Tasking{TaskName: "UpdateTweetsQuick", Interval: 5, Epoch: 0})
+	task = append(task, Tasking{TaskName: "GetMissingVideoIDsQuick", Interval: 5, Epoch: 0})
 	task = append(task, Tasking{TaskName: "UpdateYouTubeMetadata", Interval: 180, Epoch: 0})
 	task = append(task, Tasking{TaskName: "DownloadYouTubeVideo", Interval: 5, Epoch: 0})
-	task = append(task, Tasking{TaskName: "CorrectUserProgress", Interval: 360, Epoch: 0})
+	task = append(task, Tasking{TaskName: "SystemCleanup", Interval: 360, Epoch: 0})
 
 	// for each task check if it exists in database and if not insert it
 	var dbcount int64
@@ -119,6 +124,7 @@ func GetDatabase() (*gorm.DB, error) {
 	defaultSettings := Settings{
 		BaseYouTubePath: "./downloads/youtube/",
 		BaseTwitchPath:  "./downloads/twitch/",
+		BaseTwitterPath: "./downloads/twitter/",
 		DatabasePath:    "./database.db",
 		DatabaseType:    "sqlite",
 		JwtSecret:       "change-me",

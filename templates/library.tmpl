@@ -14,7 +14,7 @@
     <meta name="author" content="CreatorSpace">
 </head>
 <body>
-{{template "navbar.tmpl" }}
+{{template "navbar.tmpl" . }}
 <div class="main-content">
     <div class="content-header">
         <div class="sortfilter row py-2">
@@ -27,6 +27,8 @@
                         <li><a class="dropdown-item" href="javascript:void(0)" data-value="all">All</a></li>
                         <li><a class="dropdown-item" href="javascript:void(0)" data-value="video">Video</a></li>
                         <li><a class="dropdown-item" href="javascript:void(0)" data-value="short">Short</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="watched">Watched</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" data-value="notwatched">Not Watched</a></li>
                         <li><a class="dropdown-item" href="javascript:void(0)" data-value="public">Public</a></li>
                         <li><a class="dropdown-item" href="javascript:void(0)" data-value="unlisted">Unlisted</a></li>
                         <li><a class="dropdown-item" href="javascript:void(0)" data-value="private">Private</a></li>
@@ -170,21 +172,24 @@
   </section>
 </div>
 <script>
-    document.getElementById("page-number").addEventListener("keyup", function(event) {
-        if (event.keyCode === 13) {
-            event.preventDefault();
-            let templocation = "/library?page=" + document.getElementById("page-number").value;
-            // check if filter is set
-            if (window.location.href.includes("filter=")) {
-                templocation += "&filter=" + window.location.href.split("filter=")[1];
+    // Check if page-number id exists
+    if (document.getElementById("page-number") !== null) {
+        document.getElementById("page-number").addEventListener("keyup", function(event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                let templocation = "/library?page=" + document.getElementById("page-number").value;
+                // check if filter is set
+                if (window.location.href.includes("filter=")) {
+                    templocation += "&filter=" + window.location.href.split("filter=")[1];
+                }
+                window.location.href = templocation
             }
-            window.location.href = templocation
-        }
-    });
+        });
+    }
 
     function sendCompletedRequestAlert(video_id, video_title, data) {
         let xhr = new XMLHttpRequest();
-        let user_id = "{{.UserID}}";
+        let user_id = "{{.User.UserID}}";
         xhr.open("POST", `/api/user/${user_id}/progress/${video_id}/complete`, true);
         xhr.send();
 		// Get the image container and add <span class="watched-text"></span>

@@ -78,26 +78,25 @@ func Run() {
 	// require jwt token for all below routes
 	r.Use(notLoggedInMiddleware(db))
 	r.Use(jwttoken.JwtMiddleware())
+	r.Use(setUserMiddleware())
 	// reroute only 401 errors to login page
 
 	r.GET("/home", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "home.tmpl", gin.H{})
-	})
-
-	r.GET("/account", func(c *gin.Context) {
-		// parse the jwt token and get the user id
-		user, err := jwttoken.GetUserFromToken(c)
-		if err != nil {
-			c.HTML(http.StatusUnauthorized, "error.tmpl", gin.H{
-				"ret": 401,
-				"err": "Unauthorized",
-			})
+		userData, exists := c.Get("user")
+		if !exists {
+			// Redirect to login
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
+			c.Abort()
 			return
 		}
-		c.HTML(http.StatusOK, "account.tmpl", gin.H{
+
+		user := userData.(database.User)
+		c.HTML(http.StatusOK, "home.tmpl", gin.H{
 			"User": user,
 		})
 	})
+
+	r.GET("/account", get_account(db))
 
 	r.GET("/creators/:creator", page_creators_creator(db))
 
@@ -108,12 +107,26 @@ func Run() {
 	r.GET("/subscriptions", page_subscriptions(db))
 
 	r.GET("/download", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "download.tmpl", gin.H{})
+		userData, exists := c.Get("user")
+		if !exists {
+			// Redirect to login
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
+			c.Abort()
+			return
+		}
+
+		user := userData.(database.User)
+		c.HTML(http.StatusOK, "download.tmpl", gin.H{
+			"User": user,
+		})
 	})
 
 	r.GET("/download/:video_type/:video_id/", getDownloadPage)
 
 	r.GET("/watch/:video_id", page_watch(db))
+
+	r.Use(isAdminMiddleware())
+	r.GET("/user-management", page_user_management(db))
 
 	// share all files in static folder to /assets
 

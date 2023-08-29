@@ -23,6 +23,12 @@ import (
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
 )
 
+var r *rand.Rand
+
+func init() {
+	r = rand.New(rand.NewSource(time.Now().UnixNano()))
+}
+
 func apiMedia(c *gin.Context) {
 
 	video := c.Param("video_id")
@@ -37,6 +43,8 @@ func apiMedia(c *gin.Context) {
 	// Check if twitch or youtube
 	if vidData.VideoType == "Twitch" {
 		basePath = settings.BaseTwitchPath
+	} else if vidData.VideoType == "Twitter" {
+		basePath = settings.BaseTwitterPath
 	} else {
 		basePath = settings.BaseYouTubePath
 	}
@@ -150,6 +158,8 @@ func getVideoThumbnailPath(videoID string) (string, error) {
 	var basePath string
 	if vidData.VideoType == "Twitch" {
 		basePath = settings.BaseTwitchPath
+	} else if vidData.VideoType == "Twitter" {
+		basePath = settings.BaseTwitterPath
 	} else {
 		basePath = settings.BaseYouTubePath
 	}
@@ -216,6 +226,8 @@ func getCreatorThumbnailPath(creatorID string) (string, error) {
 	var basePath string
 	if creatorData.Platform == "Twitch" {
 		basePath = settings.BaseTwitchPath
+	} else if creatorData.Platform == "Twitter" {
+		basePath = settings.BaseTwitterPath
 	} else {
 		basePath = settings.BaseYouTubePath
 	}
@@ -237,7 +249,7 @@ func getCreatorThumbnailPath(creatorID string) (string, error) {
 		if creatorData.Platform == "Twitch" {
 			return "/assets/img/defaults/avatars/twitch_avatar.svg", nil
 		} else if creatorData.Platform == "Twitter" {
-			return "/assets/img/defaults/avatars/twitch_avatar.svg", nil
+			return "/assets/img/defaults/avatars/twitter_avatar.svg", nil
 		} else {
 			return "/assets/img/defaults/avatars/youtube_avatar.svg", nil
 		}
@@ -316,13 +328,17 @@ func apiCreatorBanner(c *gin.Context) {
 	creatorid := c.Param("creator")
 	creatorData, err := database.GetCreator(creatorid, db)
 	if err != nil {
-		c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": err.Error()})
+		// return with default banner
+		c.Redirect(http.StatusTemporaryRedirect, "/assets/img/defaults/banners/youtube_banner.svg")
+		c.Abort()
 		return
 	}
 
 	var basePath string
 	if creatorData.Platform == "Twitch" {
 		basePath = settings.BaseTwitchPath
+	} else if creatorData.Platform == "Twitter" {
+		basePath = settings.BaseTwitterPath
 	} else {
 		basePath = settings.BaseYouTubePath
 	}
@@ -381,7 +397,7 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 	var recommendations []database.Video
 
 	// Fetch videos with the same categories or from the same creator
-	query := db.Select("title", "video_id", "likes", "views", "channel_title", "channel_id", "published_at", "length", "video_type", "availability", "categories", "tags")
+	query := db.Select("title", "description", "video_id", "likes", "views", "channel_title", "channel_id", "published_at", "length", "video_type", "availability", "categories", "tags")
 	query = query.Where("video_id != ?", videoID)
 	for _, category := range currentCategories {
 		query = query.Or("categories LIKE ?", "%"+category+"%")
@@ -391,7 +407,7 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 	query = query.Order("published_at DESC")
 	query = query.Order("views DESC")
 	query = query.Order("likes DESC")
-	query = query.Limit(3000)
+	query = query.Limit(3500)
 	err = query.Find(&recommendations).Error
 	if err != nil {
 		return nil, errors.New("error fetching recommendations")
@@ -404,6 +420,67 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 
 	var scoredRecommendations []videoScore
 
+	// Store the common words in a map
+	commonWordsMap := make(map[string]bool)
+	commonWords := []string{
+		"a", "an", "the", "and", "or", "but", "for", "nor", "so", "yet", "as", "at", "by", "in", "from", "into", "of", "on", "we", "is", "you", "he", "she", "it", "they", "me", "him", "her", "us", "them", "my", "your", "our", "we", "best",
+		"to", "with", "that", "this", "these", "those", "his", "hers", "its", "theirs", "mine", "yours", "ours", "theirs", "i", "am", "are", "was", "were", "be", "been", "being", "have", "has", "had", "do", "does", "did", "done", "will", "would", "shall", "should", "may", "might", "must", "can", "could",
+		"about", "above", "across", "after", "against", "along", "among", "around", "at", "before", "behind", "below", "beneath", "beside", "between", "beyond", "down", "during", "except", "for", "from", "inside", "into", "near", "off", "on", "onto", "outside", "over", "past", "since", "through", "throughout", "till", "to", "toward", "under", "underneath", "until", "up", "upon", "with", "within", "without",
+		// Clickbait terms will be counted as common
+		"shocking", "you won't believe", "amazing", "secret", "revealed", "incredible", "ind-blowing", "unbelievable", "must-see", "jaw-dropping", "mind-boggling", "mind-bending", "epic", "awesome", "unreal", "insane", "crazy", "wild", "ridiculous", "hilarious", "funny", "lol", "wtf", "omg", "wow", "fail", "fails", "huge", "free", "crack", "pirate", "piracy",
+	}
+	for _, word := range commonWords {
+		commonWordsMap[word] = true
+	}
+
+	// Store the categories and tags of the current video in a map
+	currentCategoriesMap := make(map[string]bool)
+	currentTagsMap := make(map[string]bool)
+	for _, category := range currentCategories {
+		currentCategoriesMap[category] = true
+	}
+	for _, tag := range currentTags {
+		currentTagsMap[tag] = true
+	}
+
+	// Use a map to store the watched videos
+	watchedVidsMap := make(map[string]bool)
+	for _, vid := range watchedVids {
+		watchedVidsMap[vid] = true
+	}
+
+	// Store the words in the current video's title in a map
+	vidTitleMap := make(map[string]bool)
+	for _, word := range strings.Split(currentVideo.Title, " ") {
+		word := strings.ToLower(word)
+		if commonWordsMap[word] {
+			continue
+		}
+		vidTitleMap[word] = true
+	}
+
+	// Store the words in the current video's description in a map
+	vidDescMap := make(map[string]bool)
+	currentVideo.Description = strings.ReplaceAll(currentVideo.Description, "\n", " ")
+	for _, word := range strings.Split(currentVideo.Description, " ") {
+		word := strings.ToLower(word)
+		if commonWordsMap[word] {
+			continue
+		}
+		if len(word) <= 8 && strings.Contains(word, ":") { // Ignores timestamps
+			_, err := strconv.Atoi(strings.ReplaceAll(word, ":", ""))
+			if err == nil {
+				continue
+			}
+		}
+		vidDescMap[word] = true
+	}
+
+	curViewc, err := strconv.Atoi(currentVideo.Views)
+	if err != nil {
+		curViewc = 0
+	}
+
 	for _, rec := range recommendations {
 		var recCategories, recTags []string
 		json.Unmarshal([]byte(rec.Categories), &recCategories)
@@ -411,76 +488,60 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 
 		score := 0.0
 
+		// Check if the recommendation has any of the current video's categories or tags
 		for _, cat := range recCategories {
-			if general.StringInSlice(currentCategories, cat) {
-				score += 2
+			if currentCategoriesMap[cat] {
+				score += 3
 			}
 		}
-
 		for _, tag := range recTags {
-			if general.StringInSlice(currentTags, tag) {
-				score += 2
+			if currentTagsMap[tag] {
+				score += 3
 			}
 		}
 
 		// If the video is from the same creator, give it a little boost
 		if rec.ChannelID == currentVideo.ChannelID {
-			score += 4.5
+			score += 2
 		}
 
 		// If the video type is the same, give it a little boost
 		if rec.VideoType == currentVideo.VideoType {
-			score += 3.5
+			score += 4
 		}
 
 		// If the video is not available, give it a boost
-		if rec.Availability != "available" {
-			if currentVideo.Availability != "available" {
-				score += 3
-			} else {
-				// still a lil boost for fun since these aren't available publically anymore. Give a little more chance for those to be seen.
-				score += 1.5
-			}
+		if rec.Availability != "available" && currentVideo.Availability != "available" {
+			score += 3
 		}
 
-		commonWords := []string{
-			"a", "an", "the", "and", "or", "but", "for", "nor", "so", "yet", "as", "at", "by", "in", "from", "into", "of", "on", "we", "is", "you", "he", "she", "it", "they", "me", "him", "her", "us", "them", "my", "your", "our", "we", "best",
+		var recTitleMap = make(map[string]bool)
+		// split title into words
+		for _, word := range strings.Split(rec.Title, " ") {
+			recTitleMap[strings.ToLower(word)] = true
 		}
 
 		// If the video title has similar words to the current video, add 1 point
-		for i, word := range strings.Split(currentVideo.Title, " ") {
-			var commonWord bool
-			if general.StringInSlice(commonWords, word) {
-				commonWord = true
-			}
-			titleDat := strings.Split(rec.Title, " ")
-			if general.StringInSlice(titleDat, word) {
-				// give more weight to the first half of the title
-				if i < len(titleDat)/2 {
-					score += 1
-				}
-
-				if commonWord {
-					score += 1
-				} else {
-					score += 3
-				}
+		for word := range vidTitleMap {
+			if recTitleMap[word] {
+				score += 3
 			}
 		}
 
 		// Do the same for description
-		for _, word := range strings.Split(rec.Description, " ") {
-			if general.StringInSlice(strings.Split(currentVideo.Description, " "), word) {
-				if general.StringInSlice(commonWords, word) {
-					score += 0.3
-				} else {
-					score += 1.5
-				}
-			}
 
-			// Check if word contains the video id, if so give it a boost
-			if strings.Contains(word, videoID) {
-				score += 5
+		// replace return characters with spaces
+		rec.Description = strings.ReplaceAll(rec.Description, "\n", " ")
+
+		var recDescWordsMap = make(map[string]bool)
+		// split description into words
+		for _, word := range strings.Split(rec.Description, " ") {
+			recDescWordsMap[strings.ToLower(word)] = true
+		}
+
+		for word := range vidDescMap {
+			if recDescWordsMap[word] {
+				score += 1
 			}
 		}
 
@@ -488,11 +549,6 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 		viewc, err := strconv.Atoi(rec.Views)
 		if err != nil {
 			viewc = 0
-		}
-
-		curViewc, err := strconv.Atoi(currentVideo.Views)
-		if err != nil {
-			curViewc = 0
 		}
 
 		if viewc > 0 && curViewc > 0 {
@@ -514,16 +570,11 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 		score -= math.Log10(float64(time.Since(publishedAt).Hours()))
 
 		// If the video id is in the watched list, minus points
-		if general.StringInSlice(watchedVids, rec.VideoID) {
-			score -= 4
+		if watchedVidsMap[rec.VideoID] {
+			score -= 12.5
 		}
 
-		// If the video has the same id, set to 0 points
-		if rec.VideoID == currentVideo.VideoID {
-			score = 0
-		}
-
-		if score != 0 {
+		if score > 0 && rec.VideoID != currentVideo.VideoID {
 			scoredRecommendations = append(scoredRecommendations, videoScore{video: rec, score: score})
 		}
 	}
@@ -540,7 +591,6 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 
 	// Get 10 random reccs and sort by score
 	var topReccs []videoScore
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	// Shuffle scoredRecommendations
 	r.Shuffle(len(scoredRecommendations), func(i, j int) {
 		scoredRecommendations[i], scoredRecommendations[j] = scoredRecommendations[j], scoredRecommendations[i]
@@ -557,14 +607,10 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 		topReccs = append(topReccs, scoredRecommendations[i])
 	}
 
-	/* Screw it, let chaos reign
-
 	// Sort topReccs by score
 	sort.Slice(topReccs, func(i, j int) bool {
 		return topReccs[i].score > topReccs[j].score
 	})
-
-	*/
 
 	var topRecommendations []database.Video
 	for _, recc := range topReccs {

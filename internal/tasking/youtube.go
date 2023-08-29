@@ -89,10 +89,24 @@ func downloadThumbnail(thumbUrl string, oldThumbnailPath string, videoID string)
 		extension = "jpg"
 	case "image/png":
 		extension = "png"
-	case "image/gif":
-		extension = "gif"
 	case "image/webp":
 		extension = "webp"
+	case "image/gif":
+		extension = "gif"
+	case "image/bmp":
+		extension = "bmp"
+	case "image/tiff":
+		extension = "tiff"
+	case "video/mp4":
+		extension = "mp4"
+	case "video/quicktime":
+		extension = "mov"
+	case "video/x-msvideo":
+		extension = "avi"
+	case "video/x-matroska":
+		extension = "mkv"
+	case "video/webm":
+		extension = "webm"
 	default:
 		return "", fmt.Errorf("unknown content type: %v", res.Header.Get("Content-Type"))
 	}
@@ -111,7 +125,7 @@ func downloadThumbnail(thumbUrl string, oldThumbnailPath string, videoID string)
 
 	// Compare the thumbnails
 
-	if oldThumbnailPath != "" {
+	if oldThumbnailPath != "" && extension != "mp4" {
 		img1, err := loadImage(tmpimg)
 		if err != nil {
 			_ = os.Remove(tmpimg)
@@ -536,7 +550,7 @@ func updateVideoMetadata(videoID string) error {
 	}
 
 	// if subtitles path is missing but the video has subtitles, download the subtitles
-	if video.SubtitlePath == "" && (info.Subtitles.En != nil || info.Subtitles.Es != nil || info.Subtitles.De != nil || info.Subtitles.Fr != nil) {
+	if video.SubtitlePath == "" && len(info.Subtitles) > 0 {
 		// Download subtitles
 		if !updateVidMeta {
 			// set the input subtitle path to the ${settings.BaseYouTubePath}/${video.FilePath}/../subtitles/${video.FilePath base name without extension}/
@@ -651,7 +665,7 @@ func updateVideoMetadata(videoID string) error {
 		}
 
 		// Update video subtitles if they are missing
-		if video.SubtitlePath == "" && (info.Subtitles.En != nil || info.Subtitles.EnUS != nil || info.Subtitles.EnGB != nil || info.Subtitles.De != nil || info.Subtitles.Es != nil || info.Subtitles.Fr != nil) {
+		if video.SubtitlePath == "" && len(info.Subtitles) > 0 {
 			// Download subtitles
 			// set the input subtitle path to the ${settings.BaseYouTubePath}/${video.FilePath}/../subtitles/${video.FilePath base name without extension}/
 			inputSubPath, err := general.SanitizeFilePath(filepath.Join(settings.BaseYouTubePath, filepath.Dir(video.FilePath), "../metadata/subtitles", strings.TrimSuffix(filepath.Base(video.FilePath), filepath.Ext(video.FilePath))))
@@ -744,7 +758,7 @@ func updateVideoMetadata(videoID string) error {
 					return err
 				}
 				// update the video metadata path and remove the base youtube path
-				newPath = strings.ReplaceAll(video.MetadataPath, settings.BaseYouTubePath, "")
+				newPath = strings.ReplaceAll(newPath, settings.BaseYouTubePath, "")
 
 				video.MetadataPath = newPath
 
@@ -922,7 +936,7 @@ func GetCreatorMetadata(creatorID string) (database.YoutubePlaylistStruct, error
 
 func updateCreatorMetadata(creatorID string) error {
 	// Get the creator from the database
-	creator, err := database.GetCreator(creatorID, db)
+	creator, err := database.GetCreator(creatorID, db.Where("platform = ?", "YouTube"))
 	if err != nil {
 		return err
 	}
@@ -994,7 +1008,7 @@ func updateCreatorMetadata(creatorID string) error {
 		if newThumbPath != "" && creator.ThumbnailPath != newThumbPath {
 			fmt.Printf("Creator thumbnail changed from %v to %v\n", creator.ThumbnailPath, newThumbPath)
 			creator.ThumbnailPath = strings.ReplaceAll(newThumbPath, settings.BaseYouTubePath, "")
-			changes = true
+			silentChanges = true
 		}
 	}
 
@@ -1018,7 +1032,7 @@ func updateCreatorMetadata(creatorID string) error {
 		if newBannerPath != "" && creator.BannerPath != newBannerPath {
 			fmt.Printf("Creator banner changed from %v to %v\n", creator.BannerPath, newBannerPath)
 			creator.BannerPath = strings.ReplaceAll(newBannerPath, settings.BaseYouTubePath, "")
-			changes = true
+			silentChanges = true
 		}
 
 	}
@@ -1072,7 +1086,11 @@ func updateCreatorMetadata(creatorID string) error {
 		}
 
 		// Update the metadata path in the database
-		creator.FilePath = strings.ReplaceAll(metaPath, settings.BaseYouTubePath, "")
+		// Sanitize path
+		creator.FilePath, err = general.SanitizeFilePath(strings.ReplaceAll(metaPath, settings.BaseYouTubePath, ""))
+		if err != nil {
+			return err
+		}
 
 		// Update the creator in the database
 		err = database.UpdateCreator(creator, db)
@@ -1124,11 +1142,10 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 	thumbPath := fmt.Sprintf("%v/avatar.png", creatorPath)
 	bannerPath := fmt.Sprintf("%v/banner.png", creatorPath)
 
-	creator.FilePath, err = general.SanitizeFilePath(metaPath)
+	creator.FilePath, err = general.SanitizeFilePath(strings.ReplaceAll(metaPath, settings.BaseYouTubePath, ""))
 	if err != nil {
 		return database.Creator{}, err
 	}
-	creator.FilePath = strings.ReplaceAll(creator.FilePath, settings.BaseYouTubePath, "")
 
 	var thumbUrl string
 	var bannerUrl string
@@ -1187,6 +1204,12 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 
 	// save to metaPath
 	err = os.WriteFile(metaPath, jsonData, 0644)
+	if err != nil {
+		return database.Creator{}, err
+	}
+
+	// Update the metadata path in the database
+	creator.FilePath, err = general.SanitizeFilePath(strings.ReplaceAll(metaPath, settings.BaseYouTubePath, ""))
 	if err != nil {
 		return database.Creator{}, err
 	}
@@ -1300,6 +1323,7 @@ func downloadComments(videoID string) (string, error) {
 		newComment.VideoID = videoID
 		newComment.Text = comment.Text
 		newComment.Author = comment.Author
+		newComment.AuthorID = comment.AuthorID
 		newComment.Votes = strconv.Itoa(comment.LikeCount)
 		newComment.TimeParsed = float64(comment.Timestamp)
 		newComment.TimeString = comment.TimeText
@@ -1330,18 +1354,18 @@ func downloadComments(videoID string) (string, error) {
 	return sanitizedCommentPath, nil
 }
 
-func subDownload(subFile string, url string, ext string) error {
+func subDownload(subFile string, url string, ext string) (string, error) {
 
 	// Create the directory if it doesn't exist
 	err := os.MkdirAll(filepath.Dir(subFile), 0755)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 	// Make the request
 	resp, err := http.Get(url)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 
@@ -1350,13 +1374,13 @@ func subDownload(subFile string, url string, ext string) error {
 	// Read the body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// save file as-is
 	err = os.WriteFile(subFile, body, 0644)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Unmarshal the json to interface
@@ -1364,109 +1388,57 @@ func subDownload(subFile string, url string, ext string) error {
 	err = json.Unmarshal(body, &data)
 	if err != nil {
 		// if invalid json, return
-		return nil
+		return subFile, nil
 	}
 
 	// Marshal the json to string
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Write the json to the file
 	err = os.WriteFile(subFile, jsonData, 0644)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return subFile, nil
 
-}
-
-func _dlSubtitle(subData []database.YouTubeApiVideoInfoStructSub, lang string, subtitlePath string) (string, error) {
-	var retSub string
-	for _, sub := range subData {
-		if sub.URL == "" {
-			continue
-		}
-		// if the language is not set, set it to unknown
-		if lang == "" {
-			lang = "und"
-		}
-		// Set the subFile path to ${settings.YouTubeBasePath}/${subtitlePath}/${subtitlePath last path name}.{lang}.{videoData.Subtitles.De.Ext}
-		subFile, err := general.SanitizeFilePath(fmt.Sprintf("%v/%v.%v.%v", subtitlePath, filepath.Base(subtitlePath), lang, sub.Ext))
-		if err != nil {
-			return "", err
-		}
-
-		err = subDownload(subFile, sub.URL, sub.Ext)
-		if err != nil {
-			return "", err
-		}
-		// if vtt set retSub to subFile. This overrides previous languages.
-		if sub.Ext == "vtt" {
-			retSub = strings.ReplaceAll(subFile, settings.BaseYouTubePath, "")
-		}
-	}
-	return retSub, nil
 }
 
 // download subtitles from database.YoutubeVideo.Subtitles
 func downloadSubtitles(subtitlePath string, videoData *database.YouTubeVideoInfoStruct) ([]database.VidSubtitle, error) {
 	var subList []database.VidSubtitle
 
-	if videoData.Subtitles.En != nil {
-		// Download the subtitles
-		retSub, err := _dlSubtitle(videoData.Subtitles.En, "en", subtitlePath)
-		if err != nil {
-			return subList, err
+	for lang, subType := range videoData.Subtitles {
+		if subType == nil || lang == "live_chat" { // Skip live chat as it's not formatted correctly and will be added as part of YT Live support
+			continue
 		}
-		subList = append(subList, database.VidSubtitle{Language: "en", LanguageText: "English", FilePath: retSub})
-	}
 
-	if videoData.Subtitles.EnUS != nil {
-		// Download the subtitles
-		retSub, err := _dlSubtitle(videoData.Subtitles.EnUS, "en-US", subtitlePath)
-		if err != nil {
-			return subList, err
-		}
-		subList = append(subList, database.VidSubtitle{Language: "en-US", LanguageText: "English (US)", FilePath: retSub})
-	}
+		for _, sub := range subType {
 
-	if videoData.Subtitles.EnGB != nil {
-		// Download the subtitles
-		retSub, err := _dlSubtitle(videoData.Subtitles.EnGB, "en-GB", subtitlePath)
-		if err != nil {
-			return subList, err
-		}
-		subList = append(subList, database.VidSubtitle{Language: "en-GB", LanguageText: "English (UK)", FilePath: retSub})
-	}
+			// if the language is not set, set it to unknown
+			if lang == "" {
+				lang = "und"
+			}
+			// Set the subFile path to ${settings.YouTubeBasePath}/${subtitlePath}/${subtitlePath last path name}.{lang}.{videoData.Subtitles.De.Ext}
+			subFile, err := general.SanitizeFilePath(fmt.Sprintf("%v/%v.%v.%v", subtitlePath, filepath.Base(subtitlePath), lang, sub.Ext))
+			if err != nil {
+				fmt.Printf("Error sanitizing subtitle path: %v\n", err)
+				continue
+			}
 
-	if videoData.Subtitles.Es != nil {
-		// Download the subtitles
-		retSub, err := _dlSubtitle(videoData.Subtitles.Es, "es", subtitlePath)
-		if err != nil {
-			return subList, err
+			_, err = subDownload(subFile, sub.URL, sub.Ext)
+			if err != nil {
+				fmt.Printf("Error downloading subtitle: %v\n", err)
+				continue
+			}
+			if sub.Ext == "vtt" {
+				subList = append(subList, database.VidSubtitle{Language: lang, LanguageText: sub.Name, FilePath: strings.ReplaceAll(subFile, settings.BaseYouTubePath, "")})
+			}
 		}
-		subList = append(subList, database.VidSubtitle{Language: "es", LanguageText: "Español", FilePath: retSub})
-	}
 
-	if videoData.Subtitles.De != nil {
-		// Download the subtitles
-		retSub, err := _dlSubtitle(videoData.Subtitles.De, "de", subtitlePath)
-		if err != nil {
-			return subList, err
-		}
-		subList = append(subList, database.VidSubtitle{Language: "de", LanguageText: "Deutsch", FilePath: retSub})
-	}
-
-	if videoData.Subtitles.Fr != nil {
-		// Download the subtitles
-		retSub, err := _dlSubtitle(videoData.Subtitles.Fr, "fr", subtitlePath)
-		if err != nil {
-			return subList, err
-		}
-		subList = append(subList, database.VidSubtitle{Language: "fr", LanguageText: "Français", FilePath: retSub})
 	}
 
 	// if sublist isn't empty, log the download
@@ -1485,7 +1457,7 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 	}
 
 	// Download the sponsorblock segments
-	sponsorUrl := fmt.Sprintf("https://sponsor.ajay.app/api/skipSegments?videoID=%v", videoID)
+	sponsorUrl := fmt.Sprintf("https://sponsor.ajay.app/api/searchSegments?videoID=%v", videoID)
 	resp, err := http.Get(sponsorUrl)
 	if err != nil {
 		return "", err
@@ -1506,7 +1478,7 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 	}
 
 	// unmarshall body into json
-	var segments []database.SponsorBlockRawApi
+	var segments database.SponsorBlockRawApi
 	err = json.Unmarshal(body, &segments)
 	if err != nil {
 		fmt.Printf("Error unmarshalling sponsorblock segments for video id '%v': %v\n", videoID, err)
@@ -1523,8 +1495,10 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 
 	changes := false
 
+	var segmentsToAdd []database.SponsorBlock
+
 	// Loop through the segments and add them to the database if they don't exist
-	for _, segment := range segments {
+	for _, segment := range segments.Segments {
 		// Check if the segment is in the database
 		var inDb bool
 		for _, dbSegment := range dbSegments {
@@ -1535,26 +1509,91 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 		}
 
 		// If the segment is not in the database, add it
-		if !inDb {
+		if !inDb && segment.Votes >= 0 {
 			var newSegment database.SponsorBlock
 
 			newSegment.SegmentID = segment.UUID
 			newSegment.VideoID = videoID
 			newSegment.Category = segment.Category
-			newSegment.SegmentStart = segment.Segment[0]
-			newSegment.SegmentEnd = segment.Segment[1]
+			newSegment.SegmentStart = segment.StartTime
+			newSegment.SegmentEnd = segment.EndTime
 			newSegment.Votes = segment.Votes
 			newSegment.SegmentID = segment.UUID
 			newSegment.FilePath = strings.ReplaceAll(sponsorBlockPath, settings.BaseYouTubePath, "")
 			newSegment.ActionType = segment.ActionType
 
-			err = database.InsertSponsorBlock(newSegment, db)
-			if err != nil {
-				return "", err
-			}
-			fmt.Printf("Added sponsorblock segment %v to database for video %v (%v)\n", segment.UUID, videoID, segment.Category)
-			changes = true
+			segmentsToAdd = append(segmentsToAdd, newSegment)
 		}
+	}
+
+	if len(segmentsToAdd) == 0 {
+		return "", nil
+	}
+
+	// Sort by score
+	sort.Slice(segmentsToAdd, func(i, j int) bool {
+		return segmentsToAdd[i].Votes > segmentsToAdd[j].Votes
+	})
+
+	var segTimeMap = make(map[float64][]float64)
+	for _, segment := range segmentsToAdd {
+		segTimeMap[segment.SegmentStart] = append(segTimeMap[segment.SegmentStart], segment.SegmentEnd)
+		segTimeMap[segment.SegmentStart] = append(segTimeMap[segment.SegmentStart], float64(segment.Votes))
+
+	}
+
+	var segsToRemove []database.SponsorBlock
+	for _, segment := range segmentsToAdd {
+		// Check if the segment overlaps with any other segments
+		for _, seg := range segTimeMap {
+			if segment.SegmentStart > seg[0] && segment.SegmentEnd < seg[0] {
+				// Overlaps, check which one has more votes
+				if segment.Votes > int(seg[1]) {
+					// segment has more votes, remove the other segment
+					segsToRemove = append(segsToRemove, database.SponsorBlock{SegmentID: segment.SegmentID})
+				} else {
+					// segment has less votes, remove the segment
+					segsToRemove = append(segsToRemove, database.SponsorBlock{SegmentID: segment.SegmentID})
+				}
+			}
+		}
+	}
+
+	// Do the same for the segments in the database
+	for _, segment := range dbSegments {
+		// Check if the segment overlaps with any existing segments
+		for _, seg := range segTimeMap {
+			if segment.SegmentStart > seg[0] && segment.SegmentEnd < seg[0] {
+				// Overlaps, check which one has more votes
+				if segment.Votes > int(seg[1]) {
+					// segment has more votes, remove the other segment
+					segsToRemove = append(segsToRemove, segment)
+				} else {
+					// segment has less votes, remove the segment
+					segsToRemove = append(segsToRemove, segment)
+				}
+			}
+		}
+	}
+
+	// Remove the segments
+	for _, segment := range segsToRemove {
+		for i, seg := range segmentsToAdd {
+			if seg.SegmentID == segment.SegmentID {
+				segmentsToAdd = append(segmentsToAdd[:i], segmentsToAdd[i+1:]...)
+				break
+			}
+		}
+	}
+
+	// Add the segments to the database
+	for _, newSegment := range segmentsToAdd {
+		err = database.InsertSponsorBlock(newSegment, db)
+		if err != nil {
+			return "", err
+		}
+		fmt.Printf("Added sponsorblock segment %v to database for video %v (%v)\n", newSegment.SegmentID, videoID, newSegment.Category)
+		changes = true
 	}
 
 	// Get all segments in the database for the video, delete any that aren't in our new list
@@ -1566,9 +1605,17 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 	for _, dbSegment := range dbSegments {
 		// Check if the segment is in the new list
 		var inNewList bool
-		for _, segment := range segments {
+		for _, segment := range segments.Segments {
 			if dbSegment.SegmentID == segment.UUID {
 				inNewList = true
+				break
+			}
+		}
+
+		// Check if segment is in delete list, if so set inNewList to false
+		for _, segment := range segsToRemove {
+			if dbSegment.SegmentID == segment.SegmentID {
+				inNewList = false
 				break
 			}
 		}

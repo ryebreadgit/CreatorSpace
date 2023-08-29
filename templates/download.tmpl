@@ -14,7 +14,7 @@
 	<meta property="og:image" content="{{.ServerPath}}/assets/img/banner.png">
 </head>
 <body>
-{{template "navbar.tmpl"}}
+{{template "navbar.tmpl" . }}
 
 <div class="main-content">
     <div class="content-header">Download</div>
@@ -55,6 +55,17 @@
                 </div>
             </div>
         </div>
+        <!--
+        <div class="download-option">
+            <div class="download-option-header">Twitter</div>
+            <div class="download-option-content">
+                <div class="download-option-content-header">Twitter Handle</div>
+                <div class="download-option-content-input">
+                    <input type="text" id="twitter-id" placeholder="Twitter Handle">
+                </div>
+            </div>
+        </div>
+        -->
     </div>
 
     <div class="download-button">
@@ -68,6 +79,7 @@
         var channelID = document.getElementById("channel-id").value;
         var shortsID = document.getElementById("shorts-id").value;
         var playlistID = document.getElementById("playlist-id").value;
+        //var twitterID = document.getElementById("twitter-id").value;
 
         if (videoID != "") {
             window.location.href = "/download/video/" + videoID;
@@ -77,7 +89,9 @@
             window.location.href = "/download/shorts/" + shortsID;
         } else if (playlistID != "") {
             window.location.href = "/download/playlist/" + playlistID;
-        } else {
+        }/* else if (twitterID != "") {
+            window.location.href = "/download/twitter/" + twitterID;
+        }*/ else {
             alert("Please enter a valid ID");
         }
     }

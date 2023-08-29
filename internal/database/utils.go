@@ -269,3 +269,64 @@ func getVideoLength(filePath string) (string, error) {
 	return strconv.FormatFloat(seconds, 'f', 0, 64), nil
 
 }
+
+func ifTweetExists(id string, db *gorm.DB) bool {
+	// check if id exists
+	var t Tweet
+
+	if err := db.Select("tweet_id").Where("tweet_id = ?", id).First(&t).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Debugf("tweet_id record #{id} does not exist")
+		} else {
+			log.Errorf("Error, unable to get tweet_id record #{id} record due to error: %v", err)
+			return true
+		}
+	}
+	if t.TweetID != "" {
+		return true
+	} else {
+		return false
+	}
+}
+
+func ifDownloadQueueItemExists(id string, vidType string, db *gorm.DB) bool {
+	// check if id exists
+	var d DownloadQueue
+
+	if err := db.Select("video_id").Where("video_id = ? AND video_type = ?", id, vidType).First(&d).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Debugf("video_id record #{id} does not exist")
+		} else {
+			log.Errorf("Error, unable to get video_id record #{id} record due to error: %v", err)
+			return true
+		}
+	}
+	if d.VideoID != "" {
+		return true
+	} else {
+		return false
+	}
+}
+
+func ifUserExists(id string, db *gorm.DB) bool {
+	// check if id exists
+	var u User
+
+	if err := db.Select("user_id").Where("user_id = ?", id).First(&u).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Debugf("user_id record #{id} does not exist")
+		} else {
+			log.Errorf("Error, unable to get user_id record #{id} record due to error: %v", err)
+			return true
+		}
+	}
+	if u.UserID != "" {
+		return true
+	} else {
+		return false
+	}
+}
+
+func GetValidUserTypes() []string {
+	return []string{"admin", "user", "api"}
+}

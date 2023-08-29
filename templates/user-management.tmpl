@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Account - CreatorSpace</title>
+        <link rel="icon" type="image/x-icon" href="/favicon.ico">
+        <link rel="stylesheet" href="/assets/lib/bootstrap-5.3.0-alpha3-dist/css/bootstrap.min.css">
+        <link href="/assets/lib/bootstrap-icons-1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+        <script src="/assets/lib/bootstrap-5.3.0-alpha3-dist/js/bootstrap.bundle.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="/assets/css/styles.css" />
+        <link rel="stylesheet" type="text/css" href="/assets/css/videos.css">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="CreatorSpace is a tool to archive and watch your favorite creators. Add to or view your current collection of videos.">
+        <meta name="keywords" content="creator, archive, youtube, twitch, video, collection, watch">
+        <meta name="author" content="CreatorSpace">
+        <meta property="og:image" content="{{.ServerPath}}/assets/img/banner.png">
+    </head>
+
+
+<body>
+    {{ template "navbar.tmpl" .}}
+    <div class="container">
+        <!-- Add New User -->
+        <div class="add-user-form">
+            <h2>Add New User</h2>
+            <input type="text" id="new-username" placeholder="Username">
+            <input type="password" id="new-password" placeholder="Password">
+            <button type="button" class="btn btn-primary" onclick="addUser()">Add User</button>
+        </div>
+
+        <!-- List All Users -->
+        <h2>List of Users</h2>
+        <table class="table table-dark">
+            <thead>
+                <tr>
+                    <th class="col-4">Username</th>
+                    <th class="col-4 text-center">Account Type</th>
+                    <th class="col-4 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .Users }}
+                <tr>
+                    <td>{{ .Username }}</td>
+                    <td class="text-center">{{ .AccountType }}</td>
+                    <td class="text-right">
+                        <!-- Change Password Icon Button -->
+                <button class="btn btn-warning" onclick="showChangePasswordModal('{{.UserID}}')" title="Change Password">
+                    <i class="bi bi-key-fill"></i>
+                </button>
+
+                <!-- Change Account Type Icon Button -->
+                <button class="btn btn-info" onclick="showChangeAccountTypeModal('{{.UserID}}')" title="Change Account Type">
+                    <i class="bi bi-person-badge-fill"></i>
+                </button>
+
+                <!-- Delete Icon Button -->
+                <button class="btn btn-danger" onclick="deleteUser('{{.UserID}}')" title="Delete User">
+                    <i class="bi bi-trash-fill"></i>
+                </button>
+            </td>
+                    </td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+
+        <!-- Change Password Modal -->
+        <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="userIdModal">
+                        <div class="mb-3">
+                            <label for="new-password-modal" class="form-label">New Password:</label>
+                            <input type="password" class="form-control" id="new-password-modal" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm-password-modal" class="form-label">Confirm Password:</label>
+                            <input type="password" class="form-control" id="confirm-password-modal" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="changePassword(document.getElementById('userIdModal').value)">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change Account Type Modal -->
+        <div class="modal fade" id="changeAccountTypeModal" tabindex="-1" aria-labelledby="changeAccountTypeModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="changeAccountTypeModalLabel">Change Account Type</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="userIdRoleModal">
+                        <div class="mb-3">
+                            <label for="account-type-dropdown" class="form-label">Account Type:</label>
+                            <select class="form-select" id="account-type-dropdown">
+                                <option value="Admin">Admin</option>
+                                <option value="User" selected>User</option>
+                                <option value="API">API</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="changeAccountType(document.getElementById('userIdRoleModal').value)">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showChangePasswordModal(userId) {
+            // Set the user ID in the hidden input field of the modal
+            document.getElementById('userIdModal').value = userId;
+
+            // Reset the modal input fields
+            document.getElementById('new-password-modal').value = '';
+            document.getElementById('confirm-password-modal').value = '';
+
+            // Show the modal
+            var modal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
+            modal.show();
+        }
+
+        function showChangeAccountTypeModal(userId) {
+            // Set the user ID in the hidden input field of the modal
+            document.getElementById('userIdRoleModal').value = userId;
+
+            // Show the modal
+            var modal = new bootstrap.Modal(document.getElementById('changeAccountTypeModal'));
+            modal.show();
+        }
+
+        function changeAccountType(userId) {
+            const newRole = document.getElementById('account-type-dropdown').value;
+
+            // Warn if the role is Admin
+            if (newRole === 'Admin') {
+                if (!confirm('Are you sure you want to change this user\'s account type to Admin?')) {
+                    return;
+                }
+            }
+
+            fetch(`/api/admin/users/${userId}/role`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ NewRole: newRole })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ret === 200) {
+                    alert('Account type changed successfully');
+                    // Close the modal after successful change
+                    var modal = bootstrap.Modal.getInstance(document.getElementById('changeAccountTypeModal'));
+                    modal.hide();
+                    location.reload();
+                } else {
+                    alert('Failed to change account type - ' + (data.err || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Error occurred: ' + error.message);
+            });
+        }
+
+        function changePassword(userId) {
+            const newPassword = document.getElementById('new-password-modal').value;
+            const confirmPassword = document.getElementById('confirm-password-modal').value;
+
+            if (newPassword !== confirmPassword) {
+                alert('New password and confirm password do not match');
+                return;
+            }
+
+            console.log(JSON.stringify({ newPassword }))
+
+            fetch(`/api/admin/users/${userId}/password`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ newPassword })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ret === 200) {
+                    alert('Password changed successfully');
+                    // Close the modal after successful password change
+                    var modal = bootstrap.Modal.getInstance(document.getElementById('changePasswordModal'));
+                    modal.hide();
+                } else {
+                    alert('Failed to change password - ' + (data.err || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Error occurred: ' + error);
+            });
+        }
+
+
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                fetch(`/api/admin/users/${userId}`, {
+                    method: 'DELETE'
+                }).then(response => response.json())
+                .then(data => {
+                    if (data.ret === 200) {
+                        alert('User deleted successfully');
+                        location.reload();
+                    } else {
+                        alert('Failed to delete user - ' + (data.err || 'Unknown error'));
+                    }
+                });
+            }
+        }
+
+        function addUser() {
+            const username = document.getElementById('new-username').value;
+            const password = document.getElementById('new-password').value;
+
+            fetch(`/api/admin/users`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            }).then(response => response.json())
+            .then(data => {
+                if (data.ret === 200) {
+                    alert('User added successfully');
+                    location.reload();
+                } else {
+                    console.log(data.error);
+                    alert('Failed to add user - ' + (data.err || 'Unknown error'));
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
@@ -248,6 +249,21 @@ func processVideoIDs(videoIDChan chan videoWorkItem, limit int, settings *databa
 					fmt.Printf("Error sanitizing channel name %v: %v\n", channel.Name, err)
 					*reterr = err
 					continue
+				}
+
+				if channel.FilePath != "" {
+
+					// Pull name from filepath if possible
+
+					tmpslc := strings.Split(channel.FilePath, "/")
+					tmpname := tmpslc[len(tmpslc)-2]
+
+					chanName, err = general.SanitizeFileName(tmpname)
+					if err != nil {
+						fmt.Printf("Error sanitizing channel name %v: %v\n", channel.Name, err)
+						*reterr = err
+						continue
+					}
 				}
 
 				item.DownloadPath = fmt.Sprintf("%v/%v/%v/%v", settings.BaseYouTubePath, chanName, folderName, videoID.videoID)

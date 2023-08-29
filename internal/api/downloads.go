@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
@@ -62,14 +63,9 @@ func apiDownloadVideo(c *gin.Context) {
 	}
 
 	// If the video type is video get metadata. If the video creator is not in the database, set the creator id 000.
-	if vidtype == "video" || vidtype == "playlist" {
+	if vidtype == "video" {
 		var cname string
-		var vidurl string
-		if vidtype == "video" {
-			vidurl = fmt.Sprintf("https://www.youtube.com/watch?v=%s", videoid)
-		} else if vidtype == "playlist" {
-			vidurl = fmt.Sprintf("https://www.youtube.com/playlist?list=%s", videoid)
-		}
+		vidurl := fmt.Sprintf("https://www.youtube.com/watch?v=%s", videoid)
 		metadata, err := tasking.GetYouTubeMetadata(vidurl, false)
 		if err != nil {
 			c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": err.Error()})
@@ -86,7 +82,11 @@ func apiDownloadVideo(c *gin.Context) {
 			c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": err.Error()})
 			return
 		} else if err == nil {
-			cname, err = general.SanitizeFileName(creator.Name)
+			// creator.FilePath = "/${creator_name}/${creator_name}.json", pull the creator name from json name.
+			tmpslc := strings.Split(creator.FilePath, "/")
+			tmpname := tmpslc[len(tmpslc)-2]
+
+			cname, err = general.SanitizeFileName(tmpname)
 			if err != nil {
 				c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": err.Error()})
 				return
@@ -96,6 +96,11 @@ func apiDownloadVideo(c *gin.Context) {
 		}
 		downloadItem.Source = "youtube"
 		downloadItem.DownloadPath = fmt.Sprintf("%s/%s/videos/%s", settings.BaseYouTubePath, cname, videoid)
+	}
+
+	if vidtype == "twitter" {
+		downloadItem.Source = "twitter"
+		downloadItem.DownloadPath = fmt.Sprintf("%s/%s", settings.BaseTwitterPath, videoid)
 	}
 
 	// Add video to download queue

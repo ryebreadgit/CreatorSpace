@@ -8,10 +8,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
-	jwttoken "github.com/ryebreadgit/CreatorSpace/internal/jwt"
 	"gorm.io/gorm"
 )
 
@@ -34,26 +32,39 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 
 		// check filter
 		var filterQuery string
-		filter := c.Query("filter")
-		if filter == "" {
-			filter = "all"
-		}
-
 		filterList := getFilterList()
-
-		if filter != "" {
-			// check if filter is valid
-			if _, ok := filterList[filter]; !ok {
-				// Give invalid filter error
-				c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-					"ret": 404,
-					"err": "Invalid filter type",
-				})
-				return
-			}
-			filterQuery = filterList[filter]
+		allFilters, ok := c.GetQueryArray("filter")
+		if !ok {
+			allFilters = []string{"all"}
 		}
 
+		watchFilter := 0
+
+		for _, filter := range allFilters {
+			if filter == "watched" {
+				watchFilter = 1
+				continue
+			} else if filter == "notwatched" {
+				watchFilter = 2
+				continue
+			}
+			if filter != "" {
+				// check if filter is valid
+				if _, ok := filterList[filter]; !ok {
+					// Give invalid filter error
+					c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
+						"ret": 404,
+						"err": "Invalid filter type: " + filter,
+					})
+					return
+				}
+				if filterQuery == "" {
+					filterQuery = filterList[filter]
+				} else {
+					filterQuery = filterQuery + " AND " + filterList[filter]
+				}
+			}
+		}
 		// check sort
 		var sortQuery string
 		sort := c.Query("sort")
@@ -76,7 +87,113 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 			sortQuery = sortList[sort]
 		}
 
-		vidargs := db.Select("title", "video_id", "views", "length", "published_at", "availability").Limit(20).Offset((pageInt - 1) * 20)
+		userData, exists := c.Get("user")
+		if !exists {
+			// Redirect to login
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
+			c.Abort()
+			return
+		}
+
+		user := userData.(database.User)
+
+		// get watched videos from database
+		watchedVideos, err := database.GetPlaylistByUserID(user.UserID, "Completed Videos", db)
+		if err != nil {
+			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
+				"ret": 404,
+				"err": "Unable to get watched videos",
+			})
+			return
+		}
+
+		var creatorIDs []string
+
+		// If channel id is 000, then get videos from all creators that are not in the creator table. Get all creators, then add .Where statement to vidargs get videos from all creators that are not in the creator table
+		if creatorid == "000" {
+			creators, err := database.GetAllCreators(db.Select("channel_id"))
+			if err != nil {
+				c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
+					"ret": 404,
+					"err": err.Error(),
+				})
+				return
+			}
+
+			for _, creator := range creators {
+				creatorIDs = append(creatorIDs, creator.ChannelID)
+			}
+		}
+
+		vididquery := db.Select("video_id").Order("published_at DESC")
+		if filterQuery != "" {
+			vididquery = vididquery.Where(filterQuery)
+		}
+		if sortQuery != "" {
+			if sort == "mostviews" || sort == "leastviews" {
+				vididquery = vididquery.Where("views != ''")
+				vididquery = vididquery.Where("views NOT like '%[^0-9]%'")
+			}
+			if sort == "mostlikes" || sort == "leastlikes" {
+				vididquery = vididquery.Where("likes != ''").Where("likes != 'None'")
+				vididquery = vididquery.Where("likes NOT like '%[^0-9]%'")
+			}
+			vididquery = vididquery.Order(sortQuery)
+		}
+
+		if len(creatorIDs) == 0 {
+			vididquery = vididquery.Where("channel_id = ?", creatorid)
+		} else {
+			vididquery = vididquery.Where("channel_id NOT IN ?", creatorIDs)
+		}
+
+		// vididquery.Limit(250).Offset((pageInt - 1) * 25)
+		vidIds, err := database.GetAllVideos(vididquery)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{
+				"ret": http.StatusInternalServerError,
+				"err": fmt.Sprintf("Error getting videos: %v", err),
+			})
+			return
+		}
+
+		subVideoIDs := make([]string, len(vidIds))
+		for i, video := range vidIds {
+			subVideoIDs[i] = video.VideoID
+		}
+
+		vidargs := db.Select("title", "video_id", "views", "length", "published_at", "availability", "channel_id", "channel_title").Limit(20).Offset((pageInt - 1) * 20)
+
+		if len(creatorIDs) == 0 {
+			vidargs = vidargs.Where("channel_id = ?", creatorid)
+		} else {
+			vidargs = vidargs.Where("channel_id NOT IN ?", creatorIDs)
+		}
+
+		if watchFilter == 1 {
+			// only show videos in watchedVideos
+			if len(watchedVideos) > 0 {
+				vidargs = vidargs.Where("video_id IN (?)", intersection(subVideoIDs, watchedVideos))
+			} else {
+				// No watched videos found
+				c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
+					"ret": 404,
+					"err": "No watched videos found",
+				})
+				return
+			}
+		} else if watchFilter == 2 {
+			// remove videos in watchedVideos
+			if len(watchedVideos) > 0 {
+				vidargs = vidargs.Where("video_id IN (?)", difference(subVideoIDs, watchedVideos))
+			} else {
+				// All videos are unwatched
+				vidargs = vidargs.Where("video_id IN (?)", subVideoIDs)
+			}
+		} else {
+			vidargs = vidargs.Where("video_id IN (?)", subVideoIDs)
+		}
+
 		if filterQuery != "" {
 			vidargs = vidargs.Where(filterQuery)
 		}
@@ -91,27 +208,6 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 				vidargs = vidargs.Where("likes NOT like '%[^0-9]%'")
 			}
 			vidargs = vidargs.Order(sortQuery)
-		}
-
-		// If channel id is 000, then get videos from all creators that are not in the creator table. Get all creators, then add .Where statement to vidargs get videos from all creators that are not in the creator table
-		if creatorid == "000" {
-			creators, err := database.GetAllCreators(db.Select("channel_id"))
-			if err != nil {
-				c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-					"ret": 404,
-					"err": err.Error(),
-				})
-				return
-			}
-
-			var creatorIDs []string
-			for _, creator := range creators {
-				creatorIDs = append(creatorIDs, creator.ChannelID)
-			}
-
-			vidargs = vidargs.Where("channel_id NOT IN ?", creatorIDs)
-		} else {
-			vidargs = vidargs.Where("channel_id = ?", creatorid)
 		}
 
 		videos, err := database.GetCreatorVideos(creatorid, vidargs)
@@ -134,7 +230,7 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 		// check if there is a next page, even if there's 20 videos, there might not be a next page
 		nextPageFound := false
 		if len(videos) == 20 {
-			tmp, err := database.GetCreatorVideos(creatorid, db.Select("video_id").Order("published_at DESC").Limit(1).Offset(pageInt*20))
+			tmp, err := database.GetCreatorVideos(creatorid, vidargs.Select("video_id").Limit(1).Offset(pageInt*20))
 			if err == nil && len(tmp) > 0 {
 				nextPageFound = true
 			}
@@ -142,52 +238,17 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 
 		creator, err := database.GetCreator(creatorid, db.Select("name", "channel_id", "description", "subscribers", "platform"))
 		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Creator not found",
-			})
-			return
-		}
-
-		// get user from jwt, parse it and get the user from the database
-		token, err := jwttoken.GetToken(c)
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Unable to get token",
-			})
-			return
-		}
-
-		parsedToken, err := jwttoken.ParseToken(token, settings.JwtSecret)
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Unable to parse token",
-			})
-			return
-		}
-
-		// get user_id from parsed token using jwt package
-		claims, ok := parsedToken.Claims.(jwt.MapClaims)
-		if !ok {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Unable to get claims",
-			})
-			return
-		}
-
-		user := claims["user_id"].(string)
-
-		// get watched videos from database
-		watchedVideos, err := database.GetPlaylistByUserID(user, "Completed Videos", db)
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Unable to get watched videos",
-			})
-			return
+			// As we've found videos we know there's a creator, so we can just use the first video to get the creator info and set the rest to Various Creators
+			creator.Name = videos[0].ChannelTitle
+			creator.ChannelID = videos[0].ChannelID
+			creator.Description = "A Channel from Various Creators [Generated by CreatorSpace]"
+			if videos[0].VideoType == "Twitch" {
+				creator.Platform = "Twitch"
+			} else if videos[0].VideoType == "Twitter" {
+				creator.Platform = "Twitter"
+			} else {
+				creator.Platform = "YouTube"
+			}
 		}
 
 		if len(watchedVideos) > 0 {
@@ -204,7 +265,7 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 		subscribed := false
 
 		// Get user subscriptions and check if user is subscribed to creator
-		subscriptions, err := database.GetPlaylistByUserID(user, "Subscriptions", db)
+		subscriptions, err := database.GetPlaylistByUserID(user.UserID, "Subscriptions", db)
 		if err != nil {
 			subscriptions = []string{}
 		}
@@ -216,7 +277,7 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		// get video progress
-		allProg, err := database.GetAllVideoProgress(user, db)
+		allProg, err := database.GetAllVideoProgress(user.UserID, db)
 		if err != nil {
 			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
 				"ret": 404,
@@ -312,7 +373,7 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 			"Videos":         videos,
 			"Creator":        creator,
 			"LinkedAccounts": linkedaccs,
-			"UserID":         user,
+			"User":           user,
 			"Subscribed":     subscribed,
 			"ServerPath":     settings.ServerPath,
 		}
@@ -324,9 +385,9 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 		if page != "1" {
 			ret["PrevPage"] = pageInt - 1
 		}
-		if filter != "" {
-			ret["Filter"] = filter
-		}
+
+		ret["Filter"] = allFilters[0]
+
 		if sort != "" {
 			ret["Sort"] = sort
 		}
@@ -360,8 +421,19 @@ func page_creators(db *gorm.DB) gin.HandlerFunc {
 			return strings.ToLower(baseFiles[i].Name) < strings.ToLower(baseFiles[j].Name)
 		})
 
+		userData, exists := c.Get("user")
+		if !exists {
+			// Redirect to login
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
+			c.Abort()
+			return
+		}
+
+		user := userData.(database.User)
+
 		c.HTML(http.StatusOK, "creators.tmpl", gin.H{
 			"files": baseFiles,
+			"User":  user,
 		})
 	}
 }

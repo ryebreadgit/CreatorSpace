@@ -69,12 +69,12 @@ func Routes(route *gin.Engine) {
 				c.JSON(200, gin.H{"ret": 200, "data": retData})
 			})
 
-			// TODO - finish trancoding
+			/* TODO - finish trancoding
 
 			media.GET("/:video_id/manifest.m3u8", streamTranscodedVideo)
 			media.GET("/transcoding/video/:uuid/manifest.m3u8", ServeHLSManifest)
 			media.GET("/transcoding/video/:uuid/:chunk_name", ServeVideoChunk)
-
+			*/
 		}
 
 		downloads := api.Group("/downloads")
@@ -94,6 +94,8 @@ func Routes(route *gin.Engine) {
 
 			user.POST("/:user_id/subscriptions/:creator_id", apiAddSubscription)
 			user.DELETE("/:user_id/subscriptions/:creator_id", apiRemoveSubscription)
+
+			user.PATCH("/:user_id/password", apiUpdatePassword)
 		}
 
 		yt := api.Group("/youtube")
@@ -127,6 +129,18 @@ func Routes(route *gin.Engine) {
 			auth.POST("/login", wrapper(apiUserLogin))
 			auth.POST("/logout", wrapper(apiUserLogout))
 			auth.POST("/register", wrapper(apiUserSignup))
+		}
+
+		admin := api.Group("/admin")
+		{
+			admin.Use(jwttoken.JwtMiddleware())
+			admin.Use(AdminMiddleware())
+			admin.GET("/users", apiGetAllUsers)
+			admin.POST("/users", apiCreateUser)
+			admin.GET("/users/:user_id", apiGetUser)
+			admin.DELETE("/users/:user_id", apiDeleteUser)
+			admin.PATCH("/users/:user_id/password", apiUpdateUserPassword)
+			admin.PATCH("/users/:user_id/role", apiUpdateUserRole)
 		}
 
 	}

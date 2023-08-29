@@ -8,11 +8,12 @@ require (
 	github.com/gin-gonic/gin v1.8.2
 	github.com/goccy/go-json v0.9.11
 	github.com/golang-jwt/jwt/v5 v5.0.0-rc.1
+	github.com/n0madic/twitter-scraper v0.0.0-20230711213008-94503a2bc36c
 	github.com/redis/go-redis/v9 v9.0.3
-	github.com/sirupsen/logrus v1.9.0
-	golang.org/x/crypto v0.4.0
+	github.com/sirupsen/logrus v1.9.3
+	golang.org/x/crypto v0.11.0
 	golang.org/x/image v0.7.0
-	golang.org/x/net v0.6.0
+	golang.org/x/net v0.12.0
 	gorm.io/driver/postgres v1.4.7
 	gorm.io/driver/sqlite v1.4.4
 	gorm.io/gorm v1.24.3
@@ -48,8 +49,8 @@ require (
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

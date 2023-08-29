@@ -6,37 +6,23 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
-	jwttoken "github.com/ryebreadgit/CreatorSpace/internal/jwt"
 	"gorm.io/gorm"
 )
 
 func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		cookie, err := c.Cookie("jwt-token")
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Error getting token",
-			})
+		userData, exists := c.Get("user")
+		if !exists {
+			// Redirect to login
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
+			c.Abort()
 			return
 		}
 
-		// parse jwt token
-		parsedToken, err := jwttoken.ParseToken(cookie, settings.JwtSecret)
-		if err != nil {
-			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-				"ret": 404,
-				"err": "Error parsing token",
-			})
-			return
-		}
-
-		claims := parsedToken.Claims.(jwt.MapClaims)
-		user := claims["user_id"].(string)
+		user := userData.(database.User)
 
 		page := c.Query("page")
 
@@ -55,24 +41,37 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 
 		// check filter
 		var filterQuery string
-		filter := c.Query("filter")
-		if filter == "" {
-			filter = "all"
-		}
-
 		filterList := getFilterList()
+		allFilters, ok := c.GetQueryArray("filter")
+		if !ok {
+			allFilters = []string{"all"}
+		}
+		watchFilter := 0
 
-		if filter != "" {
-			// check if filter is valid
-			if _, ok := filterList[filter]; !ok {
-				// Give invalid filter error
-				c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
-					"ret": 404,
-					"err": "Invalid filter type",
-				})
-				return
+		for _, filter := range allFilters {
+			if filter == "watched" {
+				watchFilter = 1
+				continue
+			} else if filter == "notwatched" {
+				watchFilter = 2
+				continue
 			}
-			filterQuery = filterList[filter]
+			if filter != "" {
+				// check if filter is valid
+				if _, ok := filterList[filter]; !ok {
+					// Give invalid filter error
+					c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
+						"ret": 404,
+						"err": "Invalid filter type: " + filter,
+					})
+					return
+				}
+				if filterQuery == "" {
+					filterQuery = filterList[filter]
+				} else {
+					filterQuery = filterQuery + " AND " + filterList[filter]
+				}
+			}
 		}
 
 		// check sort
@@ -97,10 +96,8 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 			sortQuery = sortList[sort]
 		}
 
-		subargs := db.Select("video_id", "channel_id")
-
 		// get watched videos from database
-		watchedVideos, err := database.GetPlaylistByUserID(user, "Completed Videos", db)
+		watchedVideos, err := database.GetPlaylistByUserID(user.UserID, "Completed Videos", db)
 		if err != nil {
 			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
 				"ret": 404,
@@ -110,7 +107,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		// Get the user's subscriptions
-		userSubscriptions, err := database.GetPlaylistByUserID(user, "Subscriptions", db)
+		userSubscriptions, err := database.GetPlaylistByUserID(user.UserID, "Subscriptions", db)
 		if err != nil {
 			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
 				"ret": 404,
@@ -118,6 +115,8 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 			})
 			return
 		}
+
+		subargs := db.Select("video_id", "channel_id")
 
 		// Add subscriptions to query
 		if len(userSubscriptions) > 0 {
@@ -163,7 +162,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 		vidargs := db.Select("title", "video_id", "likes", "views", "channel_title", "channel_id", "published_at", "description", "length", "video_type", "availability").Limit(20).Offset((pageInt - 1) * 20)
 		// check if there is a next page, even if there's 20 videos, there might not be a next page
 
-		if filter == "watched" {
+		if watchFilter == 1 {
 			// only show videos in watchedVideos
 			if len(watchedVideos) > 0 {
 				vidargs = vidargs.Where("video_id IN (?)", intersection(subVideoIDs, watchedVideos))
@@ -175,7 +174,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 				})
 				return
 			}
-		} else if filter == "notwatched" {
+		} else if watchFilter == 2 {
 			// remove videos in watchedVideos
 			if len(watchedVideos) > 0 {
 				vidargs = vidargs.Where("video_id IN (?)", difference(subVideoIDs, watchedVideos))
@@ -211,7 +210,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 
 		nextPageFound := false
 		if len(videos) == 20 {
-			tmp, err := database.GetAllVideos(db.Select("video_id").Order("published_at DESC").Limit(1).Offset(pageInt * 20))
+			tmp, err := database.GetAllVideos(vidargs.Select("video_id").Limit(1).Offset(pageInt * 20))
 			if err == nil && len(tmp) > 0 {
 				nextPageFound = true
 			}
@@ -237,7 +236,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		// get video progress
-		allProg, err := database.GetAllVideoProgress(user, db)
+		allProg, err := database.GetAllVideoProgress(user.UserID, db)
 		if err != nil {
 			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
 				"ret": 404,
@@ -309,7 +308,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 
 		ret := gin.H{
 			"Videos":     videos,
-			"UserID":     user,
+			"User":       user,
 			"ServerPath": settings.ServerPath,
 		}
 
@@ -321,9 +320,7 @@ func page_subscriptions(db *gorm.DB) gin.HandlerFunc {
 			ret["PrevPage"] = pageInt - 1
 		}
 
-		if filter != "" {
-			ret["Filter"] = filter
-		}
+		ret["Filter"] = allFilters[0]
 		if sort != "" {
 			ret["Sort"] = sort
 		}

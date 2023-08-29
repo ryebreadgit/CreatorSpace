@@ -1,5 +1,7 @@
 package api
 
+/* Transcoding needs a lot of work and is not currently used, will work on this further with Twitch integration
+
 import (
 	"bytes"
 	"fmt"
@@ -16,7 +18,6 @@ import (
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	jwttoken "github.com/ryebreadgit/CreatorSpace/internal/jwt"
 )
-
 // Transcode video into HLS chunks. This is done with
 
 func generateHLSManifestFile(videoFilePath string, transcodingFolder string, manifestFilePath string) error {
@@ -334,3 +335,4 @@ func getDuration(filePath string) (time.Duration, error) {
 
 	return time.Duration(duration) * time.Second, nil
 }
+*/

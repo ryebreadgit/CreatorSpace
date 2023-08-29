@@ -63,8 +63,19 @@ func task_updateAllVideoMetadata(args ...interface{}) error {
 func task_DownloadYouTubeVideo(args ...interface{}) error {
 	return downloadYouTubeVideos(settings, db)
 }
-func task_CorrectUserProgress(args ...interface{}) error {
-	return correctUserProgress()
+
+func task_UpdateTweets(args ...interface{}) error {
+	return UpdateTwitterCreators(args[0].(int))
+}
+
+func task_SystemCleanup(args ...interface{}) error {
+	var errs []error
+	errs = append(errs, correctVariousUsers())
+	errs = append(errs, correctUserProgress())
+	if len(errs) > 0 {
+		return fmt.Errorf("errors: %v", errs)
+	}
+	return nil
 }
 
 func InitTasking() {
@@ -131,13 +142,33 @@ func InitTasking() {
 				})
 			}
 
-			if t.TaskName == "CorrectUserProgress" {
+			if t.TaskName == "SystemCleanup" {
 				tasks = append(tasks, &Task{
 					Name:     t.TaskName,
 					Epoch:    t.Epoch,
 					Interval: t.Interval * time.Minute,
-					Task:     task_CorrectUserProgress,
+					Task:     task_SystemCleanup,
 					Args:     []interface{}{settings, db},
+				})
+			}
+
+			if t.TaskName == "UpdateTweetsQuick" {
+				tasks = append(tasks, &Task{
+					Name:     t.TaskName,
+					Epoch:    t.Epoch,
+					Interval: t.Interval * time.Minute,
+					Task:     task_UpdateTweets,
+					Args:     []interface{}{100},
+				})
+			}
+
+			if t.TaskName == "UpdateTweets" {
+				tasks = append(tasks, &Task{
+					Name:     t.TaskName,
+					Epoch:    t.Epoch,
+					Interval: t.Interval * time.Minute,
+					Task:     task_UpdateTweets,
+					Args:     []interface{}{5},
 				})
 			}
 		}
@@ -151,6 +182,16 @@ func InitTasking() {
 	} else {
 		log.Errorf("Error getting tasking from database: %v", err)
 	}
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+
+	return false
 }
 
 func init() {

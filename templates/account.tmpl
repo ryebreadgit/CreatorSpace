@@ -13,22 +13,176 @@
         <meta name="keywords" content="creator, archive, youtube, twitch, video, collection, watch">
         <meta name="author" content="CreatorSpace">
         <meta property="og:image" content="{{.ServerPath}}/assets/img/banner.png">
+        <style>
+            label {
+                font-weight: bold;
+                padding-top: 0.5rem;
+            }
+            .container {
+                color: #fff;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .password-settings {
+                max-width: 500px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .thumbnail img {
+                width: 100px;
+                height: 100px;
+                object-fit: cover;
+                border-radius: 50%;
+                margin: 0.5rem;
+            }
+            .remove-sub {
+                /* vertically center inside img */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                /* overlay */
+                position: absolute;
+                top: 36px;
+                left: 10px;
+                font-size: 12px;
+            }
+            .minus {
+                padding: 0.25rem;
+            }
+            input {
+                background-color: #fff;
+                color: #000;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            @media screen and (max-width: 768px) {
+                .thumbnail img {
+                    width: 50px;
+                    height: 50px;
+                    object-fit: cover;
+                    border-radius: 50%;
+                    margin: 0.5rem;
+                }
+                .sub-text {
+                    font-size: 12px;
+                    margin-bottom: 1rem;
+                    margin-top: -2rem;
+                }
+            }
+        </style>
     </head>
     <body>
-        {{ template "navbar.tmpl" }}
+        {{ template "navbar.tmpl" . }}
         <div class="container">
             <!-- have options for changing password and manage subscriptions -->
             <div class="row">
                 <div class="col-12">
-                    <h1>Account Settings</h1>
+                    <h1 style="margin-top: 1rem;">Account Settings</h1>
                 </div>
                 <!-- Change password -->
                 <div class="password-settings">
-                    
+                    <h2>Change Password</h2>
+                    <div class="row">
+                        <div class="col-12">
+                            <label for="old-password" class="form-label">Old Password:</label>
+                            <input type="password" class="form-control" id="old-password" name="old-password" required>
+                        </div>
+                        <div class="col-12">
+                            <label for="new-password" class="form-label">New Password:</label>
+                            <input type="password" class="form-control" id="new-password" name="new-password" required>
+                        </div>
+                        <div class="col-12">
+                            <label for="confirm-password" class="form-label">Confirm Password:</label>
+                            <input type="password" class="form-control" id="confirm-password" name="confirm-password" required>
+                        </div>
+                        <div class="col-12 text-center mt-3">
+                            <button type="button" class="btn btn-primary" onclick="submitPassword('{{$.User.UserID}}')">Change Password</button>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
+                <!-- Manage Subscriptions -->
+                
+            <div class="row">
+                <div class="col-12">
+                    
+                    <div class="subscription">
+                        <h2 style="margin-top: 1rem;">Manage Subscriptions</h2>
+                        {{ range $subscription := .Subscriptions }}
+                            <div class="col-12">
+                                <div class="row align-items-center sub-item">
+                                    <div class="col-6 col-md-2">
+                                        <div class="thumbnail-box">
+                                            <div class="image-container">
+                                                <div class="thumbnail">
+                                                    <img src="/api/youtube/creators/{{$subscription.ChannelID}}/thumbnail" alt="{{$subscription.Name}}">
+                                                        <div class="remove-sub">
+                                                            <span class="minus" onclick="deleteSubscription('{{$.User.UserID}}', '{{$subscription.ChannelID}}', '{{$subscription.Name}}')">
+                                                                Unsubscribe                                                                 
+                                                            </span>
+                                                        </div>
+                                                    </img>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-12 col-md-8 sub-text">
+                                        <span>{{$subscription.Name}}</span>
+                                            | 
+                                        <span>{{$subscription.ChannelID}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {{ end }}
+                    </div>
+                </div>
             </div>
         </div>
+        <script>
+            function deleteSubscription(user, channelID, name) {
+                if (confirm("Are you sure you want to unsubscribe from " + name + "?")) {
+                    // Run DELETE /api/user/:user_id/subscriptions/:creator_id and display success message
+                    var xhttp = new XMLHttpRequest();
+                    xhttp.open("DELETE", "/api/user/" + user + "/subscriptions/" + channelID, true);
+                    xhttp.send();
+                    xhttp.onreadystatechange = function() {
+                        if (this.readyState == 4 && this.status == 200) {
+                            alert("Successfully unsubscribed from " + name + "!");
+                            location.reload();
+                        } else if (this.readyState == 4 && this.status == 400) {
+                            alert("Failed to unsubscribe from " + name + "!");
+                        }
+                    };
+                }
+            }
+
+            function submitPassword(user) {
+                const oldPassword = document.getElementById('old-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+
+                if (newPassword !== confirmPassword) {
+                    alert('New password and confirm password do not match');
+                    return;
+                }
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('PATCH', `/api/user/${user}/password`);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        alert('Password changed successfully');
+                        location.reload();
+                    } else {
+                        var errJson = JSON.parse(xhr.responseText);
+                        alert('Failed to change password - ' + errJson["err"]);
+                    }
+                };
+                xhr.send(JSON.stringify({ oldPassword, newPassword }));
+            }
+        </script>
     </body>
 
 </html>

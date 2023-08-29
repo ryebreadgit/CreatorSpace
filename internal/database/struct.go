@@ -13,6 +13,7 @@ type Creator struct {
 	ID             int `gorm:"primaryKey"`
 	ChannelID      string
 	Name           string
+	AltName        string
 	Description    string
 	VideoIDs       string
 	FilePath       string
@@ -54,6 +55,32 @@ type Video struct {
 	SponsorTag    string
 }
 
+type Tweet struct {
+	gorm.Model
+	ID              int `gorm:"primaryKey"`
+	TweetID         string
+	ConversationID  string
+	UserID          string
+	Username        string
+	UserDisplayName string
+	Epoch           int64
+	IsQuote         bool
+	QuoteID         string
+	IsReply         bool
+	InReplyToID     string
+	IsRetweet       bool
+	RetweetID       string
+	IsPin           bool
+	Likes           int
+	ReplyCount      int
+	RetweetCount    int
+	Photos          string
+	Videos          string
+	Text            string
+	URLs            string
+	FilePath        string
+}
+
 type SponsorBlock struct {
 	gorm.Model
 	Deleted      gorm.DeletedAt
@@ -77,6 +104,7 @@ type Comment struct {
 	VideoID         string
 	Text            string
 	Author          string
+	AuthorID        string
 	Heart           bool
 	TimeParsed      float64 `json:"time_parsed"`
 	TimeString      string
@@ -113,6 +141,7 @@ type Settings struct {
 	ID               int `gorm:"primaryKey"`
 	BaseYouTubePath  string
 	BaseTwitchPath   string
+	BaseTwitterPath  string
 	DatabasePath     string
 	DatabaseType     string
 	DatabaseHost     string
@@ -138,7 +167,6 @@ type User struct {
 	UserID      string
 	Username    string
 	Password    string
-	Email       string
 	AccountType string
 
 	// User settings
@@ -342,55 +370,47 @@ type YouTubeVideoInfoStruct struct {
 		Width      int    `json:"width,omitempty"`
 		Resolution string `json:"resolution,omitempty"`
 	} `json:"thumbnails"`
-	Thumbnail        string      `json:"thumbnail"`
-	Description      string      `json:"description"`
-	Uploader         string      `json:"uploader"`
-	UploaderID       string      `json:"uploader_id"`
-	UploaderURL      string      `json:"uploader_url"`
-	ChannelID        string      `json:"channel_id"`
-	ChannelURL       string      `json:"channel_url"`
-	Duration         int         `json:"duration"`
-	ViewCount        int         `json:"view_count"`
-	AverageRating    interface{} `json:"average_rating"`
-	AgeLimit         int         `json:"age_limit"`
-	WebpageURL       string      `json:"webpage_url"`
-	Categories       []string    `json:"categories"`
-	Tags             []string    `json:"tags"`
-	PlayableInEmbed  bool        `json:"playable_in_embed"`
-	LiveStatus       string      `json:"live_status"`
-	ReleaseTimestamp int         `json:"release_timestamp"`
-	FormatSortFields []string    `json:"_format_sort_fields"`
-	Subtitles        struct {
-		En       []YouTubeApiVideoInfoStructSub `json:"en"`
-		EnUS     []YouTubeApiVideoInfoStructSub `json:"en-US"`
-		EnGB     []YouTubeApiVideoInfoStructSub `json:"en-GB"`
-		De       []YouTubeApiVideoInfoStructSub `json:"de"`
-		Es       []YouTubeApiVideoInfoStructSub `json:"es"`
-		Fr       []YouTubeApiVideoInfoStructSub `json:"fr"`
-		LiveChat []YouTubeApiVideoInfoStructSub `json:"live_chat"`
-	} `json:"subtitles"`
-	CommentCount         int         `json:"comment_count"`
-	Chapters             interface{} `json:"chapters"`
-	LikeCount            int         `json:"like_count"`
-	Channel              string      `json:"channel"`
-	ChannelFollowerCount int         `json:"channel_follower_count"`
-	UploadDate           string      `json:"upload_date"`
-	Availability         string      `json:"availability"`
-	OriginalURL          string      `json:"original_url"`
-	WebpageURLBasename   string      `json:"webpage_url_basename"`
-	WebpageURLDomain     string      `json:"webpage_url_domain"`
-	Extractor            string      `json:"extractor"`
-	ExtractorKey         string      `json:"extractor_key"`
-	Playlist             interface{} `json:"playlist"`
-	PlaylistIndex        interface{} `json:"playlist_index"`
-	DisplayID            string      `json:"display_id"`
-	Fulltitle            string      `json:"fulltitle"`
-	DurationString       string      `json:"duration_string"`
-	ReleaseDate          string      `json:"release_date"`
-	IsLive               bool        `json:"is_live"`
-	WasLive              bool        `json:"was_live"`
-	RequestedSubtitles   interface{} `json:"requested_subtitles"`
-	HasDrm               interface{} `json:"_has_drm"`
+	Thumbnail            string                                    `json:"thumbnail"`
+	Description          string                                    `json:"description"`
+	Uploader             string                                    `json:"uploader"`
+	UploaderID           string                                    `json:"uploader_id"`
+	UploaderURL          string                                    `json:"uploader_url"`
+	ChannelID            string                                    `json:"channel_id"`
+	ChannelURL           string                                    `json:"channel_url"`
+	Duration             int                                       `json:"duration"`
+	ViewCount            int                                       `json:"view_count"`
+	AverageRating        interface{}                               `json:"average_rating"`
+	AgeLimit             int                                       `json:"age_limit"`
+	WebpageURL           string                                    `json:"webpage_url"`
+	Categories           []string                                  `json:"categories"`
+	Tags                 []string                                  `json:"tags"`
+	PlayableInEmbed      bool                                      `json:"playable_in_embed"`
+	LiveStatus           string                                    `json:"live_status"`
+	ReleaseTimestamp     int                                       `json:"release_timestamp"`
+	FormatSortFields     []string                                  `json:"_format_sort_fields"`
+	Subtitles            map[string][]YouTubeApiVideoInfoStructSub `json:"subtitles"`
+	CommentCount         int                                       `json:"comment_count"`
+	Chapters             interface{}                               `json:"chapters"`
+	LikeCount            int                                       `json:"like_count"`
+	Channel              string                                    `json:"channel"`
+	ChannelFollowerCount int                                       `json:"channel_follower_count"`
+	UploadDate           string                                    `json:"upload_date"`
+	Availability         string                                    `json:"availability"`
+	OriginalURL          string                                    `json:"original_url"`
+	WebpageURLBasename   string                                    `json:"webpage_url_basename"`
+	WebpageURLDomain     string                                    `json:"webpage_url_domain"`
+	Extractor            string                                    `json:"extractor"`
+	ExtractorKey         string                                    `json:"extractor_key"`
+	Playlist             interface{}                               `json:"playlist"`
+	PlaylistIndex        interface{}                               `json:"playlist_index"`
+	DisplayID            string                                    `json:"display_id"`
+	Fulltitle            string                                    `json:"fulltitle"`
+	DurationString       string                                    `json:"duration_string"`
+	ReleaseDate          string                                    `json:"release_date"`
+	IsLive               bool                                      `json:"is_live"`
+	WasLive              bool                                      `json:"was_live"`
+	RequestedSubtitles   interface{}                               `json:"requested_subtitles"`
+	HasDrm               interface{}                               `json:"_has_drm"`
 	Comments             []struct {
 		ID               string `json:"id"`
 		Text             string `json:"text"`
@@ -487,14 +507,23 @@ type YouTubeApiVideoInfoStructSub struct {
 }
 
 type SponsorBlockRawApi struct {
-	Category      string    `json:"category"`
-	ActionType    string    `json:"actionType"`
-	Segment       []float64 `json:"segment"`
-	UUID          string    `json:"UUID"`
-	VideoDuration float64   `json:"videoDuration"`
-	Locked        int       `json:"locked"`
-	Votes         int       `json:"votes"`
-	Description   string    `json:"description"`
+	SegmentCount int `json:"segmentCount"`
+	Page         int `json:"page"`
+	Segments     []struct {
+		UUID          string  `json:"UUID"`
+		TimeSubmitted int64   `json:"timeSubmitted"`
+		StartTime     float64 `json:"startTime"`
+		EndTime       float64 `json:"endTime"`
+		Category      string  `json:"category"`
+		ActionType    string  `json:"actionType"`
+		Votes         int     `json:"votes"`
+		Views         int     `json:"views"`
+		Locked        int     `json:"locked"`
+		Hidden        int     `json:"hidden"`
+		ShadowHidden  int     `json:"shadowHidden"`
+		UserID        string  `json:"userID"`
+		Description   string  `json:"description"`
+	} `json:"segments"`
 }
 
 type YoutubePlaylistStruct struct {

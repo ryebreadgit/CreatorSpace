@@ -281,31 +281,38 @@ hr {
 
 .image-overlay .sponsor-tag.tag-sponsor {
   background-color: #00ff00; /* green */
+  float: left;
 }
 
 .image-overlay .sponsor-tag.tag-selfpromo {
   background-color: #FFA500;  /* orange */
+  float: left;
 }
 
 .image-overlay .sponsor-tag.tag-exclusive_access {
   background-color: #0000ff;  /* blue */
+  float: left;
 }
 
-
-.checkmark {
-  transition: opacity 0.3s;
-  float: right;
-  position: absolute;
-  top: 10px;
-  right: 10px;
+.checkmark, .minus {
+  opacity: 0;
   width: 24px;
   height: 24px;
-  background-image: linear-gradient(to bottom, rgba(0, 128, 0, 0.5), rgba(0, 104, 0, 0.35));
-  border-radius: 50%;
+  top: 10px;
+  position: absolute;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+
+.checkmark {
+  float: right;
+  right: 10px;
+  background-image: linear-gradient(to bottom, rgba(0, 128, 0, 0.5), rgba(0, 104, 0, 0.35));
+  border-radius: 50%;
 }
 
 .checkmark svg {
@@ -317,7 +324,24 @@ hr {
   height: 16px;
 }
 
-.checkmark.small-overlay {
+.minus {
+  float: left;
+  left: 10px;
+  background-image: linear-gradient(to bottom, rgba(255, 0, 0, 0.5), rgba(104, 0, 0, 0.35));
+  height: 24px;
+  width: auto;
+}
+
+.image-overlay .checkmark:hover {
+  opacity: 1;
+}
+
+.sub-item:hover .minus {
+  opacity: 1;
+}
+
+
+.checkmark.small-overlay, .minus.small-overlay {
   width: 14px;
   height: 14px;
 }

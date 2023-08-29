@@ -181,7 +181,41 @@ func SignupUser(user User, db *gorm.DB) error {
 		user.AccountType = "user"
 	}
 
+	if user.SponsorBlockCategories == "" {
+		user.SponsorBlockCategories = "sponsor"
+		user.SponsorBlockEnabled = true
+	}
+
 	return insertUser(user, db)
+}
+
+func UpdateUser(user User, db *gorm.DB) error {
+	// open database and check if user exists, if not, create it
+	if !ifUserExists(user.UserID, db) {
+		return errors.New("record does not exist")
+	}
+	err := db.Model(&user).Where("user_id=?", user.UserID).Updates(user).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteUser(userID string, db *gorm.DB) error {
+	// open database and check if user exists, if not, create it
+	if !ifUserExists(userID, db) {
+		return errors.New("record does not exist")
+	}
+	err := db.Delete(&User{}, "user_id = ?", userID).Error
+	if err != nil {
+		return err
+	}
+	// Delete the user's playlists
+	err = db.Delete(&Playlist{}, "user_id = ?", userID).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func UpdateUserProgress(userID string, progressJsonString string, db *gorm.DB) error {
@@ -414,6 +448,43 @@ func UpdateCreator(creator Creator, db *gorm.DB) error {
 		return errors.New("record does not exist")
 	}
 	err := db.Model(&creator).Where("channel_id=?", creator.ChannelID).Updates(creator).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func InsertTweet(tweet Tweet, db *gorm.DB) error {
+	// open database and check if tweet exists, if not, create it
+	if !ifTweetExists(tweet.TweetID, db) {
+		db.Create(&tweet)
+		return nil
+	}
+	return errors.New("record already exists")
+}
+
+func UpdateTweet(tweet Tweet, db *gorm.DB) error {
+	// open database and check if tweet exists, if not, create it
+	if !ifTweetExists(tweet.TweetID, db) {
+		return errors.New("record does not exist")
+	}
+	err := db.Model(&tweet).Where("tweet_id=?", tweet.TweetID).Updates(tweet).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateDownloadQueueItem(item DownloadQueue, altVidID string, db *gorm.DB) error {
+	// open database and check if item exists, if not, create it
+	vidID := item.VideoID
+	if !ifDownloadQueueItemExists(vidID, item.VideoType, db) {
+		vidID = altVidID
+		if !ifDownloadQueueItemExists(vidID, item.VideoType, db) {
+			return errors.New("record does not exist")
+		}
+	}
+	err := db.Model(&item).Where("video_id=? AND video_type=?", vidID, item.VideoType).Updates(item).Error
 	if err != nil {
 		return err
 	}
