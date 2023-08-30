@@ -90,10 +90,17 @@
                         let videoLength = video["Length"];
                         let videoType = video["VideoType"];
                         let videoThumbnail = `/api/media/${videoID}/thumbnail`;
+                        if (videoType == "channel") {
+                            videoThumbnail = `/api/youtube/creators/${videoID}/thumbnail`;
+                        }
 
                         /* add elements to the search results dropdown with the thumbnail, channel title, and video title present */
                         let searchResult = document.createElement("a");
-                        searchResult.href = `/watch/${videoID}`;
+                        if (videoType == "channel") {
+                            searchResult.href = `/creators/${videoID}`;
+                        } else {
+                            searchResult.href = `/watch/${videoID}`;
+                        }
                         searchResult.innerHTML = `
                             <li class="search-result">
                                 <span class="search-result-thumbnail">
