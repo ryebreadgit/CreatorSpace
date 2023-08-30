@@ -3,9 +3,7 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
@@ -398,7 +396,7 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 
 func page_creators(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		creators, err := database.GetAllCreators(db.Select("name", "channel_id", "linked_accounts"))
+		creators, err := database.GetAllCreators(db.Select("name", "channel_id", "linked_accounts").Order("LOWER(platform) DESC, LOWER(name) ASC"))
 
 		if err != nil {
 			c.HTML(http.StatusNotFound, "error.tmpl", gin.H{
@@ -415,11 +413,6 @@ func page_creators(db *gorm.DB) gin.HandlerFunc {
 			sendCr.ChannelID = creator.ChannelID
 			baseFiles = append(baseFiles, sendCr)
 		}
-
-		// sort creators by name, ignore case
-		sort.Slice(baseFiles, func(i, j int) bool {
-			return strings.ToLower(baseFiles[i].Name) < strings.ToLower(baseFiles[j].Name)
-		})
 
 		userData, exists := c.Get("user")
 		if !exists {
