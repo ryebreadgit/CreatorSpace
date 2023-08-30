@@ -5,9 +5,8 @@ services:
       context: https://github.com/ryebreadgit/CreatorSpace.git
       dockerfile: Dockerfile
       args:
-        # Uncomment the following lines to specify a UID and GID
-        # UID: ${UID}
-        # GID: ${GID}
+        UID: 1000
+        GID: 1000
     image: creatorspace:latest
     restart: unless-stopped
     ports:
@@ -33,3 +32,6 @@ services:
   redis:
     image: redis:latest
     restart: unless-stopped
+    
+volumes:
+  postgres-data:
