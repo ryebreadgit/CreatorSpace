@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime/debug"
+	"strings"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/ryebreadgit/CreatorSpace/internal/api"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	jwttoken "github.com/ryebreadgit/CreatorSpace/internal/jwt"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -24,7 +27,9 @@ func Run() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	r := gin.Default()
+	r := gin.New()
+	r.Use(customRecovery())
+	r.Use(errorHandlingMiddleware())
 	// load html templates
 
 	r.SetFuncMap(sprig.FuncMap())
@@ -136,6 +141,46 @@ func Run() {
 	}
 
 	r.Run(":" + port)
+}
+
+func errorHandlingMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Execute next handlers in the chain
+		c.Next()
+
+		// If there are errors after executing all handlers, log them
+		if len(c.Errors) > 0 {
+			for _, e := range c.Errors {
+				if strings.Contains(e.Error(), "broken pipe") || strings.Contains(e.Error(), "connection reset by peer") {
+					log.Debugf("Gin error: %s", e.Error())
+				} else {
+					log.Warnf("Gin error: %s", e.Error())
+				}
+			}
+			c.Abort() // Abort the context to prevent other handlers from executing
+		}
+	}
+}
+
+func customRecovery() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		defer func() {
+			if err := recover(); err != nil {
+				if e, ok := err.(error); ok {
+					if strings.Contains(e.Error(), "broken pipe") || strings.Contains(e.Error(), "connection reset by peer") {
+						// Simply return if it's a broken pipe error
+						log.Debugf("Gin error: %s", e.Error())
+						return
+					}
+				}
+				// If it's any other error, use the default gin recovery behavior
+				log.Errorf("Gin panic recovered: %s\n\t%s", err, debug.Stack())
+				gin.DefaultErrorWriter.Write([]byte(fmt.Sprintf("[Recovery] panic recovered:\n%s\n%s", err, debug.Stack())))
+				c.AbortWithStatus(http.StatusInternalServerError)
+			}
+		}()
+		c.Next()
+	}
 }
 
 func init() {
