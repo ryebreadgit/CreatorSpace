@@ -57,7 +57,6 @@ func apiSearchVideos(c *gin.Context) {
 		}
 	}
 
-	// enable searching for the middle of a title
 	query = strings.ToLower(query)
 
 	err := db.Limit(limit).Where("LOWER(title) LIKE ?", "%"+query+"%").Order("likes DESC").Find(&videos).Error
@@ -67,6 +66,28 @@ func apiSearchVideos(c *gin.Context) {
 			"err": err.Error(),
 		})
 		return
+	}
+
+	// Append creators to the bottom
+
+	var creators []database.Creator
+
+	err = db.Limit(5).Where("LOWER(name) LIKE ?", "%"+query+"%").Find(&creators).Error
+	if err != nil {
+		c.JSON(500, gin.H{
+			"res": 500,
+			"err": err.Error(),
+		})
+		return
+	}
+
+	for _, creator := range creators {
+		var creatorVideo database.Video
+		creatorVideo.VideoType = "channel"
+		creatorVideo.VideoID = creator.ChannelID
+		creatorVideo.Title = creator.Name
+
+		videos = append(videos, creatorVideo)
 	}
 
 	c.JSON(200, gin.H{
