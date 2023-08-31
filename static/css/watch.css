@@ -13,6 +13,10 @@ body {
   background-position: inherit;
 }
 
+.video-js.vjs-ended .vjs-poster {
+  display: block;
+}
+
 header h1 {
     text-align: center;
     margin-top: 2rem;
