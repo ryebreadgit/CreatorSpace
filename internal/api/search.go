@@ -61,20 +61,25 @@ func apiSearchVideos(c *gin.Context) {
 
 	query = strings.ToLower(query)
 
-	/*
-		err := db.Limit(limit).Where("LOWER(title) LIKE ?", "%"+query+"%").Order("likes DESC").Find(&videos).Error
-		if err != nil {
-			c.JSON(500, gin.H{
-				"res": 500,
-				"err": err.Error(),
-			})
-			return
-		}
-	*/
+	err := db.Limit(limit).Where("LOWER(title) LIKE ?", "%"+query+"%").Order("views DESC").Find(&videos).Error
+	if err != nil {
+		c.JSON(500, gin.H{
+			"res": 500,
+			"err": err.Error(),
+		})
+		return
+	}
+
+	curTitles := make(map[string]bool)
+
+	for _, vid := range videos {
+		curTitles[vid.Title] = true
+	}
 
 	// Get all video titles lowercase
 	var titles []string
-	err := db.Model(&database.Video{}).Pluck("LOWER(title)", &titles).Error
+
+	err = db.Model(&database.Video{}).Pluck("LOWER(title)", &titles).Error
 	if err != nil {
 		c.JSON(500, gin.H{
 			"res": 500,
@@ -87,15 +92,15 @@ func apiSearchVideos(c *gin.Context) {
 	matches := fuzzy.RankFind(strings.ToLower(query), titles)
 	sort.Sort(matches)
 
-	const threshold = 25
+	const threshold = 50
 
 	// Append matches up to the limit
 	for i, match := range matches {
-		if i >= limit {
+		if len(videos) >= limit || i >= limit || match.Distance > threshold {
 			break
 		}
-		if match.Distance > threshold {
-			break
+		if curTitles[match.Target] {
+			continue
 		}
 
 		var vid database.Video
