@@ -8,6 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.8.2
 	github.com/goccy/go-json v0.9.11
 	github.com/golang-jwt/jwt/v5 v5.0.0-rc.1
+	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/n0madic/twitter-scraper v0.0.0-20230711213008-94503a2bc36c
 	github.com/redis/go-redis/v9 v9.0.3
 	github.com/sirupsen/logrus v1.9.3

@@ -1,10 +1,12 @@
 package api
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 )
 
@@ -59,13 +61,50 @@ func apiSearchVideos(c *gin.Context) {
 
 	query = strings.ToLower(query)
 
-	err := db.Limit(limit).Where("LOWER(title) LIKE ?", "%"+query+"%").Order("likes DESC").Find(&videos).Error
+	/*
+		err := db.Limit(limit).Where("LOWER(title) LIKE ?", "%"+query+"%").Order("likes DESC").Find(&videos).Error
+		if err != nil {
+			c.JSON(500, gin.H{
+				"res": 500,
+				"err": err.Error(),
+			})
+			return
+		}
+	*/
+
+	// Get all video titles lowercase
+	var titles []string
+	err := db.Model(&database.Video{}).Pluck("LOWER(title)", &titles).Error
 	if err != nil {
 		c.JSON(500, gin.H{
 			"res": 500,
 			"err": err.Error(),
 		})
 		return
+	}
+
+	// Fuzzy search titles
+	matches := fuzzy.RankFind(strings.ToLower(query), titles)
+	sort.Sort(matches)
+
+	const threshold = 25
+
+	// Append matches up to the limit
+	for i, match := range matches {
+		if i >= limit {
+			break
+		}
+		if match.Distance > threshold {
+			break
+		}
+
+		var vid database.Video
+		err := db.Where("LOWER(title) = ?", match.Target).First(&vid).Error
+		if err != nil {
+			continue
+		}
+
+		videos = append(videos, vid)
 	}
 
 	// Append creators to the bottom
