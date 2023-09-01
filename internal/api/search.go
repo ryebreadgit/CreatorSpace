@@ -34,6 +34,7 @@ func apiSearchCreators(c *gin.Context) {
 func apiSearchVideos(c *gin.Context) {
 	var videos []database.Video
 	query := c.Query("q")
+	filter := c.Query("filter")
 	if query == "" {
 		c.JSON(400, gin.H{
 			"res": 400,
@@ -44,7 +45,8 @@ func apiSearchVideos(c *gin.Context) {
 	// if limit is not specified, default to 10
 	limit := 10
 	if c.Query("limit") != "" {
-		limit, err := strconv.Atoi(c.Query("limit"))
+		var err error
+		limit, err = strconv.Atoi(c.Query("limit"))
 		if err != nil {
 			c.JSON(400, gin.H{
 				"res": 400,
@@ -61,25 +63,15 @@ func apiSearchVideos(c *gin.Context) {
 
 	query = strings.ToLower(query)
 
-	err := db.Limit(limit).Where("LOWER(title) LIKE ?", "%"+query+"%").Order("views DESC").Find(&videos).Error
-	if err != nil {
-		c.JSON(500, gin.H{
-			"res": 500,
-			"err": err.Error(),
-		})
-		return
-	}
-
-	curTitles := make(map[string]bool)
-
-	for _, vid := range videos {
-		curTitles[vid.Title] = true
-	}
-
 	// Get all video titles lowercase
 	var titles []string
 
-	err = db.Model(&database.Video{}).Pluck("LOWER(title)", &titles).Error
+	dbquery := db.Model(&database.Video{})
+	if filter != "" {
+		dbquery = dbquery.Where("channel_id = ?", filter)
+	}
+
+	err := dbquery.Pluck("LOWER(title)", &titles).Error
 	if err != nil {
 		c.JSON(500, gin.H{
 			"res": 500,
@@ -99,9 +91,6 @@ func apiSearchVideos(c *gin.Context) {
 		if len(videos) >= limit || i >= limit || match.Distance > threshold {
 			break
 		}
-		if curTitles[match.Target] {
-			continue
-		}
 
 		var vid database.Video
 		err := db.Where("LOWER(title) = ?", match.Target).First(&vid).Error
@@ -110,6 +99,21 @@ func apiSearchVideos(c *gin.Context) {
 		}
 
 		videos = append(videos, vid)
+	}
+
+	// Remove duplicates from videos
+	for i := 0; i < len(videos); i++ {
+		for j := i + 1; j < len(videos); j++ {
+			if videos[i].VideoID == videos[j].VideoID {
+				videos = append(videos[:j], videos[j+1:]...)
+				j--
+			}
+		}
+	}
+
+	// Truncate to limit
+	if len(videos) > limit {
+		videos = videos[:limit]
 	}
 
 	// Append creators to the bottom
