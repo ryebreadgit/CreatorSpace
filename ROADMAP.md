@@ -42,7 +42,7 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 - [x] User Login
 - [x] JWT Authentication
 - [x] User Settings
-- [ ] User Management
+- [x] User Management
   - [x] Add new users
   - [x] Delete existing users
   - [x] Modify existing users permissions
@@ -72,6 +72,8 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 - [ ] Picture-in-Picture Mode
 - [x] Fullscreen Mode
 - [x] Recommended Videos
+- [x] Video Comments
+  - [ ] View Comment User Profiles
 
 ### User Interface
 - [x] Responsive Design

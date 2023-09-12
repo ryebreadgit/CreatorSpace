@@ -132,6 +132,7 @@ func Run() {
 
 	r.Use(isAdminMiddleware())
 	r.GET("/user-management", page_user_management(db))
+	r.GET("/library-management", page_library_management(db))
 
 	// share all files in static folder to /assets
 
