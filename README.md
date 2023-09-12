@@ -4,7 +4,7 @@
 
 ## Introduction
 
-**CreatorSpace** is a comprehensive content archiving platform designed for YouTube creators.
+**CreatorSpace** is a comprehensive content archiving platform designed for automatic download and archival of YouTube creators & videos.
 
 ## Features
 
