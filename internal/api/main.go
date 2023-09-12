@@ -81,6 +81,7 @@ func Routes(route *gin.Engine) {
 		{
 			downloads.Use(jwttoken.JwtMiddleware())
 			downloads.POST("/:video_id/:video_type", apiDownloadVideo)
+			downloads.GET("/downloads", apiGetDownloadInfo)
 		}
 
 		user := api.Group("/user")
@@ -96,6 +97,13 @@ func Routes(route *gin.Engine) {
 			user.DELETE("/:user_id/subscriptions/:creator_id", apiRemoveSubscription)
 
 			user.PATCH("/:user_id/password", apiUpdatePassword)
+		}
+
+		creators := api.Group("/creators")
+		{
+			creators.Use(jwttoken.JwtMiddleware())
+			creators.GET("/:creator_id", apiGetCreator)
+			creators.GET("/:creator_id/videos", apiGetCreatorVideos)
 		}
 
 		yt := api.Group("/youtube")

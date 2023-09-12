@@ -62,7 +62,7 @@ func wrapper(f func(c *gin.Context) (string, error)) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		data, err := f(c)
 		if err != nil {
-			c.JSON(503, gin.H{"status": "error", "data": err.Error()})
+			c.JSON(503, gin.H{"ret": 503, "err": err.Error()})
 			return
 		}
 

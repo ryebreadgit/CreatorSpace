@@ -69,7 +69,7 @@ func getDownloadPage(c *gin.Context) {
 			return
 		}
 	} else if vidtype == "channel" || vidtype == "shorts" || vidtype == "streams" {
-		creatorMetadata, err := tasking.GetCreatorMetadata(videoid)
+		creatorMetadata, err := tasking.GetCreatorMetadata(fmt.Sprintf("https://www.youtube.com/channel/%v/about", videoid))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
 			return

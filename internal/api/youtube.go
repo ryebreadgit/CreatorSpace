@@ -14,7 +14,7 @@ import (
 
 func apiCreators(c *gin.Context) (string, error) {
 
-	channelid := c.Param("channelid")
+	channelid := c.Param("creator")
 	db, err := database.GetDatabase()
 	if err != nil {
 		return "", err

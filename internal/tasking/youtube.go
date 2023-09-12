@@ -26,6 +26,7 @@ import (
 	"github.com/corona10/goimagehash"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
+	log "github.com/sirupsen/logrus"
 )
 
 // Function to check if a video is available, unavailable, or private
@@ -916,13 +917,16 @@ func updateAllVideoMetadata() error {
 	return ret
 }
 
-func GetCreatorMetadata(creatorID string) (database.YoutubePlaylistStruct, error) {
+func GetCreatorMetadata(creatorLink string) (database.YoutubePlaylistStruct, error) {
 	// Get creator json from https://www.youtube.com/channel/$creatorID/about from yt-dlp. Export to stdout and unmarshal into a Creator struct
-	cmd := exec.Command("yt-dlp", "--dump-single-json", fmt.Sprintf("https://www.youtube.com/channel/%v/about", creatorID))
+	cmd := exec.Command("yt-dlp", "--dump-single-json", creatorLink)
 	var out bytes.Buffer
+	var stderr bytes.Buffer
 	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
+		log.Errorf("Error getting creator metadata: %v\n", stderr.String())
 		return database.YoutubePlaylistStruct{}, err
 	}
 
@@ -942,7 +946,7 @@ func updateCreatorMetadata(creatorID string) error {
 	}
 
 	// Get the creator metadata from YouTube
-	info, err := GetCreatorMetadata(creatorID)
+	info, err := GetCreatorMetadata(fmt.Sprintf("https://www.youtube.com/channel/%v/about", creatorID))
 	if err != nil {
 		return err
 	}
@@ -1121,7 +1125,7 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 	}
 
 	creator := database.Creator{}
-	data, err := GetCreatorMetadata(creatorID)
+	data, err := GetCreatorMetadata(fmt.Sprintf("https://www.youtube.com/channel/%v/about", creatorID))
 	if err != nil {
 		return database.Creator{}, err
 	}
