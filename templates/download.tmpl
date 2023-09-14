@@ -110,13 +110,11 @@
                     } else if (channelID != "") {
                         // Open modal. Have a "Channel" button and a "Shorts" button
                         resultsModalLabel.innerHTML = "Channel or Shorts?";
-                        let shortsLink = "/download/shorts/" + channelID;
-                        let channelLink = "/download/channel/" + channelID;
                         resultsModal.getElementsByClassName("modal-body")[0].innerHTML = `
                             <div class="mb-3">
                                 <div class="results-message">Please select the type of content you want to download</div>
                                 <div class="results-buttons">
-                                    <button class="btn btn-primary" onclick="window.location.href='/download/shorts/${channelID}'">Channel</button>
+                                    <button class="btn btn-primary" onclick="window.location.href='/download/channel/${channelID}'">Channel</button>
                                     <button class="btn btn-primary" onclick="window.location.href='/download/shorts/${channelID}'">Shorts</button>
                                 </div>
                             </div>
