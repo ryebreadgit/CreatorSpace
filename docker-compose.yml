@@ -12,9 +12,9 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - /path/to/downloads:/downloads
-      - /path/to/appdata/CreatorSpace/settings.json:/config/settings.json
-      # - /path/to/appdata/CreatorSpace/database.db:/database.db
+      - /path/to/downloads:/CreatorSpace/downloads
+      - /path/to/appdata/CreatorSpace/settings.json:/CreatorSpace/config/settings.json
+      # - /path/to/appdata/CreatorSpace/database.db:/CreatorSpace/database.db
     environment:
       - GIN_MODE=release
     depends_on:
