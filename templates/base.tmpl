@@ -1,0 +1,35 @@
+{{define "header"}}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{.PageTitle}} - CreatorSpace</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/assets/lib/bootstrap-5.3.0-alpha3-dist/css/bootstrap.min.css">
+    <script src="/assets/lib/bootstrap-5.3.0-alpha3-dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Add watch.css for watch page -->
+    {{if .Video}}
+    <link rel="stylesheet" href="/assets/lib/video-js-8.3.0/video-js.min.css">
+    <script src="/assets/lib/video-js-8.3.0/video.min.js"></script>
+    <link rel="stylesheet" href="/assets/lib/vsg-skin.css">
+
+    <link rel="stylesheet" href="/assets/css/watch.css">
+    {{end}}
+    
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/videos.css">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="CreatorSpace is a comprehensive content archiving platform designed for automatic download and archival of YouTube creators & videos.">
+	<meta name="keywords" content="creator, space, creatorspace, archive, youtube, twitch, video, collection, watch">
+	<meta name="author" content="CreatorSpace">
+	<meta property="og:image" content="{{.ServerPath}}/assets/img/banner.png">
+</head>
+<body>
+    {{template "navbar.tmpl" . }}
+{{end}}
+
+{{define "footer"}}
+</body>
+</html>
+{{end}}

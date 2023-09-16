@@ -44,8 +44,9 @@ func page_user_management(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		c.HTML(http.StatusOK, "user-management.tmpl", gin.H{
-			"User":  user,
-			"Users": users,
+			"User":      user,
+			"Users":     users,
+			"PageTitle": "User Management",
 		})
 	}
 }
@@ -110,6 +111,7 @@ func page_library_management(db *gorm.DB) gin.HandlerFunc {
 			"Creators":   creators,
 			"User":       user,
 			"BaseYTPath": settings.BaseYouTubePath,
+			"PageTitle":  "Library Management",
 		})
 	}
 }

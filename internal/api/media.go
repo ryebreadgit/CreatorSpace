@@ -313,8 +313,8 @@ func apiThumbnail(c *gin.Context) {
 		c.Header("X-Cache", "MISS")
 	}
 
-	// set header to cache for 3 days
-	c.Header("Cache-Control", "public, max-age=259200")
+	// set header to cache for 14 days
+	c.Header("Cache-Control", "public, max-age=1209600")
 	// set etag header
 	c.Header("ETag", fmt.Sprintf("%x", md5.Sum(thumbnail)))
 	// set last modified header

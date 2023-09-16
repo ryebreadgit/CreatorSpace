@@ -1,36 +1,18 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Account - CreatorSpace</title>
-        <link rel="icon" type="image/x-icon" href="/favicon.ico">
-        <link rel="stylesheet" href="/assets/lib/bootstrap-5.3.0-alpha3-dist/css/bootstrap.min.css">
-        <link href="/assets/lib/bootstrap-icons-1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+{{template "header" .}}
 
-        <script src="/assets/lib/bootstrap-5.3.0-alpha3-dist/js/bootstrap.bundle.min.js"></script>
-        <link rel="stylesheet" type="text/css" href="/assets/css/styles.css" />
-        <link rel="stylesheet" type="text/css" href="/assets/css/videos.css">
+    <link href="/assets/lib/bootstrap-icons-1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="CreatorSpace is a tool to archive and watch your favorite creators. Add to or view your current collection of videos.">
-        <meta name="keywords" content="creator, archive, youtube, twitch, video, collection, watch">
-        <meta name="author" content="CreatorSpace">
-        <meta property="og:image" content="{{.ServerPath}}/assets/img/banner.png">
-    </head>
-
-
-<body>
-    {{ template "navbar.tmpl" .}}
     <div class="container">
         <!-- Add New User -->
         <div class="add-user-form">
-            <h2>Add New User</h2>
+            <h2 class="text-white" style="margin: 1rem 0;">Add New User</h2>
             <input type="text" id="new-username" placeholder="Username">
             <input type="password" id="new-password" placeholder="Password">
             <button type="button" class="btn btn-primary" onclick="addUser()">Add User</button>
         </div>
 
         <!-- List All Users -->
-        <h2>List of Users</h2>
+        <h2 class="text-white" style="margin: 1rem 0;">List of Users</h2>
         <table class="table table-dark">
             <thead>
                 <tr>
@@ -187,8 +169,6 @@
                 return;
             }
 
-            console.log(JSON.stringify({ newPassword }))
-
             fetch(`/api/admin/users/${userId}/password`, {
                 method: 'PATCH',
                 headers: {
@@ -245,11 +225,9 @@
                     alert('User added successfully');
                     location.reload();
                 } else {
-                    console.log(data.error);
                     alert('Failed to add user - ' + (data.err || 'Unknown error'));
                 }
             });
         }
     </script>
-</body>
-</html>
+{{template "footer" .}}

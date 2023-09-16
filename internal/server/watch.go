@@ -257,6 +257,7 @@ func page_watch(db *gorm.DB) gin.HandlerFunc {
 			"Subtitles":              subtitles,
 			"Recommendations":        recs,
 			"ServerPath":             settings.ServerPath,
+			"PageTitle":              video.Title,
 		})
 	}
 }

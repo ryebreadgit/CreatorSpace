@@ -97,7 +97,8 @@ func Run() {
 
 		user := userData.(database.User)
 		c.HTML(http.StatusOK, "home.tmpl", gin.H{
-			"User": user,
+			"User":      user,
+			"PageTitle": "Home",
 		})
 	})
 
@@ -122,7 +123,8 @@ func Run() {
 
 		user := userData.(database.User)
 		c.HTML(http.StatusOK, "download.tmpl", gin.H{
-			"User": user,
+			"User":      user,
+			"PageTitle": "Download",
 		})
 	})
 

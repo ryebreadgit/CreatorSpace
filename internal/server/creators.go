@@ -374,6 +374,7 @@ func page_creators_creator(db *gorm.DB) gin.HandlerFunc {
 			"User":           user,
 			"Subscribed":     subscribed,
 			"ServerPath":     settings.ServerPath,
+			"PageTitle":      creator.Name,
 		}
 
 		if nextPageFound {
@@ -425,8 +426,9 @@ func page_creators(db *gorm.DB) gin.HandlerFunc {
 		user := userData.(database.User)
 
 		c.HTML(http.StatusOK, "creators.tmpl", gin.H{
-			"files": baseFiles,
-			"User":  user,
+			"files":     baseFiles,
+			"User":      user,
+			"PageTitle": "Creators",
 		})
 	}
 }

@@ -119,6 +119,7 @@ func getDownloadPage(c *gin.Context) {
 		"Type":        vidtype,
 		"ServerPath":  settings.ServerPath,
 		"User":        user,
+		"PageTitle":   "Confirm Download",
 	})
 
 }
