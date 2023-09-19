@@ -299,17 +299,18 @@ theaterModeButton.addEventListener('click', function () {
   
   if (!theaterModeEnabled) {
     videoPlayerContainer.classList.add('theater-mode-enabled');
+    videoPlayer.style.width = "100%";
+    videoPlayer.style.height = "100%";
+    videoPlayer.classList.remove("vjs-fluid");
     theaterModeEnabled = true;
   } else {
     videoPlayerContainer.classList.remove('theater-mode-enabled');
-    videoPlayer.classList.remove('theater-mode-enabled');
+    videoPlayer.classList.add("vjs-fluid");
+    videoPlayer.style.width = "";
+    videoPlayer.style.height = "";
     theaterModeEnabled = false;
   }
     
-  videoPlayerContainer.style.transition = 'all 0.2s ease-in-out';
-    setTimeout(function () {
-        videoPlayerContainer.style.transition = 'none';
-    }, 200);
     });
 
     

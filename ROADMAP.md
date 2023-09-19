@@ -8,7 +8,7 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 
 ## Known Issues
 
-- [ ] Theater mode video size is larger than theater mode container
+- [x] Theater mode video size is larger than theater mode container
 - [ ] Cannot import existing library, only recommended for new setups for now
 - [ ] Video download approval is required for non-admin users but there is no approval process
 - [ ] Videos deleted from disk are not removed from library
