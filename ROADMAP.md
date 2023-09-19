@@ -20,10 +20,12 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 ---
 
 ### YT-DLP Integration
+
 - [x] Video Downloading
 - [x] Metadata Downloading
 
 ### YouTube Integration
+
 - [x] Video Downloading
 - [x] Metadata Downloading
 - [x] Channel Downloading
@@ -31,6 +33,7 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 - [ ] Subscription Downloading
 
 ### Task Management
+
 - [x] Task Queuing
 - [ ] Task Prioritization
 - [ ] Task Progress Tracking
@@ -38,6 +41,7 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 - [ ] Task Resumption
 
 ### User Management
+
 - [x] User Registration
 - [x] User Login
 - [x] JWT Authentication
@@ -48,7 +52,8 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
   - [x] Modify existing users permissions
   - [x] Add UI page for user management
 
-  ### Video Management
+### Video Management
+
 - [x] Video Library
 - [x] Video Search
 - [ ] Import Videos
@@ -59,6 +64,7 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 - [ ] Modify Video Metadata
 
 ### Playlist Management
+
 - [x] Custom Playlists
 - [x] Automatic Playlist Updates
 - [ ] Playlist Management
@@ -66,6 +72,7 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 - [ ] Remove videos from playlists
 
 ### Video Playback
+
 - [x] SponsorBlock integration
 - [x] VideoJS Player
 - [ ] Theater Mode
@@ -76,11 +83,13 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
   - [ ] View Comment User Profiles
 
 ### User Interface
+
 - [x] Responsive Design
 - [ ] Dark Mode
 - [ ] Customizable Layout
 
 ### Backend
+
 - [x] Go-based Server
 - [x] JWT for Authentication
 - [ ] Full test coverage

@@ -75,10 +75,12 @@ The easiest way to get started is to use the provided [docker-compose.yml](./doc
 2. Modify volume paths "/path/to/appdata/" and "/path/to/downloads/" to your desired locations
 3. Modify db environment variables to your desired values, these must be input in the setup wizard
 4. Run the following command
+
     ```shell
     docker-compose up -d
     ```
-5. Open the application in your browser at http://localhost:8080
+
+5. Open the application in your browser at <http://localhost:8080>
 
 #### Pre-built Binaries
 
@@ -89,26 +91,37 @@ You can download the pre-built binaries directly from the [releases](https://git
 If you prefer to build the application yourself:
 
 1. Clone the repository
+
     ```shell
     git clone https://github.com/ryebreadgit/CreatorSpace.git
     ```
+
 2. Change into the directory
+
     ```shell
     cd CreatorSpace
     ```
+
 3. Change into the "cmd" directory
+
     ```shell
     cd cmd
     ```
+
 4. Download dependencies
+
     ```shell
     go get
     ```
+
 5. Build the application
+
     ```shell
     go build
     ```
+
 6. Move the output to the root folder
+
     ```shell
     mv CreatorSpace ..
     ```
