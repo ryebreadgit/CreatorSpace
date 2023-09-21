@@ -110,5 +110,8 @@ func SanitizeFileName(fileName string) (string, error) {
 		safeFileName = safeFileName[:maxLength]
 	}
 
+	// Strip leading and trailing whitespace
+	safeFileName = strings.TrimSpace(safeFileName)
+
 	return safeFileName, nil
 }
