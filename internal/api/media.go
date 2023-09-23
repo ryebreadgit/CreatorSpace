@@ -21,6 +21,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
+	log "github.com/sirupsen/logrus"
 )
 
 var r *rand.Rand
@@ -136,7 +137,7 @@ func getImageData(filePath string) ([]byte, error, bool) {
 
 	} else if err != nil {
 		// Debug log the error and read the image from the file system
-		fmt.Printf("Error getting image data from Redis: %v", err) // TODO change to debug log
+		log.Debugf("Error getting image data from Redis: %v", err)
 		imageData, err = readImageFromDisk(filePath)
 		if err != nil {
 			return nil, err, false
@@ -201,7 +202,7 @@ func getThumbnail(c *gin.Context, thumbPath string) ([]byte, string, error, bool
 	if strings.HasPrefix(thumbPath, "/assets/") {
 		c.Redirect(http.StatusMovedPermanently, thumbPath)
 		c.Abort()
-		return nil, "", nil, false
+		return nil, "redirect", nil, false
 	}
 
 	// Read thumbnail from path
@@ -264,16 +265,23 @@ func apiThumbnail(c *gin.Context) {
 	var thumbPath string
 
 	if c.Params.ByName("video_id") != "" {
-		thumbPath, err = getVideoThumbnailPath(c.Param("video_id"))
+		vidId := c.Param("video_id")
+		thumbPath, err = getVideoThumbnailPath(vidId)
+		if err != nil {
+			// Default to the YouTube video thumbnail
+			log.Errorf("Error getting video thumbnail '%v': %v", vidId, err)
+			thumbPath = "/assets/img/defaults/posts/youtube_post.svg"
+		}
 	} else if c.Params.ByName("creator") != "" {
-		thumbPath, err = getCreatorThumbnailPath(c.Param("creator"))
+		creator_id := c.Param("creator")
+		thumbPath, err = getCreatorThumbnailPath(creator_id)
+		if err != nil {
+			// Default to the YouTube creator thumbnail
+			log.Errorf("Error getting creator thumbnail '%v': %v", creator_id, err)
+			thumbPath = "/assets/img/defaults/avatars/youtube_avatar.svg"
+		}
 	} else {
 		c.AbortWithStatusJSON(400, gin.H{"ret": 400, "err": "invalid request"})
-		return
-	}
-
-	if err != nil {
-		c.AbortWithStatusJSON(404, gin.H{"ret": 404, "err": err.Error()})
 		return
 	}
 
@@ -302,11 +310,16 @@ func apiThumbnail(c *gin.Context) {
 	}
 
 	thumbnail, mimetype, err, red := getThumbnail(c, thumbPath)
-
 	if err != nil {
 		c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": err.Error()})
 		return
 	}
+
+	if mimetype == "redirect" {
+		c.Abort()
+		return
+	}
+
 	if red {
 		c.Header("X-Cache", "HIT")
 	} else {
