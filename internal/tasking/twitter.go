@@ -158,7 +158,7 @@ func updateCreatorTweets(handle string, tweetlimit int, dlqueueItem database.Dow
 
 	}
 
-	log.Infof("Updating twitter creator: %v", creator[0].Name)
+	log.Debugf("Updating twitter creator: %v", creator[0].Name)
 
 	basePath := filepath.Join(settings.BaseTwitterPath, creator[0].Name)
 	tweetsPath := filepath.Join(basePath, "tweets")

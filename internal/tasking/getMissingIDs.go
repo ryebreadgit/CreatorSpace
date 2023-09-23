@@ -11,15 +11,15 @@ import (
 
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 func fetchChannelVideoIDs(channelID string, vidtype string, limit int) ([]string, error) {
-	fmt.Printf("Fetching video IDs for %v-%v", channelID, vidtype)
 	if limit > 0 {
-		fmt.Println(" (quick)")
+		log.Debugf("Fetching video IDs for %v-%v (quick)", channelID, vidtype)
 	} else {
-		fmt.Println(" (full)")
+		log.Debugf("Fetching video IDs for %v-%v (full)", channelID, vidtype)
 	}
 	var addr string
 	if vidtype == "playlist" {
@@ -62,7 +62,7 @@ func fetchChannelVideoIDs(channelID string, vidtype string, limit int) ([]string
 	if err != nil {
 		// Check if yt-dlp returned data in stdout. If so, try to continue with that data.
 		if len(stdout.Bytes()) > 0 {
-			fmt.Printf("yt-dlp command failed on '%v', but returned data in stdout. Continuing with that data.\n", channelID)
+			log.Debugf("yt-dlp command failed on '%v', but returned data in stdout. Continuing with that data.\n", channelID)
 		} else {
 			return nil, fmt.Errorf("yt-dlp command failed on '%v': %v, stderr: %s", channelID, err, stderr.String())
 		}
@@ -246,7 +246,7 @@ func processVideoIDs(videoIDChan chan videoWorkItem, limit int, settings *databa
 
 				chanName, err := general.SanitizeFileName(channel.Name)
 				if err != nil {
-					fmt.Printf("Error sanitizing channel name %v: %v\n", channel.Name, err)
+					log.Errorf("Error sanitizing channel name %v: %v\n", channel.Name, err)
 					*reterr = err
 					continue
 				}
@@ -260,7 +260,7 @@ func processVideoIDs(videoIDChan chan videoWorkItem, limit int, settings *databa
 
 					chanName, err = general.SanitizeFileName(tmpname)
 					if err != nil {
-						fmt.Printf("Error sanitizing channel name %v: %v\n", channel.Name, err)
+						log.Errorf("Error sanitizing channel name %v: %v\n", channel.Name, err)
 						*reterr = err
 						continue
 					}
@@ -271,14 +271,14 @@ func processVideoIDs(videoIDChan chan videoWorkItem, limit int, settings *databa
 				// Make the download path parent directories if they don't exist
 				err = os.MkdirAll(filepath.Dir(item.DownloadPath), 0755)
 				if err != nil {
-					fmt.Printf("Error making download path %v: %v\n", item.DownloadPath, err)
+					log.Errorf("Error making download path %v: %v\n", item.DownloadPath, err)
 					*reterr = err
 					continue
 				}
 
 				err = database.InsertDownloadQueueItem(item, db)
 				if err != nil {
-					fmt.Printf("Error inserting download queue item for video %v: %v\n", videoID, err)
+					log.Errorf("Error inserting download queue item for video %v: %v\n", videoID, err)
 					*reterr = err
 					continue
 				}

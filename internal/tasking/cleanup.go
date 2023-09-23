@@ -9,6 +9,7 @@ import (
 
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
+	log "github.com/sirupsen/logrus"
 )
 
 func correctUserProgress() error {
@@ -33,7 +34,7 @@ func correctUserProgress() error {
 		completedVideos, err := database.GetPlaylistByUserID(u.UserID, "Completed Videos", db)
 		if err != nil {
 			// print error and continue
-			fmt.Printf("error getting completed videos for user %s: %v\n", u.Username, err)
+			log.Errorf("error getting completed videos for user %s: %v\n", u.Username, err)
 			continue
 		}
 
@@ -41,7 +42,7 @@ func correctUserProgress() error {
 		allProg, err := database.GetAllVideoProgress(u.UserID, db)
 		if err != nil {
 			// print error and continue
-			fmt.Printf("error getting all video progress for user %s: %v", u.Username, err)
+			log.Errorf("error getting all video progress for user %s: %v", u.Username, err)
 			continue
 		}
 
@@ -57,7 +58,7 @@ func correctUserProgress() error {
 
 		// Check if the newProg is different from the old one
 		if len(newProg) != len(allProg) {
-			fmt.Printf("Cleaned up %d videos for user progress %s\n", len(allProg)-len(newProg), u.Username)
+			log.Infof("Cleaned up %d videos for user progress %s\n", len(allProg)-len(newProg), u.Username)
 			// if it is, update the video progress
 			newProgJson, err := json.Marshal(newProg)
 			if err != nil {
@@ -91,7 +92,7 @@ func correctUserProgress() error {
 
 		// Check if the tempCompletedVideos is different from the old one
 		if len(tempCompletedVideos) != len(completedVideos) {
-			fmt.Printf("Cleaned up %d videos for completed videos %s\n", len(completedVideos)-len(tempCompletedVideos), u.Username)
+			log.Infof("Cleaned up %d videos for completed videos %s\n", len(completedVideos)-len(tempCompletedVideos), u.Username)
 			// if it is, update the completed videos
 			completedJson, err := json.Marshal(tempCompletedVideos)
 			if err != nil {
@@ -134,7 +135,7 @@ func correctVariousUsers() error {
 				if err != nil {
 					errs = append(errs, err)
 				}
-				fmt.Printf("Updated %s to be under correct creator: %s (%s)\n", v.VideoID, c.Name, c.ChannelID)
+				log.Debugf("Updated %s to be under correct creator: %s (%s)\n", v.VideoID, c.Name, c.ChannelID)
 			}
 		}
 	}

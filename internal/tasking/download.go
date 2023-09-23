@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -68,14 +69,14 @@ func downloadYouTubeVideos(settings *database.Settings, db *gorm.DB) error {
 		err = database.InsertVideo(vidData, db)
 
 		if err != nil {
-			fmt.Println("Error adding video to database: ", err)
+			log.Error("Error adding video to database: ", err)
 			return err
 		}
 
 		// update video metadata
 		err = updateVideoMetadata(video.VideoID)
 		if err != nil {
-			fmt.Println("Error updating video metadata: ", err)
+			log.Error("Error updating video metadata: ", err)
 			return err
 		}
 	}

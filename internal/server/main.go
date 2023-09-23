@@ -186,13 +186,22 @@ func loggingMiddleware() gin.HandlerFunc {
 		latency := time.Since(start)
 
 		logData := gin.H{
-			"ip":      c.ClientIP(),
-			"method":  c.Request.Method,
-			"path":    c.Request.URL.Path,
-			"status":  c.Writer.Status(),
-			"latency": latency.String(),
-			"agent":   c.Request.UserAgent(),
-			"error":   c.Errors.ByType(gin.ErrorTypePrivate).String(),
+			"ip":         c.ClientIP(),
+			"method":     c.Request.Method,
+			"path":       c.Request.URL.Path,
+			"status":     c.Writer.Status(),
+			"latency":    latency.String(),
+			"user_agent": c.Request.UserAgent(),
+		}
+
+		user, err := jwttoken.GetUserFromToken(c)
+		if err == nil {
+			logData["user"] = user
+		}
+
+		// If there is an error, add it to log data
+		if len(c.Errors) > 0 {
+			logData["error"] = c.Errors.String()
 		}
 
 		// To json
