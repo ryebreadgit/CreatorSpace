@@ -8,6 +8,8 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"time"
+
 	"github.com/Masterminds/sprig/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/ryebreadgit/CreatorSpace/internal/api"
@@ -30,6 +32,7 @@ func Run() {
 	r := gin.New()
 	r.Use(customRecovery())
 	r.Use(errorHandlingMiddleware())
+	r.Use(loggingMiddleware())
 	// load html templates
 
 	r.SetFuncMap(sprig.FuncMap())
@@ -161,6 +164,53 @@ func errorHandlingMiddleware() gin.HandlerFunc {
 				}
 			}
 			c.Abort() // Abort the context to prevent other handlers from executing
+		}
+	}
+}
+
+func loggingMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Start timer
+		start := time.Now()
+		// Execute next handlers in the chain
+		c.Next()
+
+		// Check if client has closed before setting latency
+		select {
+		case <-c.Request.Context().Done():
+			return
+		default:
+		}
+
+		// Calculate latency using timer
+		latency := time.Since(start)
+
+		logData := gin.H{
+			"ip":      c.ClientIP(),
+			"method":  c.Request.Method,
+			"path":    c.Request.URL.Path,
+			"status":  c.Writer.Status(),
+			"latency": latency.String(),
+			"agent":   c.Request.UserAgent(),
+			"error":   c.Errors.ByType(gin.ErrorTypePrivate).String(),
+		}
+
+		// To json
+		logDataJson, err := json.Marshal(logData)
+		if err != nil {
+			log.Errorf("Error marshalling log data: %s", err)
+		}
+
+		if c.Writer.Status() == 401 {
+			log.Warnf("Access Unauthorized: %s", logDataJson)
+		} else if c.Writer.Status() >= 500 {
+			log.Errorf("Access Error: %s", logDataJson)
+		} else if c.Writer.Status() >= 400 {
+			log.Debugf("Access Error: %s", logDataJson)
+		} else if c.Writer.Status() >= 300 {
+			log.Debugf("Access Redirect: %s", logDataJson)
+		} else {
+			log.Debugf("Access: %s", logDataJson)
 		}
 	}
 }

@@ -17,5 +17,8 @@
         {{ $count = add $count 1 }}
         {{ end }}
     </div>
+    <div>
+        <span class="text-white">Creator count: {{ len .files }}</span>
+    </div>
 </div>
 {{ template "footer" .}}
