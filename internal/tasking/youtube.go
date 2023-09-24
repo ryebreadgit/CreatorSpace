@@ -1099,13 +1099,14 @@ func updateCreatorMetadata(creatorID string) error {
 		if err != nil {
 			return err
 		}
+		log.Infof("Updated creator metadata for %v", creator.Name)
 	} else if silentChanges {
 		// Update the creator in the database
 		err = database.UpdateCreator(creator, db)
 		if err != nil {
 			return err
 		}
-		log.Infof("Updated creator metadata for %v", creator.Name)
+		log.Debugf("Silent metadata update for %v", creator.Name)
 	} else {
 		log.Debugf("Creator %v has not changed", creator.Name)
 	}
