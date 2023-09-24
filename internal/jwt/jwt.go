@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -72,7 +73,7 @@ func JwtMiddleware() gin.HandlerFunc {
 			}
 			// set new token
 			SetToken(c, token)
-			fmt.Println("refreshed token")
+			log.Debugf("Refreshed token for user %s", userId)
 		}
 
 		// Continue

@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -412,7 +413,7 @@ func ImportMetadata(creator string, settings *Settings, db *gorm.DB) error {
 
 	if reterr != nil {
 		for _, err := range reterr {
-			fmt.Println(err.Error()) // Change to debug
+			log.Debug(err.Error())
 		}
 		return reterr[0]
 	}
@@ -451,7 +452,7 @@ func ImportMetadata(creator string, settings *Settings, db *gorm.DB) error {
 	*/
 	if reterr != nil {
 		for _, err := range reterr {
-			fmt.Println(err.Error()) // Change to debug
+			log.Debug(err.Error())
 		}
 		return reterr[0]
 	}

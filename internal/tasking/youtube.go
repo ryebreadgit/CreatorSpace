@@ -53,7 +53,7 @@ func GetYouTubeMetadata(url string, comments bool) (database.YouTubeVideoInfoStr
 			var info database.YouTubeVideoInfoStruct
 			err = json.Unmarshal(out, &info)
 			if err != nil {
-				fmt.Println("Error unmarshalling JSON data: ", err)
+				log.Errorf("Error unmarshalling JSON data: %v", err)
 				return database.YouTubeVideoInfoStruct{}, err
 			}
 			return info, nil
@@ -62,7 +62,7 @@ func GetYouTubeMetadata(url string, comments bool) (database.YouTubeVideoInfoStr
 		} else if strings.Contains(errstr, "unavailable") || strings.Contains(errstr, "this video has been removed") {
 			return database.YouTubeVideoInfoStruct{}, fmt.Errorf("unavailable video")
 		} else {
-			fmt.Println("Error getting video metadata: ", err)
+			log.Errorf("Error getting video metadata: %v", err)
 			return database.YouTubeVideoInfoStruct{}, err
 		}
 	}
@@ -70,7 +70,7 @@ func GetYouTubeMetadata(url string, comments bool) (database.YouTubeVideoInfoStr
 	var info database.YouTubeVideoInfoStruct
 	err = json.Unmarshal(out, &info)
 	if err != nil {
-		fmt.Println("Error unmarshalling JSON data: ", err)
+		log.Errorf("Error unmarshalling JSON data: %v", err)
 		return database.YouTubeVideoInfoStruct{}, err
 	}
 	return info, nil
@@ -374,7 +374,7 @@ func updateVideoMetadata(videoID string) error {
 			}
 			return nil
 		} else {
-			fmt.Println("Error getting video metadata: ", err)
+			log.Errorf("Error getting video metadata: %v", err)
 			return err
 		}
 	}
@@ -404,7 +404,7 @@ func updateVideoMetadata(videoID string) error {
 			// convert to epoch
 			parsedDateEpoch, err := general.DateToEpoch(parsedDate)
 			if err != nil {
-				fmt.Println("Error converting date to epoch: ", err)
+				log.Errorf("Error converting date to epoch: %v", err)
 			} else {
 				video.Epoch = parsedDateEpoch
 			}

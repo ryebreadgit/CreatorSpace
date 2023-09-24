@@ -351,7 +351,7 @@ type YouTubeVideoInfoStruct struct {
 		SourcePreference   int         `json:"source_preference,omitempty"`
 		AudioChannels      int         `json:"audio_channels,omitempty"`
 		Quality            float64     `json:"quality,omitempty"`
-		HasDrm             bool        `json:"has_drm,omitempty"`
+		HasDrm             interface{} `json:"has_drm,omitempty"`
 		Tbr                float64     `json:"tbr,omitempty"`
 		Language           interface{} `json:"language,omitempty"`
 		LanguagePreference int         `json:"language_preference,omitempty"`
@@ -434,7 +434,7 @@ type YouTubeVideoInfoStruct struct {
 		AudioChannels      interface{} `json:"audio_channels"`
 		Height             int         `json:"height"`
 		Quality            float64     `json:"quality"`
-		HasDrm             bool        `json:"has_drm"`
+		HasDrm             interface{} `json:"has_drm"`
 		Tbr                float64     `json:"tbr"`
 		URL                string      `json:"url"`
 		Width              int         `json:"width"`
