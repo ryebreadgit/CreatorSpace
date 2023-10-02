@@ -140,9 +140,9 @@
       {{ if .PrevPage }}
       {{ if .Filter }}
         {{ if .Sort }}
-            <a href="/creators/{{.Creator.ChannelID}}?page={{.PrevPage}}&sort={{ .Sort }}">Back Page</a>
+            <a href="/creators/{{.Creator.ChannelID}}?page={{.PrevPage}}&filter={{ .Filter }}&sort={{ .Sort }}">Back Page</a>
         {{ else }}
-            <a href="/creators/{{.Creator.ChannelID}}?page={{.PrevPage}}">Back Page</a>
+            <a href="/creators/{{.Creator.ChannelID}}?page={{.PrevPage}}&filter={{ .Filter }}">Back Page</a>
         {{ end }}
       {{ else }}
           {{ if .Sort }}
