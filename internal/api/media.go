@@ -170,15 +170,15 @@ func getVideoThumbnailPath(videoID string) (string, error) {
 	redirect := false
 
 	dat, err := os.Stat(thumbPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			// redirect to default thumbnail
-			redirect = true
+	if err != nil || dat == nil {
+		redirect = true
+		if !os.IsNotExist(err) { // If the error is not that the file does not exist, log the error
+			log.Errorf("Unable to get thumbnail %v due to error: %v", thumbPath, err)
 		}
 	}
 
 	// Check if file is a directory
-	if dat.IsDir() {
+	if err == nil && dat.IsDir() {
 		// redirect to default thumbnail
 		redirect = true
 	}
