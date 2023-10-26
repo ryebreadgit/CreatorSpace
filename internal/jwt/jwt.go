@@ -64,9 +64,9 @@ func JwtMiddleware() gin.HandlerFunc {
 			// create new token
 			token, err := CreateToken(userId)
 			if err != nil {
-				c.AbortWithStatusJSON(401, gin.H{
-					"ret": 401,
-					"err": "Error creating new token",
+				c.AbortWithStatusJSON(500, gin.H{
+					"ret": 500,
+					"err": fmt.Sprintf("Could not create token: %s", err.Error()),
 				})
 				c.Abort()
 				return
@@ -176,8 +176,8 @@ func RefreshToken(c *gin.Context) {
 	// get the token from the header
 	token, err := GetToken(c)
 	if err != nil {
-		c.AbortWithStatusJSON(401, gin.H{
-			"ret":   401,
+		c.AbortWithStatusJSON(400, gin.H{
+			"ret":   400,
 			"error": "No token provided",
 		})
 		return

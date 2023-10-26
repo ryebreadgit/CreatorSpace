@@ -44,7 +44,7 @@ func Routes(route *gin.Engine) {
 				vidID := c.Param("video_id")
 				userID, err := jwttoken.GetUserFromToken(c)
 				if err != nil {
-					c.AbortWithStatusJSON(401, gin.H{"ret": 401, "err": err.Error()})
+					c.AbortWithStatusJSON(500, gin.H{"ret": 500, "err": err.Error()})
 					return
 				}
 				if userID == "" {

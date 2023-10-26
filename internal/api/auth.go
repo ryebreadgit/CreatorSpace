@@ -33,15 +33,15 @@ func apiUserLogin(c *gin.Context) (string, error) {
 
 	switch data.AccountType {
 	case "disabled":
-		c.AbortWithStatusJSON(401, gin.H{
-			"ret": 401,
+		c.AbortWithStatusJSON(403, gin.H{
+			"ret": 403,
 			"err": "User's account has been disabled, please contact the administrator.",
 		})
 		c.Abort()
 		return "", err
 	case "banned":
-		c.AbortWithStatusJSON(401, gin.H{
-			"ret": 401,
+		c.AbortWithStatusJSON(403, gin.H{
+			"ret": 403,
 			"err": "User's account has been banned, please contact the administrator.",
 		})
 		c.Abort()
