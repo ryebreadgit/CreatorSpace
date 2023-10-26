@@ -1,8 +1,10 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"runtime/debug"
@@ -172,6 +174,52 @@ func loggingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Start timer
 		start := time.Now()
+
+		logData := gin.H{
+			"ip":         c.ClientIP(),
+			"method":     c.Request.Method,
+			"path":       c.Request.URL.Path,
+			"user_agent": c.Request.UserAgent(),
+		}
+
+		// If query string exists, add it to log data
+		if len(c.Request.URL.RawQuery) > 0 {
+			logData["query"] = c.Request.URL.RawQuery
+		}
+
+		// If content length exists, add it to log data
+		if c.Request.ContentLength > 0 {
+			logData["req_content_length"] = c.Request.ContentLength
+			// if content length is less than 5mb, add body to log data
+			if c.Request.ContentLength < 5000000 {
+				body, err := io.ReadAll(c.Request.Body)
+				if err != nil {
+					body = []byte(fmt.Sprintf("Error reading body: %s", err))
+				}
+				// Clone body for later use
+				buffer := bytes.NewBuffer(body)
+
+				if len(body) > 0 {
+					// If url path eq "/api/auth/login", remove password from log data
+					if c.Request.URL.Path == "/api/auth/login" {
+						var loginData database.LoginData
+						err = json.Unmarshal(body, &loginData)
+						if err == nil {
+							loginData.Password = "***"
+							body, err = json.Marshal(loginData)
+							if err != nil {
+								log.Errorf("Error marshalling login data in logging middleware: %s", err)
+							}
+						}
+					}
+					logData["req_body"] = string(body)
+				}
+
+				// Create a new ReadCloser that reads from a buffer that is a copy of the original request body
+				c.Request.Body = io.NopCloser(buffer)
+			}
+		}
+
 		// Execute next handlers in the chain
 		c.Next()
 
@@ -183,17 +231,15 @@ func loggingMiddleware() gin.HandlerFunc {
 		}
 
 		// Calculate latency using timer
-		latency := time.Since(start)
+		logData["latency"] = time.Since(start).String()
 
-		logData := gin.H{
-			"ip":         c.ClientIP(),
-			"method":     c.Request.Method,
-			"path":       c.Request.URL.Path,
-			"status":     c.Writer.Status(),
-			"latency":    latency.String(),
-			"user_agent": c.Request.UserAgent(),
+		logData["status"] = c.Writer.Status()
+		// If 401 or 500+, add cookies to log data
+		if c.Writer.Status() >= 400 && c.Writer.Status() != 404 {
+			logData["req_cookies"] = c.Request.Cookies()
 		}
 
+		// If user exists, add it to log data
 		user, err := jwttoken.GetUserFromToken(c)
 		if err == nil {
 			logData["user"] = user
@@ -210,16 +256,16 @@ func loggingMiddleware() gin.HandlerFunc {
 			log.Errorf("Error marshalling log data: %s", err)
 		}
 
-		if c.Writer.Status() == 401 {
+		if c.Writer.Status() == 401 || c.Writer.Status() == 403 {
 			log.Warnf("Access Unauthorized: %s", logDataJson)
 		} else if c.Writer.Status() >= 500 {
-			log.Errorf("Access Error: %s", logDataJson)
+			log.Errorf("Access Server Error: %s", logDataJson)
 		} else if c.Writer.Status() >= 400 {
-			log.Debugf("Access Error: %s", logDataJson)
+			log.Debugf("Access Client Error: %s", logDataJson)
 		} else if c.Writer.Status() >= 300 {
-			log.Debugf("Access Redirect: %s", logDataJson)
+			log.Debugf("Access Redirection: %s", logDataJson)
 		} else {
-			log.Debugf("Access: %s", logDataJson)
+			log.Debugf("Access Success: %s", logDataJson)
 		}
 	}
 }
