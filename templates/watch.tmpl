@@ -371,16 +371,17 @@ theaterModeButton.addEventListener('click', function () {
 
     player.on('timeupdate', function () {
         for (let sb of sponsorBlock) {
-            if (!sponsorBlockEnabled) {
+            if (!sponsorBlockEnabled || player.paused() || player.ended() || player.currentTime() > player.duration() - 2 || player.CurrentTime < 0.5) {
                 continue;
             }
             if (player.currentTime() >= sb['segmentStart'] && player.currentTime() < sb['segmentEnd'] && sb['category'] == "sponsor") {
-                // if the segment time would exceed the video duration, set the end time to the video duration
-                if (sb['segmentEnd'] >= player.duration()) {
-                    sb['segmentEnd'] = player.duration();
+                // if the segment time would exceed the video duration, set the end time to the video duration -.5 seconds
+                if (sb['segmentEnd'] >= player.duration() - 1) {
+                    player.currentTime(player.duration());
                     sendCompletedRequest("{{.VideoID}}");
+                } else {
+                    player.currentTime(sb['segmentEnd']);
                 }
-                player.currentTime(sb['segmentEnd']);
             }
         }
     });
@@ -457,6 +458,8 @@ theaterModeButton.addEventListener('click', function () {
     {{if .Video.Watched}}
         completed = true;
     {{end}}
+
+    let curTime = 0;
     
     // keep track of user's current time
     player.on('timeupdate', function () {
@@ -466,7 +469,7 @@ theaterModeButton.addEventListener('click', function () {
             return;
         }
 
-        let curTime = player.currentTime();
+        curTime = player.currentTime();
 
         // Skip if within the first 5 seconds
         if (curTime < 5) {
@@ -540,6 +543,43 @@ theaterModeButton.addEventListener('click', function () {
             }, true);
         {{ end }}
 
+    });
+
+    // On video connection error, try 5 times to reconnect. If it succeeds, continue playing the video. If it fails, display an error message. 
+    let retry = 0;
+    let retryTimer = null;
+    player.on('error', function () {
+        // Stop normal error handling
+        err = player.error();   
+        player.error(null);
+        if (retry >= 5) {
+            if (retry != 999) {
+                console.log(`Failed to load video after 5 retries`);
+            }
+            retry = 999
+            return;
+        }
+        // 1.5 second delay
+        retryTimer = setTimeout(function () {
+            player.src({
+                src: vidsrc,
+                type: vidSrcMime
+            });
+            // Set the player time to the last time it was at
+            player.currentTime(curTime);
+            player.play();
+            retry++;
+            retryTimer = null;
+        }, 1500);
+    });
+
+    // On successful video connection, reset retry counter and clear retry timer
+    player.on('loadedmetadata', function () {
+        retry = 0;
+        if (retryTimer) {
+            clearTimeout(retryTimer);
+            retryTimer = null;
+        }
     });
 
     // replace links in description with hyperlinks, use regex to match links.
