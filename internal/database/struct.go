@@ -160,6 +160,11 @@ type Settings struct {
 	PublicImages     bool
 }
 
+type LoginData struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 type User struct {
 	gorm.Model
 	ID int `gorm:"primaryKey"`

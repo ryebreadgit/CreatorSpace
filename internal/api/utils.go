@@ -61,6 +61,10 @@ func wrapper(f func(c *gin.Context) (string, error)) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		data, err := f(c)
+		// Check if already aborted
+		if c.IsAborted() {
+			return
+		}
 		if err != nil {
 			c.JSON(503, gin.H{"ret": 503, "err": err.Error()})
 			return
@@ -68,12 +72,13 @@ func wrapper(f func(c *gin.Context) (string, error)) gin.HandlerFunc {
 
 		var result map[string]interface{}
 		err = json.Unmarshal([]byte(data), &result)
-		if err != nil {
+		if err == nil {
+			c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "data": result})
+		} else {
+			// Not json
 			c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(data))
-			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "data": result})
 	}
 }
 

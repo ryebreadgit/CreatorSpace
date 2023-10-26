@@ -17,6 +17,7 @@ func downloadYouTubeVideos(settings *database.Settings, db *gorm.DB) error {
 	if err != nil {
 		return err
 	}
+	dlerrs := []error{}
 	// loop over all videos and download them
 	for _, video := range videos {
 		// skip any non-youtube videos. Type must be video
@@ -30,7 +31,9 @@ func downloadYouTubeVideos(settings *database.Settings, db *gorm.DB) error {
 			// video is already downloaded, remove from queue
 			err = database.RemoveFromDownloadQueue(video.VideoID, video.VideoType, db)
 			if err != nil {
-				return err
+				log.Errorf("Error removing video id '%v' from download queue: %v", video.VideoID, err)
+				dlerrs = append(dlerrs, err)
+				continue
 			}
 			continue
 		}
@@ -42,7 +45,9 @@ func downloadYouTubeVideos(settings *database.Settings, db *gorm.DB) error {
 
 		filePath, err := downloadYouTubeVideo(vidUrl, outputDir, video.VideoID, config)
 		if err != nil {
-			return err
+			dlerrs = append(dlerrs, err)
+			log.Errorf("Error downloading video id '%v': %v", video.VideoID, err)
+			continue
 		}
 
 		filePath = strings.ReplaceAll(filePath, settings.BaseYouTubePath, "")
@@ -67,18 +72,24 @@ func downloadYouTubeVideos(settings *database.Settings, db *gorm.DB) error {
 
 		// Add the video to the database
 		err = database.InsertVideo(vidData, db)
-
 		if err != nil {
-			log.Error("Error adding video to database: ", err)
-			return err
+			log.Errorf("Error inserting video id '%v' into database: %v", video.VideoID, err)
+			dlerrs = append(dlerrs, err)
+			continue
 		}
 
 		// update video metadata
 		err = updateVideoMetadata(video.VideoID)
 		if err != nil {
-			log.Error("Error updating video metadata: ", err)
-			return err
+			log.Errorf("Error updating video metadata for video id '%v': %v", video.VideoID, err)
+			dlerrs = append(dlerrs, err)
+			continue
 		}
+
+		log.Info("Successfully downloaded video: ", video.VideoID)
+	}
+	if len(dlerrs) > 0 {
+		return fmt.Errorf("errors downloading videos: %v", dlerrs)
 	}
 	return nil
 }

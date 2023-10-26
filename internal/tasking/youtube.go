@@ -373,6 +373,15 @@ func updateVideoMetadata(videoID string) error {
 				return err
 			}
 			return nil
+		} else if strings.Contains(strings.ToLower(err.Error()), "members-only") {
+			video.Availability = "members"
+			// Set updated to true
+			video.Updated = true
+			err = database.UpdateVideo(video, db)
+			if err != nil {
+				return err
+			}
+			return nil
 		} else {
 			log.Errorf("Error getting video metadata: %v", err)
 			return err
@@ -419,6 +428,8 @@ func updateVideoMetadata(videoID string) error {
 		video.Availability = "available"
 	case "private":
 		video.Availability = "private"
+	case "members only":
+		video.Availability = "members"
 	case "needs_auth":
 		video.AgeRestricted = true
 	default:

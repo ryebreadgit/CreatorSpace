@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"strconv"
 
@@ -33,9 +34,9 @@ func apiUpdateWatchTime(c *gin.Context) {
 	// get jwt token
 	token, err := jwttoken.GetToken(c)
 	if err != nil {
-		c.AbortWithStatusJSON(401, gin.H{
-			"ret": 401,
-			"err": "Unauthorized",
+		c.AbortWithStatusJSON(500, gin.H{
+			"ret": 500,
+			"err": fmt.Sprintf("Error getting token: %v", err),
 		})
 		c.Abort()
 		return
@@ -60,8 +61,8 @@ func apiUpdateWatchTime(c *gin.Context) {
 	if reqID != userId {
 		// check token is admin from account_type in token
 		if parsedToken.Claims.(jwt.MapClaims)["account_type"] != "admin" {
-			c.AbortWithStatusJSON(401, gin.H{
-				"ret": 401,
+			c.AbortWithStatusJSON(403, gin.H{
+				"ret": 403,
 				"err": "Unauthorized",
 			})
 			c.Abort()
@@ -172,9 +173,9 @@ func apiGetWatchTime(c *gin.Context) {
 	// get the token from the header
 	token, err := jwttoken.GetToken(c)
 	if err != nil {
-		c.AbortWithStatusJSON(401, gin.H{
-			"ret": 401,
-			"err": "No token provided",
+		c.AbortWithStatusJSON(500, gin.H{
+			"ret": 500,
+			"err": fmt.Sprintf("Error getting token: %v", err),
 		})
 		c.Abort()
 		return
@@ -198,8 +199,8 @@ func apiGetWatchTime(c *gin.Context) {
 	if reqID != userId {
 		// check token is admin from account_type in token
 		if parsedToken.Claims.(jwt.MapClaims)["account_type"] != "admin" {
-			c.AbortWithStatusJSON(401, gin.H{
-				"ret": 401,
+			c.AbortWithStatusJSON(403, gin.H{
+				"ret": 403,
 				"err": "Unauthorized",
 			})
 			c.Abort()
@@ -276,9 +277,9 @@ func apiMarkVideoComplete(c *gin.Context) {
 	// get the token from the header
 	token, err := jwttoken.GetToken(c)
 	if err != nil {
-		c.AbortWithStatusJSON(401, gin.H{
-			"ret": 401,
-			"err": "No token provided",
+		c.AbortWithStatusJSON(500, gin.H{
+			"ret": 500,
+			"err": fmt.Sprintf("Error getting token: %v", err),
 		})
 
 		c.Abort()
@@ -304,8 +305,8 @@ func apiMarkVideoComplete(c *gin.Context) {
 	if reqID != userId {
 		// check token is admin from account_type in token
 		if parsedToken.Claims.(jwt.MapClaims)["account_type"] != "admin" {
-			c.AbortWithStatusJSON(401, gin.H{
-				"ret": 401,
+			c.AbortWithStatusJSON(403, gin.H{
+				"ret": 403,
 				"err": "Unauthorized",
 			})
 
@@ -499,9 +500,9 @@ func apiUpdateSponsorblock(c *gin.Context) {
 	// get the token from the header
 	token, err := jwttoken.GetToken(c)
 	if err != nil {
-		c.AbortWithStatusJSON(401, gin.H{
-			"ret": 401,
-			"err": "No token provided",
+		c.AbortWithStatusJSON(500, gin.H{
+			"ret": 500,
+			"err": fmt.Sprintf("Error getting token: %v", err),
 		})
 
 		c.Abort()
@@ -573,9 +574,9 @@ func apiAddSubscription(c *gin.Context) {
 	// get the token from the header
 	token, err := jwttoken.GetToken(c)
 	if err != nil {
-		c.AbortWithStatusJSON(401, gin.H{
-			"ret": 401,
-			"err": "No token provided",
+		c.AbortWithStatusJSON(500, gin.H{
+			"ret": 500,
+			"err": fmt.Sprintf("Error getting token: %v", err),
 		})
 
 		c.Abort()
@@ -601,8 +602,8 @@ func apiAddSubscription(c *gin.Context) {
 	if reqID != userId {
 		// check token is admin from account_type in token
 		if parsedToken.Claims.(jwt.MapClaims)["account_type"] != "admin" {
-			c.AbortWithStatusJSON(401, gin.H{
-				"ret": 401,
+			c.AbortWithStatusJSON(403, gin.H{
+				"ret": 403,
 				"err": "Unauthorized",
 			})
 
@@ -689,9 +690,9 @@ func apiRemoveSubscription(c *gin.Context) {
 	// get the token from the header
 	token, err := jwttoken.GetToken(c)
 	if err != nil {
-		c.AbortWithStatusJSON(401, gin.H{
-			"ret": 401,
-			"err": "No token provided",
+		c.AbortWithStatusJSON(500, gin.H{
+			"ret": 500,
+			"err": fmt.Sprintf("Error getting token: %v", err),
 		})
 
 		c.Abort()
@@ -717,8 +718,8 @@ func apiRemoveSubscription(c *gin.Context) {
 	if reqID != userId {
 		// check token is admin from account_type in token
 		if parsedToken.Claims.(jwt.MapClaims)["account_type"] != "admin" {
-			c.AbortWithStatusJSON(401, gin.H{
-				"ret": 401,
+			c.AbortWithStatusJSON(403, gin.H{
+				"ret": 403,
 				"err": "Unauthorized",
 			})
 
@@ -811,8 +812,8 @@ func apiUpdatePassword(c *gin.Context) {
 	// get the token from the header
 	token, err := jwttoken.GetToken(c)
 	if err != nil {
-		c.AbortWithStatusJSON(401, gin.H{
-			"ret": 401,
+		c.AbortWithStatusJSON(500, gin.H{
+			"ret": 500,
 			"err": "No token provided",
 		})
 
@@ -837,8 +838,8 @@ func apiUpdatePassword(c *gin.Context) {
 
 	// Check if request user is the same as the user in the token
 	if reqUser != userId {
-		c.AbortWithStatusJSON(401, gin.H{
-			"ret": 401,
+		c.AbortWithStatusJSON(403, gin.H{
+			"ret": 403,
 			"err": "Unauthorized",
 		})
 

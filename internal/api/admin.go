@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 
@@ -17,7 +18,7 @@ func AdminMiddleware() gin.HandlerFunc {
 		// Get the user from jwt
 		userID, err := jwttoken.GetUserFromToken(c)
 		if err != nil {
-			c.AbortWithStatusJSON(401, gin.H{"ret": 401, "err": err.Error()})
+			c.AbortWithStatusJSON(400, gin.H{"ret": 400, "err": fmt.Sprintf("Invalid token: %s", err.Error())})
 			return
 		}
 		if userID == "" {
@@ -28,13 +29,13 @@ func AdminMiddleware() gin.HandlerFunc {
 		// Get the user from the database
 		user, err := database.GetUserByID(userID, db)
 		if err != nil {
-			c.AbortWithStatusJSON(401, gin.H{"ret": 401, "err": err.Error()})
+			c.AbortWithStatusJSON(500, gin.H{"ret": 500, "err": fmt.Sprintf("Error getting user: %s", err.Error())})
 			return
 		}
 
 		// Check if the user is an admin
 		if user.AccountType != "admin" {
-			c.AbortWithStatusJSON(401, gin.H{"ret": 401, "err": "Not an admin"})
+			c.AbortWithStatusJSON(403, gin.H{"ret": 403, "err": "Not an admin"})
 			return
 		}
 
