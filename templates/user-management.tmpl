@@ -16,32 +16,33 @@
         <table class="table table-dark">
             <thead>
                 <tr>
-                    <th class="col-4">Username</th>
-                    <th class="col-4 text-center">Account Type</th>
-                    <th class="col-4 text-right">Actions</th>
+                    <th class="col text-center">Username</th>
+                    <th class="col text-center">User ID</th>
+                    <th class="col text-center">Account Type</th>
+                    <th class="col text-center">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {{ range .Users }}
                 <tr>
-                    <td>{{ .Username }}</td>
+                    <td class="text-left">{{ .Username }}</td>
+                    <td class="text-center">{{ .UserID }}</td>
                     <td class="text-center">{{ .AccountType }}</td>
-                    <td class="text-right">
+                    <td class="text-center">
                         <!-- Change Password Icon Button -->
-                <button class="btn btn-warning" onclick="showChangePasswordModal('{{.UserID}}')" title="Change Password">
-                    <i class="bi bi-key-fill"></i>
-                </button>
+                        <button class="btn btn-warning" onclick="showChangePasswordModal('{{.UserID}}')" title="Change Password">
+                            <i class="bi bi-key-fill"></i>
+                        </button>
 
-                <!-- Change Account Type Icon Button -->
-                <button class="btn btn-info" onclick="showChangeAccountTypeModal('{{.UserID}}')" title="Change Account Type">
-                    <i class="bi bi-person-badge-fill"></i>
-                </button>
+                        <!-- Change Account Type Icon Button -->
+                        <button class="btn btn-info" onclick="showChangeAccountTypeModal('{{.UserID}}')" title="Change Account Type">
+                            <i class="bi bi-person-badge-fill"></i>
+                        </button>
 
-                <!-- Delete Icon Button -->
-                <button class="btn btn-danger" onclick="deleteUser('{{.UserID}}')" title="Delete User">
-                    <i class="bi bi-trash-fill"></i>
-                </button>
-            </td>
+                        <!-- Delete Icon Button -->
+                        <button class="btn btn-danger" onclick="deleteUser('{{.UserID}}')" title="Delete User">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
                     </td>
                 </tr>
                 {{ end }}
