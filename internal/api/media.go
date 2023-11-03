@@ -11,6 +11,7 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -106,9 +107,43 @@ func readImageFromDisk(filepath string) ([]byte, error) {
 	return bytes, nil
 }
 
+func convertThumbnail(filepath string) ([]byte, error) {
+	// Use ffmpeg to convert thumbnails to smaller size. We use ffmpeg to limit dependancies as this is already required for transcoding.
+
+	cmd := exec.Command("ffmpeg", "-i", filepath, "-vf", "scale=320:-1", "-vframes", "1", "-f", "image2pipe", "-vcodec", "png", "-")
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+
+	bytes, err := io.ReadAll(stdout)
+	if err != nil {
+		return nil, err
+	}
+
+	errBytes, err := io.ReadAll(stderr)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return nil, fmt.Errorf("%v: %s", err, errBytes)
+	}
+
+	return bytes, nil
+}
+
 // getImageData reads the image data from Redis if available, otherwise reads from the file system and caches it in Redis
 // Returns []byte data, error, and a bool indicating if the data was read from Redis
-func getImageData(filePath string) ([]byte, error, bool) {
+func getImageData(filePath string, compress bool) ([]byte, error, bool) {
 	// Try to get the image data from Redis
 	var imageData []byte
 	if rdb == nil {
@@ -119,26 +154,44 @@ func getImageData(filePath string) ([]byte, error, bool) {
 		return imageData, nil, false
 	}
 
-	imageData, err := rdb.Get(ctx, filePath).Bytes()
+	redisKey := filePath
+	if compress {
+		redisKey = fmt.Sprintf("%v:compress", filePath)
+	}
+
+	imageData, err := rdb.Get(ctx, redisKey).Bytes()
 
 	// If data is not found in Redis
 	if err == redis.Nil {
+		keytime := time.Hour * 24
 		// Read the image from the file system
-		imageData, err = readImageFromDisk(filePath)
+		if compress {
+			imageData, err = convertThumbnail(filePath)
+			keytime = time.Hour * 48 // Keep compressed thumbnails in cache for 2 days
+		} else {
+			imageData, err = readImageFromDisk(filePath)
+		}
 		if err != nil {
-			return nil, err, false
+			log.Warnf("Error converting thumbnail '%v': %v", filePath, err.Error())
+			imageData, err = readImageFromDisk(filePath)
+			if err != nil {
+				return nil, err, false
+			}
 		}
 
-		// Cache the image data in Redis with an expiration time of 12 hours
-		err = rdb.Set(ctx, filePath, imageData, time.Hour*12).Err()
+		// Cache the image data in Redis with an expiration time of 24 hours
+		err = rdb.Set(ctx, redisKey, imageData, keytime).Err()
 		if err != nil {
 			return nil, err, false
 		}
 
 	} else if err != nil {
-		// Debug log the error and read the image from the file system
-		log.Debugf("Error getting image data from Redis: %v", err)
-		imageData, err = readImageFromDisk(filePath)
+		// Read the image from the file system directly
+		if compress {
+			imageData, err = convertThumbnail(filePath)
+		} else {
+			imageData, err = readImageFromDisk(filePath)
+		}
 		if err != nil {
 			return nil, err, false
 		}
@@ -196,7 +249,7 @@ func getVideoThumbnailPath(videoID string) (string, error) {
 	return thumbPath, nil
 }
 
-func getThumbnail(c *gin.Context, thumbPath string) ([]byte, string, error, bool) {
+func getThumbnail(c *gin.Context, thumbPath string, compress bool) ([]byte, string, error, bool) {
 
 	// If starts with /assets/ then redirect to that path
 	if strings.HasPrefix(thumbPath, "/assets/") {
@@ -206,8 +259,9 @@ func getThumbnail(c *gin.Context, thumbPath string) ([]byte, string, error, bool
 	}
 
 	// Read thumbnail from path
-	thumbnail, err, red := getImageData(thumbPath)
+	thumbnail, err, red := getImageData(thumbPath, compress)
 	if err != nil {
+		log.Errorf("Error getting thumbnail '%v': %v", thumbPath, err)
 		return nil, "", err, false
 	}
 
@@ -262,6 +316,7 @@ func getCreatorThumbnailPath(creatorID string) (string, error) {
 func apiThumbnail(c *gin.Context) {
 
 	var err error
+	var compress bool = false
 	var thumbPath string
 
 	if c.Params.ByName("video_id") != "" {
@@ -283,6 +338,10 @@ func apiThumbnail(c *gin.Context) {
 	} else {
 		c.AbortWithStatusJSON(400, gin.H{"ret": 400, "err": "invalid request"})
 		return
+	}
+
+	if c.Query("compress") == "true" {
+		compress = true
 	}
 
 	// get if modified since header
@@ -309,7 +368,7 @@ func apiThumbnail(c *gin.Context) {
 		}
 	}
 
-	thumbnail, mimetype, err, red := getThumbnail(c, thumbPath)
+	thumbnail, mimetype, err, red := getThumbnail(c, thumbPath, compress)
 	if err != nil {
 		c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": err.Error()})
 		return

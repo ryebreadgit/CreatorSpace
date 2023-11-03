@@ -5,9 +5,9 @@
 	<div class="creator-info">
 	<a href="/creators/{{.ChannelID}}">
 		{{if eq .VideoType "Twitch"}}
-		<img src="/api/twitch/creators/{{.ChannelID}}/thumbnail" alt={{.ChannelTitle}}>
+		<img src="/api/twitch/creators/{{.ChannelID}}/thumbnail?compress=true" alt={{.ChannelTitle}}>
 		{{else}}
-		<img src="/api/youtube/creators/{{.ChannelID}}/thumbnail" alt={{.ChannelTitle}}>
+		<img src="/api/youtube/creators/{{.ChannelID}}/thumbnail?compress=true" alt={{.ChannelTitle}}>
 		{{end}}
 		<span class="creator-info-text">{{.ChannelTitle}}</span>
 	</a>
@@ -16,7 +16,7 @@
 	<div class="thumbnail-box">
 		<div class="image-container">
 			<a href="/watch/{{.VideoID}}">
-				<img src="/api/media/{{.VideoID}}/thumbnail" alt="{{.Title}}">
+				<img src="/api/media/{{.VideoID}}/thumbnail?compress=true" alt="{{.Title}}">
 			</a>
 			<div class="image-overlay">
 				<div class="mark-watched">
@@ -182,7 +182,7 @@ document.getElementById("page-number").addEventListener("keyup", function(event)
         xhr.open("POST", `/api/user/${user_id}/progress/${video_id}/complete`, true);
         xhr.send();
 		// Get the image container and add <span class="watched-text"></span>
-		let imageContainer = document.querySelector(`img[src="/api/media/${video_id}/thumbnail"]`).parentElement.parentElement;
+		let imageContainer = document.querySelector(`img[src="/api/media/${video_id}/thumbnail?compress=true"]`).parentElement.parentElement;
 		
         
         // Remove in-progress-text and in-progress-bkg if they exist

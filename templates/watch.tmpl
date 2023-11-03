@@ -28,16 +28,16 @@
     <div class="creator-info">
       <a href="/creators/{{.Recommendation.ChannelID}}">
         {{if eq .Recommendation.VideoType "Twitch"}}
-          <img src="/api/twitch/creators/{{.Recommendation.ChannelID}}/thumbnail" alt={{.Recommendation.ChannelTitle}}>
+          <img src="/api/twitch/creators/{{.Recommendation.ChannelID}}/thumbnail?compress=true" alt={{.Recommendation.ChannelTitle}}>
         {{else}}
-          <img src="/api/youtube/creators/{{.Recommendation.ChannelID}}/thumbnail" alt={{.Recommendation.ChannelTitle}}>
+          <img src="/api/youtube/creators/{{.Recommendation.ChannelID}}/thumbnail?compress=true" alt={{.Recommendation.ChannelTitle}}>
         {{end}}
         <span class="creator-info-text">{{.Recommendation.ChannelTitle}}</span>
       </a>
     </div>
     <div class="video">
       <div class="thumbnail-box">
-          <a href="/watch/{{.Recommendation.VideoID}}"><img src="/api/media/{{.Recommendation.VideoID}}/thumbnail" style="width: 187.5px;height: 105px;" alt="{{.Recommendation.Title}}"></a>
+          <a href="/watch/{{.Recommendation.VideoID}}"><img src="/api/media/{{.Recommendation.VideoID}}/thumbnail?compress=true" style="width: 187.5px;height: 105px;" alt="{{.Recommendation.Title}}"></a>
           
           {{if .Recommendation.Watched}}
            <span class="watched-text"></span>

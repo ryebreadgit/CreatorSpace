@@ -49,9 +49,9 @@
                         <div class="creator-info">
                         <a href="/creators/{{.ChannelID}}">
                             {{if eq .VideoType "Twitch"}}
-                            <img src="/api/twitch/creators/{{.ChannelID}}/thumbnail" alt={{.ChannelTitle}}>
+                            <img src="/api/twitch/creators/{{.ChannelID}}/thumbnail?compress=true" alt={{.ChannelTitle}}>
                             {{else}}
-                            <img src="/api/youtube/creators/{{.ChannelID}}/thumbnail" alt={{.ChannelTitle}}>
+                            <img src="/api/youtube/creators/{{.ChannelID}}/thumbnail?compress=true" alt={{.ChannelTitle}}>
                             {{end}}
                             <span class="creator-info-text">{{.ChannelTitle}}</span>
                         </a>
