@@ -278,7 +278,7 @@ func processVideoIDs(videoIDChan chan videoWorkItem, limit int, settings *databa
 
 				err = database.InsertDownloadQueueItem(item, db)
 				if err != nil {
-					log.Errorf("Error inserting download queue item for video %v: %v\n", videoID, err)
+					log.Errorf("Error inserting download queue item for video %v: %v\n", videoID.videoID, err)
 					*reterr = err
 					continue
 				}
