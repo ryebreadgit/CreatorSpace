@@ -89,9 +89,9 @@
                         let videoChannel = video["ChannelTitle"];
                         let videoLength = video["Length"];
                         let videoType = video["VideoType"];
-                        let videoThumbnail = `/api/media/${videoID}/thumbnail`;
+                        let videoThumbnail = `/api/media/${videoID}/thumbnail?compress=true`;
                         if (videoType == "channel") {
-                            videoThumbnail = `/api/youtube/creators/${videoID}/thumbnail`;
+                            videoThumbnail = `/api/youtube/creators/${videoID}/thumbnail?compress=true`;
                         }
 
                         /* add elements to the search results dropdown with the thumbnail, channel title, and video title present */
