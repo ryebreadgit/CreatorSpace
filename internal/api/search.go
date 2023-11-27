@@ -61,7 +61,35 @@ func apiSearchVideos(c *gin.Context) {
 		}
 	}
 
-	query = strings.ToLower(query)
+	query = strings.Trim(strings.ToLower(query), " ")
+	// Replace special characters with spaces
+	// Literal search
+	literalSearch := db.Where("LOWER(title) LIKE ?", "%"+query+"%")
+	if filter != "" {
+		literalSearch = literalSearch.Where("channel_id = ?", filter)
+	}
+
+	err := literalSearch.Limit(limit).Find(&videos).Error
+	if err != nil {
+		c.JSON(500, gin.H{
+			"res": 500,
+			"err": err.Error(),
+		})
+		return
+	}
+
+	// Sort videos by relevance
+	sort.Slice(videos, func(i, j int) bool {
+		return fuzzy.LevenshteinDistance(query, strings.ToLower(videos[i].Title)) < fuzzy.LevenshteinDistance(query, strings.ToLower(videos[j].Title))
+	})
+
+	var videoMap = make(map[string]bool)
+
+	for _, video := range videos {
+		videoMap[video.VideoID] = true
+	}
+
+	// Fuzzy search
 
 	// Get all video titles lowercase
 	var titles []string
@@ -71,7 +99,7 @@ func apiSearchVideos(c *gin.Context) {
 		dbquery = dbquery.Where("channel_id = ?", filter)
 	}
 
-	err := dbquery.Pluck("LOWER(title)", &titles).Error
+	err = dbquery.Pluck("LOWER(title)", &titles).Error
 	if err != nil {
 		c.JSON(500, gin.H{
 			"res": 500,
@@ -86,10 +114,19 @@ func apiSearchVideos(c *gin.Context) {
 
 	const threshold = 50
 
+	// Only keep top 100 matches
+	if len(matches) > 100 {
+		matches = matches[:100]
+	}
+
 	// Append matches up to the limit
-	for i, match := range matches {
-		if len(videos) >= limit || i >= limit || match.Distance > threshold {
+	for _, match := range matches {
+		if len(videos) >= limit+20 { // Arbitrary number to so that we can sort the last half of videos by relevance. This mixes the literal search and fuzzy search results better.
 			break
+		}
+
+		if match.Distance > threshold {
+			continue
 		}
 
 		var vid database.Video
@@ -98,18 +135,18 @@ func apiSearchVideos(c *gin.Context) {
 			continue
 		}
 
+		// Check if video is already in videos
+		if _, ok := videoMap[vid.VideoID]; ok {
+			continue
+		}
+		videoMap[vid.VideoID] = true
 		videos = append(videos, vid)
 	}
 
-	// Remove duplicates from videos
-	for i := 0; i < len(videos); i++ {
-		for j := i + 1; j < len(videos); j++ {
-			if videos[i].VideoID == videos[j].VideoID {
-				videos = append(videos[:j], videos[j+1:]...)
-				j--
-			}
-		}
-	}
+	// Sort only the last half of videos by relevance. Keep first half's sorting order.
+	sort.Slice(videos[len(videos)/2:], func(i, j int) bool {
+		return fuzzy.LevenshteinDistance(query, strings.ToLower(videos[i].Title)) < fuzzy.LevenshteinDistance(query, strings.ToLower(videos[j].Title))
+	})
 
 	// Truncate to limit
 	if len(videos) > limit {
@@ -120,7 +157,7 @@ func apiSearchVideos(c *gin.Context) {
 
 	var creators []database.Creator
 
-	err = db.Limit(5).Where("LOWER(name) LIKE ?", "%"+query+"%").Find(&creators).Error
+	err = db.Limit(limit).Where("LOWER(name) LIKE ?", "%"+query+"%").Find(&creators).Error
 	if err != nil {
 		c.JSON(500, gin.H{
 			"res": 500,
