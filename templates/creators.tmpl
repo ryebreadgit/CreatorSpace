@@ -10,7 +10,7 @@
         {{ end }}
         <a href="/creators/{{ .ChannelID }}">
             <div class="creator">
-                <img class="thumbnail" src="/api/youtube/creators/{{.ChannelID}}/thumbnail" alt="{{.Name}}"/>
+                <img class="thumbnail" src="/api/youtube/creators/{{.ChannelID}}/thumbnail?compress=true" alt="{{.Name}}"/>
                 <div class="name">{{ .Name }}</div>
             </div>
         </a>
