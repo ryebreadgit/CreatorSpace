@@ -115,5 +115,22 @@ func InitLogging() {
 		LogFormat:         "(%time%) [%lvl%] %msg%\n",
 		LogLevelPadding:   true,
 	})
+	// Get the value of the LOGLEVEL environment variable
+	logLevel := os.Getenv("LOGLEVEL")
+	// Set the log level based on the value of the LOGLEVEL environment variable
+	switch strings.ToUpper(logLevel) {
+	case "DEBUG":
+		logrus.SetLevel(logrus.DebugLevel)
+	case "INFO":
+		logrus.SetLevel(logrus.InfoLevel)
+	case "WARN":
+		logrus.SetLevel(logrus.WarnLevel)
+	case "ERROR":
+		logrus.SetLevel(logrus.ErrorLevel)
+	case "FATAL":
+		logrus.SetLevel(logrus.FatalLevel)
+	default:
+		logrus.SetLevel(logrus.InfoLevel)
+	}
 	logrus.SetOutput(mw)
 }

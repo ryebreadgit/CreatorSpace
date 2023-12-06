@@ -1,16 +1,23 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"runtime/debug"
+	"strings"
+
+	"time"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/ryebreadgit/CreatorSpace/internal/api"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	jwttoken "github.com/ryebreadgit/CreatorSpace/internal/jwt"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -24,7 +31,10 @@ func Run() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	r := gin.Default()
+	r := gin.New()
+	r.Use(customRecovery())
+	r.Use(errorHandlingMiddleware())
+	r.Use(loggingMiddleware())
 	// load html templates
 
 	r.SetFuncMap(sprig.FuncMap())
@@ -92,7 +102,8 @@ func Run() {
 
 		user := userData.(database.User)
 		c.HTML(http.StatusOK, "home.tmpl", gin.H{
-			"User": user,
+			"User":      user,
+			"PageTitle": "Home",
 		})
 	})
 
@@ -117,7 +128,8 @@ func Run() {
 
 		user := userData.(database.User)
 		c.HTML(http.StatusOK, "download.tmpl", gin.H{
-			"User": user,
+			"User":      user,
+			"PageTitle": "Download",
 		})
 	})
 
@@ -127,6 +139,7 @@ func Run() {
 
 	r.Use(isAdminMiddleware())
 	r.GET("/user-management", page_user_management(db))
+	r.GET("/library-management", page_library_management(db))
 
 	// share all files in static folder to /assets
 
@@ -136,6 +149,146 @@ func Run() {
 	}
 
 	r.Run(":" + port)
+}
+
+func errorHandlingMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Execute next handlers in the chain
+		c.Next()
+
+		// If there are errors after executing all handlers, log them
+		if len(c.Errors) > 0 {
+			for _, e := range c.Errors {
+				if strings.Contains(e.Error(), "broken pipe") || strings.Contains(e.Error(), "connection reset by peer") {
+					log.Debugf("Gin error: %s", e.Error())
+				} else {
+					log.Warnf("Gin error: %s", e.Error())
+				}
+			}
+			c.Abort() // Abort the context to prevent other handlers from executing
+		}
+	}
+}
+
+func loggingMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Start timer
+		start := time.Now()
+
+		logData := gin.H{
+			"ip":         c.ClientIP(),
+			"method":     c.Request.Method,
+			"path":       c.Request.URL.Path,
+			"user_agent": c.Request.UserAgent(),
+		}
+
+		// If query string exists, add it to log data
+		if len(c.Request.URL.RawQuery) > 0 {
+			logData["query"] = c.Request.URL.RawQuery
+		}
+
+		// If content length exists, add it to log data
+		if c.Request.ContentLength > 0 {
+			logData["req_content_length"] = c.Request.ContentLength
+			// if content length is less than 5mb, add body to log data
+			if c.Request.ContentLength < 5000000 {
+				body, err := io.ReadAll(c.Request.Body)
+				if err != nil {
+					body = []byte(fmt.Sprintf("Error reading body: %s", err))
+				}
+				// Clone body for later use
+				buffer := bytes.NewBuffer(body)
+
+				if len(body) > 0 {
+					// If url path eq "/api/auth/login", remove password from log data
+					if c.Request.URL.Path == "/api/auth/login" {
+						var loginData database.LoginData
+						err = json.Unmarshal(body, &loginData)
+						if err == nil {
+							loginData.Password = "***"
+							body, err = json.Marshal(loginData)
+							if err != nil {
+								log.Errorf("Error marshalling login data in logging middleware: %s", err)
+							}
+						}
+					}
+					logData["req_body"] = string(body)
+				}
+
+				// Create a new ReadCloser that reads from a buffer that is a copy of the original request body
+				c.Request.Body = io.NopCloser(buffer)
+			}
+		}
+
+		// Execute next handlers in the chain
+		c.Next()
+
+		// Check if client has closed before setting latency
+		select {
+		case <-c.Request.Context().Done():
+			return
+		default:
+		}
+
+		// Calculate latency using timer
+		logData["latency"] = time.Since(start).String()
+
+		logData["status"] = c.Writer.Status()
+		// If 401 or 500+, add cookies to log data
+		if c.Writer.Status() >= 400 && c.Writer.Status() != 404 {
+			logData["req_cookies"] = c.Request.Cookies()
+		}
+
+		// If user exists, add it to log data
+		user, err := jwttoken.GetUserFromToken(c)
+		if err == nil {
+			logData["user"] = user
+		}
+
+		// If there is an error, add it to log data
+		if len(c.Errors) > 0 {
+			logData["error"] = c.Errors.String()
+		}
+
+		// To json
+		logDataJson, err := json.Marshal(logData)
+		if err != nil {
+			log.Errorf("Error marshalling log data: %s", err)
+		}
+
+		if c.Writer.Status() == 401 || c.Writer.Status() == 403 {
+			log.Warnf("Access Unauthorized: %s", logDataJson)
+		} else if c.Writer.Status() >= 500 {
+			log.Errorf("Access Server Error: %s", logDataJson)
+		} else if c.Writer.Status() >= 400 {
+			log.Debugf("Access Client Error: %s", logDataJson)
+		} else if c.Writer.Status() >= 300 {
+			log.Debugf("Access Redirection: %s", logDataJson)
+		} else {
+			log.Debugf("Access Success: %s", logDataJson)
+		}
+	}
+}
+
+func customRecovery() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		defer func() {
+			if err := recover(); err != nil {
+				if e, ok := err.(error); ok {
+					if strings.Contains(e.Error(), "broken pipe") || strings.Contains(e.Error(), "connection reset by peer") {
+						// Simply return if it's a broken pipe error
+						log.Debugf("Gin error: %s", e.Error())
+						return
+					}
+				}
+				// If it's any other error, use the default gin recovery behavior
+				log.Errorf("Gin panic recovered: %s\n\t%s", err, debug.Stack())
+				gin.DefaultErrorWriter.Write([]byte(fmt.Sprintf("[Recovery] panic recovered:\n%s\n%s", err, debug.Stack())))
+				c.AbortWithStatus(http.StatusInternalServerError)
+			}
+		}()
+		c.Next()
+	}
 }
 
 func init() {

@@ -26,6 +26,7 @@ import (
 	"github.com/corona10/goimagehash"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
+	log "github.com/sirupsen/logrus"
 )
 
 // Function to check if a video is available, unavailable, or private
@@ -52,7 +53,7 @@ func GetYouTubeMetadata(url string, comments bool) (database.YouTubeVideoInfoStr
 			var info database.YouTubeVideoInfoStruct
 			err = json.Unmarshal(out, &info)
 			if err != nil {
-				fmt.Println("Error unmarshalling JSON data: ", err)
+				log.Errorf("Error unmarshalling JSON data: %v", err)
 				return database.YouTubeVideoInfoStruct{}, err
 			}
 			return info, nil
@@ -61,7 +62,7 @@ func GetYouTubeMetadata(url string, comments bool) (database.YouTubeVideoInfoStr
 		} else if strings.Contains(errstr, "unavailable") || strings.Contains(errstr, "this video has been removed") {
 			return database.YouTubeVideoInfoStruct{}, fmt.Errorf("unavailable video")
 		} else {
-			fmt.Println("Error getting video metadata: ", err)
+			log.Errorf("Error getting video metadata: %v", err)
 			return database.YouTubeVideoInfoStruct{}, err
 		}
 	}
@@ -69,7 +70,7 @@ func GetYouTubeMetadata(url string, comments bool) (database.YouTubeVideoInfoStr
 	var info database.YouTubeVideoInfoStruct
 	err = json.Unmarshal(out, &info)
 	if err != nil {
-		fmt.Println("Error unmarshalling JSON data: ", err)
+		log.Errorf("Error unmarshalling JSON data: %v", err)
 		return database.YouTubeVideoInfoStruct{}, err
 	}
 	return info, nil
@@ -136,20 +137,20 @@ func downloadThumbnail(thumbUrl string, oldThumbnailPath string, videoID string)
 			hash1, err := goimagehash.PerceptionHash(img1)
 			if err != nil {
 				_ = os.Remove(tmpimg)
-				fmt.Printf("Error comparing hash1 hashes: %v\n", err)
+				log.Debugf("Error comparing hash1 hashes: %v", err)
 			}
 
 			hash2, err := goimagehash.PerceptionHash(img2)
 			if err != nil {
 				_ = os.Remove(tmpimg)
-				fmt.Printf("Error comparing hash2 hashes: %v\n", err)
+				log.Debugf("Error comparing hash2 hashes: %v", err)
 			}
 
 			// Compare the hash codes
 			distance, err := hash1.Distance(hash2)
 			if err != nil {
 				_ = os.Remove(tmpimg)
-				fmt.Printf("Error comparing hash distance: %v\n", err)
+				log.Debugf("Error comparing hash distance: %v", err)
 			}
 
 			// if image is 95% similar, return
@@ -159,7 +160,7 @@ func downloadThumbnail(thumbUrl string, oldThumbnailPath string, videoID string)
 				_ = os.Remove(tmpimg)
 				return "", fmt.Errorf("thumbnails are the same")
 			} else {
-				fmt.Printf("Thumbnails for %v are only %v%% similar, getting new image\n", videoID, 100-distance)
+				log.Debugf("Thumbnails for %v are only %v%% similar, getting new image", videoID, 100-distance)
 			}
 		}
 	}
@@ -198,7 +199,7 @@ func downloadThumbnail(thumbUrl string, oldThumbnailPath string, videoID string)
 			// If the file doesn't exist, save the file
 			err = os.WriteFile(newThumbPath, data, 0644)
 			if err != nil {
-				fmt.Printf("Error saving thumbnail '%v' for video '%v' due to the following error: %v\n", newThumbPath, videoID, err.Error())
+				log.Errorf("Error saving thumbnail '%v' for video '%v' due to the following error: %v", newThumbPath, videoID, err.Error())
 				return "", err
 			}
 			break
@@ -264,7 +265,7 @@ func downloadYouTubeVideo(url string, outputDir string, videoid string, config s
 
 	// Wait for the command to finish
 	if err := cmd.Wait(); err != nil {
-		fmt.Printf("Error downloading video '%v' due to the following error: %v\n", url, err)
+		log.Errorf("Error downloading video '%v' due to the following error: %v", url, err)
 		// Check if any files were downloaded and delete them
 		fif, err2 := general.StringInFolder(videoid, "./data/tmp/")
 		if err2 != nil {
@@ -345,7 +346,7 @@ func downloadYouTubeVideo(url string, outputDir string, videoid string, config s
 }
 
 func updateVideoMetadata(videoID string) error {
-	//fmt.Printf("Checking metadata updates for video '%v'\n", videoID) // Change to debug
+	log.Debugf("Checking metadata updates for video '%v'", videoID) // Change to debug
 	// Get the video from the database
 	video, err := database.GetVideo(videoID, db)
 	if err != nil {
@@ -372,8 +373,17 @@ func updateVideoMetadata(videoID string) error {
 				return err
 			}
 			return nil
+		} else if strings.Contains(strings.ToLower(err.Error()), "members-only") {
+			video.Availability = "members"
+			// Set updated to true
+			video.Updated = true
+			err = database.UpdateVideo(video, db)
+			if err != nil {
+				return err
+			}
+			return nil
 		} else {
-			fmt.Println("Error getting video metadata: ", err)
+			log.Errorf("Error getting video metadata: %v", err)
 			return err
 		}
 	}
@@ -403,7 +413,7 @@ func updateVideoMetadata(videoID string) error {
 			// convert to epoch
 			parsedDateEpoch, err := general.DateToEpoch(parsedDate)
 			if err != nil {
-				fmt.Println("Error converting date to epoch: ", err)
+				log.Errorf("Error converting date to epoch: %v", err)
 			} else {
 				video.Epoch = parsedDateEpoch
 			}
@@ -418,6 +428,8 @@ func updateVideoMetadata(videoID string) error {
 		video.Availability = "available"
 	case "private":
 		video.Availability = "private"
+	case "members only":
+		video.Availability = "members"
 	case "needs_auth":
 		video.AgeRestricted = true
 	default:
@@ -446,35 +458,35 @@ func updateVideoMetadata(videoID string) error {
 	var updateVidMeta bool
 
 	if video.Title != originalVideo.Title {
-		fmt.Printf("Video title changed from %v to %v\n", originalVideo.Title, video.Title)
+		log.Debugf("Video title changed from %v to %v", originalVideo.Title, video.Title)
 		updateVidMeta = true
 	}
 	if video.Description != originalVideo.Description {
-		fmt.Printf("Video description changed from %v to %v\n", originalVideo.Description, video.Description)
+		log.Debugf("Video description changed from %v to %v", originalVideo.Description, video.Description)
 		updateVidMeta = true
 	}
 	if video.Length != originalVideo.Length {
-		fmt.Printf("Video length changed from %v to %v\n", originalVideo.Length, video.Length)
+		log.Debugf("Video length changed from %v to %v", originalVideo.Length, video.Length)
 		updateVidMeta = true
 	}
 	if video.PublishedAt != originalVideo.PublishedAt {
-		fmt.Printf("Video published at changed from %v to %v\n", originalVideo.PublishedAt, video.PublishedAt)
+		log.Debugf("Video published at changed from %v to %v", originalVideo.PublishedAt, video.PublishedAt)
 		updateVidMeta = true
 	}
 	if video.ThumbnailPath != originalVideo.ThumbnailPath {
-		fmt.Printf("Video thumbnail path changed from %v to %v\n", originalVideo.ThumbnailPath, video.ThumbnailPath)
+		log.Debugf("Video thumbnail path changed from %v to %v", originalVideo.ThumbnailPath, video.ThumbnailPath)
 		updateVidMeta = true
 	}
 	if video.MetadataPath != originalVideo.MetadataPath {
-		fmt.Printf("Video metadata path changed from %v to %v\n", originalVideo.MetadataPath, video.MetadataPath)
+		log.Debugf("Video metadata path changed from %v to %v", originalVideo.MetadataPath, video.MetadataPath)
 		updateVidMeta = true
 	}
 	if video.Availability != originalVideo.Availability {
-		fmt.Printf("Video availability changed from %v to %v\n", originalVideo.Availability, video.Availability)
+		log.Debugf("Video availability changed from %v to %v", originalVideo.Availability, video.Availability)
 		updateVidMeta = true
 	}
 	if video.AgeRestricted != originalVideo.AgeRestricted {
-		fmt.Printf("Video age restricted changed from %v to %v\n", originalVideo.AgeRestricted, video.AgeRestricted)
+		log.Debugf("Video age restricted changed from %v to %v", originalVideo.AgeRestricted, video.AgeRestricted)
 		updateVidMeta = true
 	}
 	if video.Views != strconv.Itoa(info.ViewCount) {
@@ -605,7 +617,7 @@ func updateVideoMetadata(videoID string) error {
 			// Download sponsor segments
 			_, err = downloadSponsorBlockSegments(video.VideoID, sponsorBlockPath)
 			if err != nil {
-				fmt.Printf("Error downloading sponsor block segments for %v: %v\n", video.VideoID, err) // don't return error, just print it
+				log.Errorf("Error downloading sponsor block segments for %v: %v", video.VideoID, err) // don't return error, just print it
 			}
 		}
 
@@ -623,11 +635,11 @@ func updateVideoMetadata(videoID string) error {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Updated video comments for %v\n", video.VideoID)
+			log.Debugf("Updated video comments for %v", video.VideoID)
 			// Also update sponsor segments at this time to ensure they are up to date
 			_, err = downloadSponsorBlockSegments(video.VideoID, sponsorBlockPath)
 			if err != nil {
-				fmt.Printf("Error downloading sponsor block segments for %v: %v\n", video.VideoID, err) // don't return error, just print it
+				log.Errorf("Error downloading sponsor block segments for %v: %v", video.VideoID, err) // don't return error, just print it
 			}
 			video.Updated = true
 		}
@@ -635,7 +647,7 @@ func updateVideoMetadata(videoID string) error {
 
 	// Check if the video has changed, if so update the database
 	if updateVidMeta {
-		fmt.Printf("Updating video metadata for %v\n", video.Title)
+		log.Debugf("Updating video metadata for %v", video.Title)
 
 		// Make metadata folder for the video filepath.Dir(video.FilePath)../metadata/metadata/
 
@@ -694,7 +706,7 @@ func updateVideoMetadata(videoID string) error {
 		// Download sponsorblock segments
 		_, err = downloadSponsorBlockSegments(video.VideoID, sponsorBlockPath)
 		if err != nil {
-			fmt.Printf("Error downloading sponsorblock segments for %v: %v\n", video.Title, err) // Change to log error
+			log.Errorf("Error downloading sponsorblock segments for %v: %v", video.Title, err) // Change to log error
 		}
 
 		// Download comments
@@ -795,10 +807,8 @@ func updateVideoMetadata(videoID string) error {
 			return err
 		}
 
-		fmt.Printf("Updated video metadata for: %v\n", video.VideoID)
-	} //else {
-	//fmt.Printf("Video %v has not changed\n", videoID)  // Change to debug
-	//}
+		log.Infof("Updated video metadata for: %v", video.VideoID)
+	}
 
 	var oldThumbPath string
 
@@ -836,7 +846,7 @@ func updateVideoMetadata(videoID string) error {
 	}
 
 	if err == nil {
-		fmt.Printf("Updated video thumbnail for: %v\n", video.VideoID)
+		log.Debugf("Updated video thumbnail for: %v", video.VideoID)
 	}
 
 	return nil
@@ -868,7 +878,7 @@ func updateAllVideoMetadata() error {
 		err = updateCreatorMetadata(creator.ChannelID)
 		if err != nil {
 			ret = err
-			fmt.Printf("Error updating creator %v: %v\n", creator.Name, err)
+			log.Errorf("Error updating creator %v: %v", creator.Name, err)
 			continue
 		}
 		files, err := os.ReadDir("./data/tmp")
@@ -896,7 +906,7 @@ func updateAllVideoMetadata() error {
 		err = updateVideoMetadata(video.VideoID)
 		if err != nil {
 			ret = err
-			fmt.Printf("Error updating video %v: %v\n", video.VideoID, err)
+			log.Errorf("Error updating video %v: %v", video.VideoID, err)
 			continue
 		}
 		// if ./data/tmp/$videoID.* exists, delete it
@@ -916,13 +926,16 @@ func updateAllVideoMetadata() error {
 	return ret
 }
 
-func GetCreatorMetadata(creatorID string) (database.YoutubePlaylistStruct, error) {
+func GetCreatorMetadata(creatorLink string) (database.YoutubePlaylistStruct, error) {
 	// Get creator json from https://www.youtube.com/channel/$creatorID/about from yt-dlp. Export to stdout and unmarshal into a Creator struct
-	cmd := exec.Command("yt-dlp", "--dump-single-json", fmt.Sprintf("https://www.youtube.com/channel/%v/about", creatorID))
+	cmd := exec.Command("yt-dlp", "--dump-single-json", creatorLink)
 	var out bytes.Buffer
+	var stderr bytes.Buffer
 	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
+		log.Errorf("Error getting creator metadata: %v", stderr.String())
 		return database.YoutubePlaylistStruct{}, err
 	}
 
@@ -942,7 +955,7 @@ func updateCreatorMetadata(creatorID string) error {
 	}
 
 	// Get the creator metadata from YouTube
-	info, err := GetCreatorMetadata(creatorID)
+	info, err := GetCreatorMetadata(fmt.Sprintf("https://www.youtube.com/channel/%v/about", creatorID))
 	if err != nil {
 		return err
 	}
@@ -952,17 +965,17 @@ func updateCreatorMetadata(creatorID string) error {
 	silentChanges := false
 
 	if creator.Name != info.Uploader {
-		fmt.Printf("Creator name changed from %v to %v\n", creator.Name, info.Uploader)
+		log.Debugf("Creator name changed from %v to %v", creator.Name, info.Uploader)
 		creator.Name = info.Uploader
 		changes = true
 	}
 	if creator.Description != info.Description {
-		fmt.Printf("Creator description changed from %v to %v\n", creator.Description, info.Description)
+		log.Debugf("Creator description changed from %v to %v", creator.Description, info.Description)
 		creator.Description = info.Description
 		changes = true
 	}
 	if creator.Subscribers != strconv.Itoa(info.ChannelFollowerCount) {
-		//fmt.Printf("Creator subscribers changed from %v to %v\n", creator.Subscribers, info.ChannelFollowerCount) //debug logging
+		//log.Debugf("Creator subscribers changed from %v to %v", creator.Subscribers, info.ChannelFollowerCount) //debug logging
 		creator.Subscribers = strconv.Itoa(info.ChannelFollowerCount)
 		silentChanges = true
 	}
@@ -1006,7 +1019,7 @@ func updateCreatorMetadata(creatorID string) error {
 		}
 
 		if newThumbPath != "" && creator.ThumbnailPath != newThumbPath {
-			fmt.Printf("Creator thumbnail changed from %v to %v\n", creator.ThumbnailPath, newThumbPath)
+			log.Debugf("Creator thumbnail changed from %v to %v", creator.ThumbnailPath, newThumbPath)
 			creator.ThumbnailPath = strings.ReplaceAll(newThumbPath, settings.BaseYouTubePath, "")
 			silentChanges = true
 		}
@@ -1030,7 +1043,7 @@ func updateCreatorMetadata(creatorID string) error {
 		}
 
 		if newBannerPath != "" && creator.BannerPath != newBannerPath {
-			fmt.Printf("Creator banner changed from %v to %v\n", creator.BannerPath, newBannerPath)
+			log.Debugf("Creator banner changed from %v to %v", creator.BannerPath, newBannerPath)
 			creator.BannerPath = strings.ReplaceAll(newBannerPath, settings.BaseYouTubePath, "")
 			silentChanges = true
 		}
@@ -1038,7 +1051,7 @@ func updateCreatorMetadata(creatorID string) error {
 	}
 
 	if changes {
-		fmt.Printf("Updating creator metadata for %v\n", creator.Name)
+		log.Debugf("Updating creator metadata for %v", creator.Name)
 
 		// Save data to file as indented json
 		jsonData, err := json.MarshalIndent(info, "", "  ")
@@ -1097,14 +1110,16 @@ func updateCreatorMetadata(creatorID string) error {
 		if err != nil {
 			return err
 		}
+		log.Infof("Updated creator metadata for %v", creator.Name)
 	} else if silentChanges {
 		// Update the creator in the database
 		err = database.UpdateCreator(creator, db)
 		if err != nil {
 			return err
 		}
+		log.Debugf("Silent metadata update for %v", creator.Name)
 	} else {
-		fmt.Printf("Creator %v has not changed\n", creator.Name)
+		log.Debugf("Creator %v has not changed", creator.Name)
 	}
 
 	return nil
@@ -1121,7 +1136,7 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 	}
 
 	creator := database.Creator{}
-	data, err := GetCreatorMetadata(creatorID)
+	data, err := GetCreatorMetadata(fmt.Sprintf("https://www.youtube.com/channel/%v/about", creatorID))
 	if err != nil {
 		return database.Creator{}, err
 	}
@@ -1171,7 +1186,7 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 	if thumbUrl != "" {
 		thmb, err := downloadThumbnail(thumbUrl, thumbPath, "avatar")
 		if err != nil {
-			fmt.Printf("Error downloading thumbnail for %v: %v\n", creator.Name, err)
+			log.Errorf("Error downloading thumbnail for %v: %v", creator.Name, err)
 		} else {
 			creator.ThumbnailPath, err = general.SanitizeFilePath(thmb)
 			if err != nil {
@@ -1186,7 +1201,7 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 	if bannerUrl != "" {
 		thmb, err := downloadThumbnail(bannerUrl, bannerPath, "banner")
 		if err != nil {
-			fmt.Printf("Error downloading banner for %v: %v\n", creator.Name, err)
+			log.Errorf("Error downloading banner for %v: %v", creator.Name, err)
 		} else {
 			creator.BannerPath, err = general.SanitizeFilePath(thmb)
 			if err != nil {
@@ -1220,6 +1235,8 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 		return database.Creator{}, err
 	}
 
+	log.Infof("Added creator %v to database", creator.Name)
+
 	return creator, nil
 
 }
@@ -1249,7 +1266,7 @@ func loadImage(filename string) (image.Image, error) {
 
 // download youtube comments
 func downloadComments(videoID string) (string, error) {
-	fmt.Printf("Downloading comments for video %v\n", videoID)
+	log.Debugf("Downloading comments for video %v", videoID)
 	// Make sure video exists
 	video, err := database.GetVideo(videoID, db)
 	if err != nil {
@@ -1336,14 +1353,14 @@ func downloadComments(videoID string) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			fmt.Printf("Added comment '%v' to video id '%v' in database\n", comment.ID, videoID) // Make Debug Logging
+			log.Debugf("Added comment '%v' to video id '%v' in database", comment.ID, videoID) // Make Debug Logging
 		} else {
 			// Update the comment
 			err = database.UpdateComment(newComment, db)
 			if err != nil {
 				return "", err
 			}
-			fmt.Printf("Updated comment '%v' in video id '%v' in database\n", comment.ID, videoID) // Make Debug Logging
+			log.Debugf("Updated comment '%v' in video id '%v' in database", comment.ID, videoID) // Make Debug Logging
 		}
 		i++ // Increment i even if we skip the comment, we just want 20 comments overall
 		if i >= 20 {
@@ -1425,13 +1442,13 @@ func downloadSubtitles(subtitlePath string, videoData *database.YouTubeVideoInfo
 			// Set the subFile path to ${settings.YouTubeBasePath}/${subtitlePath}/${subtitlePath last path name}.{lang}.{videoData.Subtitles.De.Ext}
 			subFile, err := general.SanitizeFilePath(fmt.Sprintf("%v/%v.%v.%v", subtitlePath, filepath.Base(subtitlePath), lang, sub.Ext))
 			if err != nil {
-				fmt.Printf("Error sanitizing subtitle path: %v\n", err)
+				log.Errorf("Error sanitizing subtitle path: %v", err)
 				continue
 			}
 
 			_, err = subDownload(subFile, sub.URL, sub.Ext)
 			if err != nil {
-				fmt.Printf("Error downloading subtitle: %v\n", err)
+				log.Errorf("Error downloading subtitle: %v", err)
 				continue
 			}
 			if sub.Ext == "vtt" {
@@ -1443,7 +1460,7 @@ func downloadSubtitles(subtitlePath string, videoData *database.YouTubeVideoInfo
 
 	// if sublist isn't empty, log the download
 	if len(subList) > 0 {
-		fmt.Printf("Downloaded subtitles for video id '%v' to '%v'\n", videoData.ID, subtitlePath)
+		log.Debugf("Downloaded subtitles for video id '%v' to '%v'", videoData.ID, subtitlePath)
 	}
 	return subList, nil
 }
@@ -1481,7 +1498,7 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 	var segments database.SponsorBlockRawApi
 	err = json.Unmarshal(body, &segments)
 	if err != nil {
-		fmt.Printf("Error unmarshalling sponsorblock segments for video id '%v': %v\n", videoID, err)
+		log.Errorf("Error unmarshalling sponsorblock segments for video id '%v': %v", videoID, err)
 		return "", err
 	}
 
@@ -1490,7 +1507,7 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 	if err != nil {
 		// Just set dbSegments to an empty slice if there is an error
 		dbSegments = []database.SponsorBlock{}
-		fmt.Printf("Error getting sponsorblock segments for video id '%v': %v\n", videoID, err)
+		log.Errorf("Error getting sponsorblock segments for video id '%v': %v", videoID, err)
 	}
 
 	changes := false
@@ -1592,7 +1609,7 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 		if err != nil {
 			return "", err
 		}
-		fmt.Printf("Added sponsorblock segment %v to database for video %v (%v)\n", newSegment.SegmentID, videoID, newSegment.Category)
+		log.Debugf("Added sponsorblock segment %v to database for video %v (%v)", newSegment.SegmentID, videoID, newSegment.Category)
 		changes = true
 	}
 
@@ -1626,7 +1643,7 @@ func downloadSponsorBlockSegments(videoID string, sponsorBlockPath string) (stri
 			if err != nil {
 				return "", err
 			}
-			fmt.Printf("Deleted sponsorblock segment %v from database for video %v\n", dbSegment.SegmentID, videoID)
+			log.Debugf("Deleted sponsorblock segment %v from database for video %v", dbSegment.SegmentID, videoID)
 			changes = true
 		}
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -63,16 +64,16 @@ func JwtMiddleware() gin.HandlerFunc {
 			// create new token
 			token, err := CreateToken(userId)
 			if err != nil {
-				c.AbortWithStatusJSON(401, gin.H{
-					"ret": 401,
-					"err": "Error creating new token",
+				c.AbortWithStatusJSON(500, gin.H{
+					"ret": 500,
+					"err": fmt.Sprintf("Could not create token: %s", err.Error()),
 				})
 				c.Abort()
 				return
 			}
 			// set new token
 			SetToken(c, token)
-			fmt.Println("refreshed token")
+			log.Debugf("Refreshed token for user %s", userId)
 		}
 
 		// Continue
@@ -175,8 +176,8 @@ func RefreshToken(c *gin.Context) {
 	// get the token from the header
 	token, err := GetToken(c)
 	if err != nil {
-		c.AbortWithStatusJSON(401, gin.H{
-			"ret":   401,
+		c.AbortWithStatusJSON(400, gin.H{
+			"ret":   400,
 			"error": "No token provided",
 		})
 		return

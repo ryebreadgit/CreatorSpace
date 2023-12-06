@@ -8,7 +8,7 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 
 ## Known Issues
 
-- [ ] Theater mode video size is larger than theater mode container
+- [x] Theater mode video size is larger than theater mode container
 - [ ] Cannot import existing library, only recommended for new setups for now
 - [ ] Video download approval is required for non-admin users but there is no approval process
 - [ ] Videos deleted from disk are not removed from library
@@ -20,10 +20,12 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 ---
 
 ### YT-DLP Integration
+
 - [x] Video Downloading
 - [x] Metadata Downloading
 
 ### YouTube Integration
+
 - [x] Video Downloading
 - [x] Metadata Downloading
 - [x] Channel Downloading
@@ -31,6 +33,7 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 - [ ] Subscription Downloading
 
 ### Task Management
+
 - [x] Task Queuing
 - [ ] Task Prioritization
 - [ ] Task Progress Tracking
@@ -38,17 +41,19 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 - [ ] Task Resumption
 
 ### User Management
+
 - [x] User Registration
 - [x] User Login
 - [x] JWT Authentication
 - [x] User Settings
-- [ ] User Management
+- [x] User Management
   - [x] Add new users
   - [x] Delete existing users
   - [x] Modify existing users permissions
   - [x] Add UI page for user management
 
-  ### Video Management
+### Video Management
+
 - [x] Video Library
 - [x] Video Search
 - [ ] Import Videos
@@ -59,6 +64,7 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 - [ ] Modify Video Metadata
 
 ### Playlist Management
+
 - [x] Custom Playlists
 - [x] Automatic Playlist Updates
 - [ ] Playlist Management
@@ -66,19 +72,24 @@ CreatorSpace is a comprehensive content archiving platform designed for YouTube 
 - [ ] Remove videos from playlists
 
 ### Video Playback
+
 - [x] SponsorBlock integration
 - [x] VideoJS Player
 - [ ] Theater Mode
 - [ ] Picture-in-Picture Mode
 - [x] Fullscreen Mode
 - [x] Recommended Videos
+- [x] Video Comments
+  - [ ] View Comment User Profiles
 
 ### User Interface
+
 - [x] Responsive Design
 - [ ] Dark Mode
 - [ ] Customizable Layout
 
 ### Backend
+
 - [x] Go-based Server
 - [x] JWT for Authentication
 - [ ] Full test coverage

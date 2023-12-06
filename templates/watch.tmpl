@@ -1,33 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>{{ .Video.Title }} - CreatorSpace</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-
-    
-
-    <link rel="stylesheet" href="/assets/lib/bootstrap-5.3.0-alpha3-dist/css/bootstrap.min.css">
-    <script src="/assets/lib/bootstrap-5.3.0-alpha3-dist/js/bootstrap.bundle.min.js"></script>
-
-
-    <link rel="stylesheet" href="/assets/css/watch.css">
-    <link rel="stylesheet" href="/assets/css/styles.css">
-    <link rel="stylesheet" href="/assets/css/videos.css">
-
-    <link rel="stylesheet" href="/assets/lib/video-js-8.3.0/video-js.min.css">
-    <script src="/assets/lib/video-js-8.3.0/video.min.js"></script>
-    <link rel="stylesheet" href="/assets/lib/vsg-skin.css">
-
-
-    <meta name="description" content="Watch '{{ .Video.Title }}' by '{{ .Creator.Name }}' on CreatorSpace.">
-    <meta property="og:image" content="{{ .ServerPath }}/api/youtube/video/thumbnail/{{ .Video.VideoID }}">
-    <meta name="keywords" content="creator, archive, youtube, twitch, video, collection, watch">
-    <meta name="author" content="CreatorSpace">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-<body>
-{{template "navbar.tmpl" .}}
+{{template "header" .}}
 
 {{define "comment"}}
     <div class="comment">
@@ -57,16 +28,16 @@
     <div class="creator-info">
       <a href="/creators/{{.Recommendation.ChannelID}}">
         {{if eq .Recommendation.VideoType "Twitch"}}
-          <img src="/api/twitch/creators/{{.Recommendation.ChannelID}}/thumbnail" alt={{.Recommendation.ChannelTitle}}>
+          <img src="/api/twitch/creators/{{.Recommendation.ChannelID}}/thumbnail?compress=true" alt={{.Recommendation.ChannelTitle}}>
         {{else}}
-          <img src="/api/youtube/creators/{{.Recommendation.ChannelID}}/thumbnail" alt={{.Recommendation.ChannelTitle}}>
+          <img src="/api/youtube/creators/{{.Recommendation.ChannelID}}/thumbnail?compress=true" alt={{.Recommendation.ChannelTitle}}>
         {{end}}
         <span class="creator-info-text">{{.Recommendation.ChannelTitle}}</span>
       </a>
     </div>
     <div class="video">
       <div class="thumbnail-box">
-          <a href="/watch/{{.Recommendation.VideoID}}"><img src="/api/media/{{.Recommendation.VideoID}}/thumbnail" style="width: 187.5px;height: 105px;" alt="{{.Recommendation.Title}}"></a>
+          <a href="/watch/{{.Recommendation.VideoID}}"><img src="/api/media/{{.Recommendation.VideoID}}/thumbnail?compress=true" style="width: 187.5px;height: 105px;" alt="{{.Recommendation.Title}}"></a>
           
           {{if .Recommendation.Watched}}
            <span class="watched-text"></span>
@@ -264,15 +235,6 @@
         "category": "{{ .Category }}"
     });
     {{ end }}
-
-    // If sponsorBlock segments were found, log them to the console
-
-    if (sponsorBlock.length == 0) {
-        console.log(`No SponsorBlock segments found`)
-    } else {
-        console.log(`SponsorBlock segments found: ${JSON.stringify(sponsorBlock)}`)
-    }
-
     // iterate over all sponsorBlock segments and highlight them on the videojs progress bar
 
     for (let sb of sponsorBlock) {
@@ -337,17 +299,18 @@ theaterModeButton.addEventListener('click', function () {
   
   if (!theaterModeEnabled) {
     videoPlayerContainer.classList.add('theater-mode-enabled');
+    videoPlayer.style.width = "100%";
+    videoPlayer.style.height = "100%";
+    videoPlayer.classList.remove("vjs-fluid");
     theaterModeEnabled = true;
   } else {
     videoPlayerContainer.classList.remove('theater-mode-enabled');
-    videoPlayer.classList.remove('theater-mode-enabled');
+    videoPlayer.classList.add("vjs-fluid");
+    videoPlayer.style.width = "";
+    videoPlayer.style.height = "";
     theaterModeEnabled = false;
   }
     
-  videoPlayerContainer.style.transition = 'all 0.2s ease-in-out';
-    setTimeout(function () {
-        videoPlayerContainer.style.transition = 'none';
-    }, 200);
     });
 
     
@@ -408,16 +371,17 @@ theaterModeButton.addEventListener('click', function () {
 
     player.on('timeupdate', function () {
         for (let sb of sponsorBlock) {
-            if (!sponsorBlockEnabled) {
+            if (!sponsorBlockEnabled || player.paused() || player.ended() || player.currentTime() > player.duration() - 2 || player.CurrentTime < 0.5) {
                 continue;
             }
             if (player.currentTime() >= sb['segmentStart'] && player.currentTime() < sb['segmentEnd'] && sb['category'] == "sponsor") {
-                // if the segment time would exceed the video duration, set the end time to the video duration
-                if (sb['segmentEnd'] >= player.duration()) {
-                    sb['segmentEnd'] = player.duration();
+                // if the segment time would exceed the video duration, set the end time to the video duration -.5 seconds
+                if (sb['segmentEnd'] >= player.duration() - 1) {
+                    player.currentTime(player.duration());
                     sendCompletedRequest("{{.VideoID}}");
+                } else {
+                    player.currentTime(sb['segmentEnd']);
                 }
-                player.currentTime(sb['segmentEnd']);
             }
         }
     });
@@ -494,6 +458,8 @@ theaterModeButton.addEventListener('click', function () {
     {{if .Video.Watched}}
         completed = true;
     {{end}}
+
+    let curTime = 0;
     
     // keep track of user's current time
     player.on('timeupdate', function () {
@@ -503,7 +469,7 @@ theaterModeButton.addEventListener('click', function () {
             return;
         }
 
-        let curTime = player.currentTime();
+        curTime = player.currentTime();
 
         // Skip if within the first 5 seconds
         if (curTime < 5) {
@@ -575,9 +541,45 @@ theaterModeButton.addEventListener('click', function () {
                 label: "{{.LanguageText}}",
                 src: '/api/youtube/subtitles/{{ $.Video.VideoID }}/{{ .Language }}'
             }, true);
-            console.log("subtitles added");
         {{ end }}
 
+    });
+
+    // On video connection error, try 5 times to reconnect. If it succeeds, continue playing the video. If it fails, display an error message. 
+    let retry = 0;
+    let retryTimer = null;
+    player.on('error', function () {
+        // Stop normal error handling
+        err = player.error();   
+        player.error(null);
+        if (retry >= 5) {
+            if (retry != 999) {
+                console.log(`Failed to load video after 5 retries`);
+            }
+            retry = 999
+            return;
+        }
+        // 1.5 second delay
+        retryTimer = setTimeout(function () {
+            player.src({
+                src: vidsrc,
+                type: vidSrcMime
+            });
+            // Set the player time to the last time it was at
+            player.currentTime(curTime);
+            player.play();
+            retry++;
+            retryTimer = null;
+        }, 1500);
+    });
+
+    // On successful video connection, reset retry counter and clear retry timer
+    player.on('loadedmetadata', function () {
+        retry = 0;
+        if (retryTimer) {
+            clearTimeout(retryTimer);
+            retryTimer = null;
+        }
     });
 
     // replace links in description with hyperlinks, use regex to match links.
@@ -641,5 +643,4 @@ theaterModeButton.addEventListener('click', function () {
     }
 
 </script>
-</body>
-</html>
+{{template "footer" .}}

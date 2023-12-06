@@ -66,6 +66,7 @@ func get_account(db *gorm.DB) gin.HandlerFunc {
 		c.HTML(http.StatusOK, "account.tmpl", gin.H{
 			"User":          user,
 			"Subscriptions": creators,
+			"PageTitle":     "Account",
 		})
 	}
 }

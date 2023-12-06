@@ -1,101 +1,130 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Download - CreatorSpace</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="stylesheet" href="/assets/lib/bootstrap-5.3.0-alpha3-dist/css/bootstrap.min.css">
-    <script src="/assets/lib/bootstrap-5.3.0-alpha3-dist/js/bootstrap.bundle.min.js"></script>
-    <link rel="stylesheet" href="/assets/css/styles.css">
-
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta name="description" content="CreatorSpace is a tool to archive and watch your favorite creators. Add to or view your current collection of videos.">
-	<meta name="keywords" content="creator, archive, youtube, twitch, video, collection, watch">
-	<meta name="author" content="CreatorSpace">
-	<meta property="og:image" content="{{.ServerPath}}/assets/img/banner.png">
-</head>
-<body>
-{{template "navbar.tmpl" . }}
+{{template "header" . }}
 
 <div class="main-content">
     <div class="content-header">Download</div>
-    <div class="download-options">
         <div class="download-option">
-            <div class="download-option-header">Video</div>
-            <div class="download-option-content">
-                <div class="download-option-content-header">Video ID</div>
-                <div class="download-option-content-input">
-                    <input type="text" id="video-id" placeholder="Video ID">
+            <div class="download-option-header" style="color: white; margin: 1rem 0;">YouTube Link</div>
+                <div class="download-option-content-input" style="margin: 1rem 0; max-width: 500px; width: 100%;">
+                    <form onsubmit="submitForm(event)">
+                        <div >
+                            <input type="text" class="form-control" id="dl-link" placeholder="YouTube Link" style="width: 100%;">
+                        </div>
+                        <input type="submit" style="display: none;">
+                    </form>
                 </div>
             </div>
         </div>
-        <div class="download-option">
-            <div class="download-option-header">Channel</div>
-            <div class="download-option-content">
-                <div class="download-option-content-header">Channel ID</div>
-                <div class="download-option-content-input">
-                    <input type="text" id="channel-id" placeholder="Channel ID">
-                </div>
-            </div>
-        </div>
-        <div class="download-option">
-            <div class="download-option-header">Shorts</div>
-            <div class="download-option-content">
-                <div class="download-option-content-header">Channel ID</div>
-                <div class="download-option-content-input">
-                    <input type="text" id="shorts-id" placeholder="Channel ID">
-                </div>
-            </div>
-        </div>
-        <div class="download-option">
-            <div class="download-option-header">Playlist</div>
-            <div class="download-option-content">
-                <div class="download-option-content-header">Playlist ID</div>
-                <div class="download-option-content-input">
-                    <input type="text" id="playlist-id" placeholder="Playlist ID">
-                </div>
-            </div>
-        </div>
-        <!--
-        <div class="download-option">
-            <div class="download-option-header">Twitter</div>
-            <div class="download-option-content">
-                <div class="download-option-content-header">Twitter Handle</div>
-                <div class="download-option-content-input">
-                    <input type="text" id="twitter-id" placeholder="Twitter Handle">
-                </div>
-            </div>
-        </div>
-        -->
     </div>
 
-    <div class="download-button">
-        <button class="btn btn-primary" onclick="download()">Download</button>
+</div>
+
+<!-- Results modal -->
+
+<div class="modal" id="resultsModal" tabindex="-1" aria-labelledby="resultsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resultsModalLabel">Results</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="display: flex; justify-content: center; margin-top: 10px; margin-bottom: 10px; width: 100%;">
+                <!-- details will be populated here dynamically -->
+            </div>
         </div>
+    </div>
 </div>
 
 <script>
-    function download() {
-        var videoID = document.getElementById("video-id").value;
-        var channelID = document.getElementById("channel-id").value;
-        var shortsID = document.getElementById("shorts-id").value;
-        var playlistID = document.getElementById("playlist-id").value;
-        //var twitterID = document.getElementById("twitter-id").value;
+    var modal = new bootstrap.Modal(document.getElementById('resultsModal'), {});
+    
+    function submitForm(event) {
+        event.preventDefault(); // Prevents the form from actually submitting
+        // Get dllink
+        var dllink = document.getElementById("dl-link").value;
+        download(dllink);
+    }
 
-        if (videoID != "") {
-            window.location.href = "/download/video/" + videoID;
-        } else if (channelID != "") {
-            window.location.href = "/download/channel/" + channelID;
-        } else if (shortsID != "") {
-            window.location.href = "/download/shorts/" + shortsID;
-        } else if (playlistID != "") {
-            window.location.href = "/download/playlist/" + playlistID;
-        }/* else if (twitterID != "") {
-            window.location.href = "/download/twitter/" + twitterID;
-        }*/ else {
-            alert("Please enter a valid ID");
+    function download(dllink) {
+
+        if (dllink == "") {
+            alert("Please enter a valid link");
+            return;
         }
+
+        let params = {
+            "dllink": dllink
+        };
+
+        let query = Object.keys(params)
+             .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
+             .join('&');
+
+        // Show results as loading wheel
+        
+        let resultsModal = document.getElementById("resultsModal");
+        let resultsModalLabel = document.getElementById("resultsModalLabel");
+        let modalBody = resultsModal.getElementsByClassName("modal-body")[0];
+        resultsModalLabel.innerHTML = "Results";
+        modalBody.innerHTML = `
+            <div class="results-loading"
+                <div class="results-message" style="margin-right: 0.5rem;">Loading...</div>
+                <div class="spinner-border" role="status">
+            </div>
+        `;
+
+        modal.show();
+
+        fetch("/api/downloads/downloads?" + query, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then(response => response.json())
+            .then(data => {
+                if (data.ret == 200) {
+                    var videoID = data.data.videoID;
+                    var channelID = data.data.channelID;
+                    var playlistID = data.data.playlistID;
+
+                    if (videoID != "") {
+                        window.location.href = "/download/video/" + videoID;
+                    }else if (playlistID != "") {
+                        window.location.href = "/download/playlist/" + playlistID;
+                    } else if (channelID != "") {
+                        // Open modal. Have a "Channel" button and a "Shorts" button
+                        resultsModalLabel.innerHTML = "Channel or Shorts?";
+                        resultsModal.getElementsByClassName("modal-body")[0].innerHTML = `
+                            <div class="mb-3">
+                                <div class="results-message">Please select the type of content you want to download</div>
+                                <div class="results-buttons">
+                                    <button class="btn btn-primary" onclick="window.location.href='/download/channel/${channelID}'">Channel</button>
+                                    <button class="btn btn-primary" onclick="window.location.href='/download/shorts/${channelID}'">Shorts</button>
+                                </div>
+                            </div>
+                        `;
+                        modal.show();
+                    } else {
+                        showResults("No results found");
+                    }
+                } else {
+                    showResults("Please enter a valid ID");
+                }
+            });
+    }
+
+    function showResults(message) {
+        let resultsModal = document.getElementById("resultsModal");
+        let modalBody = resultsModal.getElementsByClassName("modal-body")[0];
+        let modalLabel = document.getElementById("resultsModalLabel");
+        modalBody.innerHTML = `
+            <div class="results-message">${message}</div>
+        `;
+        modalLabel.innerHTML = "Results";
+        modal.show();
+        setTimeout(function() {
+            modal.hide();
+        }, 2000);
     }
 </script>
 
-</body>
-</html>
+{{template "footer" . }}

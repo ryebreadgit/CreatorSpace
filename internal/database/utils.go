@@ -19,10 +19,10 @@ func ifVideoExists(id string, db *gorm.DB) bool {
 
 	if err := db.Select("video_id").Where("video_id = ?", id).First(&v).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Debugf("Video_id record #{id} does not exist")
+			log.Debugf("Video_id record %v does not exist", id)
 			return false
 		} else {
-			log.Errorf("Error, unable to get video_id record #{id} record due to error: %v", err)
+			log.Errorf("Error, unable to get video_id record %v record due to error: %v", id, err)
 			return true
 		}
 	}
@@ -39,9 +39,9 @@ func ifChannelExists(id string, db *gorm.DB) bool {
 
 	if err := db.Select("channel_id").Where("channel_id = ?", id).First(&c).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Debugf("channel_id record #{id} does not exist")
+			log.Debugf("channel_id record %v does not exist", id)
 		} else {
-			log.Errorf("Error, unable to get channel_id record #{id} record due to error: %v", err)
+			log.Errorf("Error, unable to get channel_id record %v record due to error: %v", id, err)
 			return true
 		}
 	}
@@ -58,9 +58,9 @@ func ifCommentExists(id string, db *gorm.DB) bool {
 
 	if err := db.Select("comment_id").Where("comment_id = ?", id).First(&co).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Debugf("comment_id record #{id} does not exist")
+			log.Debugf("comment_id record %v does not exist", id)
 		} else {
-			log.Errorf("Error, unable to get comment_id record #{id} record due to error: %v", err)
+			log.Errorf("Error, unable to get comment_id record %v record due to error: %v", id, err)
 			return true
 		}
 	}
@@ -77,10 +77,10 @@ func ifSponsorBlockExists(id string, db *gorm.DB) bool {
 
 	if err := db.Select("segment_id").Where("segment_id = ?", id).First(&s).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Debugf("segment_id record #{id} does not exist")
+			log.Debugf("segment_id record %v does not exist", id)
 			return false
 		} else {
-			log.Errorf("Error, unable to get segment_id record #{id} record due to error: %v", err)
+			log.Errorf("Error, unable to get segment_id record %v record due to error: %v", id, err)
 			return true
 		}
 	}
@@ -97,10 +97,10 @@ func ifTaskExists(name string, db *gorm.DB) bool {
 
 	if err := db.Select("task_name").Where("task_name = ?", name).First(&s).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Debugf("name record #{id} does not exist")
+			log.Debugf("name record %v does not exist", name)
 			return false
 		} else {
-			log.Errorf("Error, unable to get name record #{id} record due to error: %v", err)
+			log.Errorf("Error, unable to get name record %v record due to error: %v", name, err)
 			return true
 		}
 	}
@@ -117,10 +117,10 @@ func ifPlaylistExists(id string, db *gorm.DB) bool {
 
 	if err := db.Select("playlist_id").Where("playlist_id = ?", id).First(&p).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Debugf("playlist_id record #{id} does not exist")
+			log.Debugf("playlist_id record %v does not exist", id)
 			return false
 		} else {
-			log.Errorf("Error, unable to get playlist_id record #{id} record due to error: %v", err)
+			log.Errorf("Error, unable to get playlist_id record %v record due to error: %v", id, err)
 			return true
 		}
 	}
@@ -171,9 +171,9 @@ func ifCommentsExist(file_path string, db *gorm.DB) bool {
 	// check for video_id
 	if err := db.Select("comment_id").Where("video_id = ?", vidId).First(&co).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Debugf("comment_id record #{id} does not exist, checking file_path")
+			log.Debugf("comment_id record %v does not exist", vidId)
 		} else {
-			log.Debugf("Error, unable to get comment_id record #{id} record due to error: %v", err)
+			log.Debugf("Error, unable to get comment_id record %v record due to error: %v", vidId, err)
 		}
 	}
 
@@ -186,10 +186,10 @@ func ifCommentsExist(file_path string, db *gorm.DB) bool {
 
 	if err := db.Select("comment_id, file_path").Where("file_path = ?", file_path).First(&co).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Debugf("comment_id record #{id} does not exist")
+			log.Debugf("comment_id record %v does not exist", file_path)
 			return false
 		} else {
-			log.Errorf("Error, unable to get comment_id record #{id} record due to error: %v", err)
+			log.Errorf("Error, unable to get comment_id record %v record due to error: %v", file_path, err)
 			return true
 		}
 	}
@@ -276,9 +276,9 @@ func ifTweetExists(id string, db *gorm.DB) bool {
 
 	if err := db.Select("tweet_id").Where("tweet_id = ?", id).First(&t).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Debugf("tweet_id record #{id} does not exist")
+			log.Debugf("tweet_id record %v does not exist", id)
 		} else {
-			log.Errorf("Error, unable to get tweet_id record #{id} record due to error: %v", err)
+			log.Errorf("Error, unable to get tweet_id record %v record due to error: %v", id, err)
 			return true
 		}
 	}
@@ -295,9 +295,9 @@ func ifDownloadQueueItemExists(id string, vidType string, db *gorm.DB) bool {
 
 	if err := db.Select("video_id").Where("video_id = ? AND video_type = ?", id, vidType).First(&d).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Debugf("video_id record #{id} does not exist")
+			log.Debugf("video_id record %v does not exist", id)
 		} else {
-			log.Errorf("Error, unable to get video_id record #{id} record due to error: %v", err)
+			log.Errorf("Error, unable to get video_id record %v record due to error: %v", id, err)
 			return true
 		}
 	}
@@ -314,9 +314,9 @@ func ifUserExists(id string, db *gorm.DB) bool {
 
 	if err := db.Select("user_id").Where("user_id = ?", id).First(&u).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Debugf("user_id record #{id} does not exist")
+			log.Debugf("user_id record %v does not exist", id)
 		} else {
-			log.Errorf("Error, unable to get user_id record #{id} record due to error: %v", err)
+			log.Errorf("Error, unable to get user_id record %v record due to error: %v", id, err)
 			return true
 		}
 	}

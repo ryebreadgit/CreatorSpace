@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -111,4 +112,52 @@ func apiDownloadVideo(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"ret": 200, "data": "Video added to download queue"})
+}
+
+func apiGetDownloadInfo(c *gin.Context) {
+	// Get dllink from request
+	dllink := c.Query("dllink")
+
+	vidRegex := regexp.MustCompile(`(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})`)
+	channelRegex := regexp.MustCompile(`(?:youtube\.com\/(?:c\/|channel\/|@))([a-zA-Z0-9_-]+)`)
+	playlistRegex := regexp.MustCompile(`(?:youtube\.com\/playlist\?list=)([a-zA-Z0-9_-]+)`)
+
+	var ret struct {
+		VideoID    string `json:"videoID"`
+		ChannelID  string `json:"channelID"`
+		PlaylistID string `json:"playlistID"`
+	}
+
+	// Check if link is valid
+	if vidRegex.MatchString(dllink) {
+		// Get video id
+		ret.VideoID = vidRegex.FindStringSubmatch(dllink)[1]
+	}
+
+	// Get channel id
+	if channelRegex.MatchString(dllink) {
+		// Get yt-dlp metadata
+		query := channelRegex.FindStringSubmatch(dllink)
+		creatorLink := fmt.Sprintf("https://www.youtube.com/channel/%s/about", query[1])
+		if strings.Contains(dllink, "/@") {
+			creatorLink = fmt.Sprintf("https://www.youtube.com/@%s/about", query[1])
+		} else if strings.Contains(dllink, "/c/") {
+			creatorLink = fmt.Sprintf("https://www.youtube.com/c/%s/about", query[1])
+		}
+		metadata, err := tasking.GetCreatorMetadata(creatorLink)
+		if err != nil {
+			c.AbortWithStatusJSON(503, gin.H{"ret": 503, "err": err.Error()})
+			return
+		}
+
+		ret.ChannelID = metadata.ChannelID
+	}
+
+	// Get playlist id
+	if playlistRegex.MatchString(dllink) {
+		ret.PlaylistID = playlistRegex.FindStringSubmatch(dllink)[1]
+	}
+
+	c.JSON(200, gin.H{"ret": 200, "data": ret})
+
 }

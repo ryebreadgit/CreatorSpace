@@ -60,5 +60,15 @@ COPY --from=build /go/CreatorSpace/templates ./templates
 COPY --from=build /go/CreatorSpace/config ./config
 COPY --from=build /go/CreatorSpace/static ./static
 
+# Switch to the root user
+USER root
+
+# Add user permissions to the folders
+RUN chown -R csuser:csgroup /CreatorSpace
+RUN chmod -R 755 /CreatorSpace
+
+# Switch back to the csuser
+USER csuser
+
 # Set the entrypoint
 ENTRYPOINT ["/CreatorSpace/cs"]

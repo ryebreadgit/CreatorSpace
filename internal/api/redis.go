@@ -1,9 +1,8 @@
 package api
 
 import (
-	"fmt"
-
 	"github.com/redis/go-redis/v9"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -18,6 +17,6 @@ func initRedis(ctx context.Context) (*redis.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Connected to Redis successfully")
+	log.Infof("Connected to Redis at %s", settings.RedisAddress)
 	return ret, nil
 }

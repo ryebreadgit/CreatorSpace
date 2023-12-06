@@ -1,31 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<title>Subscriptions - CreatorSpace</title>
-	<link rel="icon" type="image/x-icon" href="/favicon.ico">
-	<link rel="stylesheet" href="/assets/lib/bootstrap-5.3.0-alpha3-dist/css/bootstrap.min.css">
-	<script src="/assets/lib/bootstrap-5.3.0-alpha3-dist/js/bootstrap.bundle.min.js"></script>
-	<link rel="stylesheet" type="text/css" href="/assets/css/styles.css">
-	<link rel="stylesheet" type="text/css" href="/assets/css/videos.css">
-
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta name="description" content="CreatorSpace is a tool to archive and watch your favorite creators. Add to or view your current collection of videos.">
-	<meta name="keywords" content="creator, archive, youtube, twitch, video, collection, watch">
-	<meta name="author" content="CreatorSpace">
-	<meta property="og:image" content="{{.ServerPath}}/assets/img/banner.png">
-</head>
-
-<body>
-{{template "navbar.tmpl" .}}
+{{template "header" .}}
 
 {{define "video"}}
 <div class="video-data">
 	<div class="creator-info">
 	<a href="/creators/{{.ChannelID}}">
 		{{if eq .VideoType "Twitch"}}
-		<img src="/api/twitch/creators/{{.ChannelID}}/thumbnail" alt={{.ChannelTitle}}>
+		<img src="/api/twitch/creators/{{.ChannelID}}/thumbnail?compress=true" alt={{.ChannelTitle}}>
 		{{else}}
-		<img src="/api/youtube/creators/{{.ChannelID}}/thumbnail" alt={{.ChannelTitle}}>
+		<img src="/api/youtube/creators/{{.ChannelID}}/thumbnail?compress=true" alt={{.ChannelTitle}}>
 		{{end}}
 		<span class="creator-info-text">{{.ChannelTitle}}</span>
 	</a>
@@ -34,7 +16,7 @@
 	<div class="thumbnail-box">
 		<div class="image-container">
 			<a href="/watch/{{.VideoID}}">
-				<img src="/api/media/{{.VideoID}}/thumbnail" alt="{{.Title}}">
+				<img src="/api/media/{{.VideoID}}/thumbnail?compress=true" alt="{{.Title}}">
 			</a>
 			<div class="image-overlay">
 				<div class="mark-watched">
@@ -200,7 +182,7 @@ document.getElementById("page-number").addEventListener("keyup", function(event)
         xhr.open("POST", `/api/user/${user_id}/progress/${video_id}/complete`, true);
         xhr.send();
 		// Get the image container and add <span class="watched-text"></span>
-		let imageContainer = document.querySelector(`img[src="/api/media/${video_id}/thumbnail"]`).parentElement.parentElement;
+		let imageContainer = document.querySelector(`img[src="/api/media/${video_id}/thumbnail?compress=true"]`).parentElement.parentElement;
 		
         
         // Remove in-progress-text and in-progress-bkg if they exist
@@ -272,5 +254,5 @@ function updatePageWithParams(filter, sort) {
         window.location.href = `${baseUrl}?${searchParams.toString()}`;
     }
 </script>
-</body>
-</html>
+
+{{template "footer" .}}

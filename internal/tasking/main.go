@@ -24,7 +24,7 @@ func runTask(task *Task, db *gorm.DB) {
 			log.Infof("Started running task '%v' at '%v'", task.Name, time.Now().Format("2006-01-02 15:04:05"))
 			err = task.Task(task.Args...)
 			if err != nil {
-				log.Errorf("Error running task: %v", err)
+				log.Errorf("Error running task '%v': %v", task.Name, err)
 			}
 			task.Lock()
 			task.Epoch = time.Now().Unix() + int64(task.Interval.Seconds())

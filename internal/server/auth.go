@@ -12,6 +12,14 @@ import (
 func page_login(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		openreg := settings.OpenRegister
+
+		// check if logged in, if so redirect to home
+		if jwttoken.IsLoggedIn(c) {
+			c.Redirect(http.StatusTemporaryRedirect, "/home")
+			c.Abort()
+			return
+		}
+
 		c.HTML(http.StatusOK, "login.tmpl", gin.H{
 			"OpenRegister": openreg,
 		})
@@ -91,7 +99,7 @@ func isAdminMiddleware() gin.HandlerFunc {
 
 		if user.AccountType != "admin" {
 			c.HTML(http.StatusUnauthorized, "error.tmpl", gin.H{
-				"ret": 401,
+				"ret": 403,
 				"err": "Unauthorized",
 			})
 			c.Abort()

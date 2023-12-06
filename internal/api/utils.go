@@ -61,19 +61,24 @@ func wrapper(f func(c *gin.Context) (string, error)) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		data, err := f(c)
+		// Check if already aborted
+		if c.IsAborted() {
+			return
+		}
 		if err != nil {
-			c.JSON(503, gin.H{"status": "error", "data": err.Error()})
+			c.JSON(503, gin.H{"ret": 503, "err": err.Error()})
 			return
 		}
 
 		var result map[string]interface{}
 		err = json.Unmarshal([]byte(data), &result)
-		if err != nil {
+		if err == nil {
+			c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "data": result})
+		} else {
+			// Not json
 			c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(data))
-			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "data": result})
 	}
 }
 
@@ -96,24 +101,23 @@ func StreamDirect(c *gin.Context, filePath string, mimeType string) error {
 
 	// Set the maximum chunk size to 10MB
 	const maxChunkSize int64 = 5 * 1024 * 1024
-
+	var start, end int64
 	// Parse the range header
 	rangeHeader := c.Request.Header.Get("Range")
-	start, end, err := parseRangeHeader(rangeHeader, fileSize, maxChunkSize)
-	if err != nil {
-		c.Status(http.StatusBadRequest)
-		return err
-	}
-
-	// if asking for whole file, return 204 no content status
-	if start == 0 && end == fileSize-1 {
-		c.Status(http.StatusNoContent)
-		return nil
+	if rangeHeader == "" || c.Request.Header.Get("Content-Disposition") == "attachment" {
+		// If no range header, set start and end to cover the whole file
+		start, end = 0, fileSize-1
+	} else {
+		start, end, err = parseRangeHeader(rangeHeader, fileSize, maxChunkSize)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return err
+		}
 	}
 
 	c.Status(http.StatusPartialContent)
 	c.Header("Content-Type", mimeType)
-	c.Header("Content-Disposition", "inline")
+	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", fileInfo.Name()))
 
 	// Calculate the size of the chunk to be served
 	chunkSize := end - start + 1
@@ -139,23 +143,17 @@ func StreamDirect(c *gin.Context, filePath string, mimeType string) error {
 		return err
 	}
 
-	// If the last chunk was smaller than the maximum chunk size,
-	// adjust the content-range header to reflect the actual size
-	if bytesCopied < chunkSize {
-		c.Header("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, start+bytesCopied-1, fileSize))
-	}
-
 	// Serve subsequent chunks until the end of the file is reached
-	for end-bytesCopied >= start {
+	for end >= start {
 		// Calculate the size of the next chunk
-		chunkSize = end - bytesCopied + 1
+		chunkSize = end - start + 1
 		if chunkSize > maxChunkSize {
 			chunkSize = maxChunkSize
-			end = bytesCopied + maxChunkSize - 1
+			end = start + maxChunkSize - 1
 		}
 
 		// Set the content-range header for the next chunk
-		c.Header("Content-Range", fmt.Sprintf("bytes %d-%d/%d", bytesCopied, end, fileSize))
+		c.Header("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, fileSize))
 
 		// Serve the next chunk
 		_, err = io.CopyN(c.Writer, file, chunkSize)
@@ -165,6 +163,7 @@ func StreamDirect(c *gin.Context, filePath string, mimeType string) error {
 		}
 
 		bytesCopied += chunkSize
+		start += bytesCopied
 	}
 	return nil
 }

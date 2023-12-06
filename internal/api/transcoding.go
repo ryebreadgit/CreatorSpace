@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/gin-gonic/gin"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	jwttoken "github.com/ryebreadgit/CreatorSpace/internal/jwt"
@@ -275,7 +276,7 @@ func streamTranscodedVideo(c *gin.Context) {
 	// Start transcoding in a separate goroutine
 	go func() {
 		if err := StartTranscoding(videoFilePath, transcodingFolder); err != nil {
-			fmt.Printf("Failed to start transcoding: %v", err)
+			log.Errorf("Failed to start transcoding: %v", err)
 		}
 	}()
 

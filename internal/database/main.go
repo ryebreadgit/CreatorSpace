@@ -112,7 +112,7 @@ func GetDatabase() (*gorm.DB, error) {
 		var creator Creator
 		creator.ChannelID = "000"
 		creator.Name = "Various Creators"
-		creator.Platform = "creatorspace"
+		creator.Platform = "CreatorSpace"
 
 		// add creator to database
 		err := db.Create(&creator).Error

@@ -289,6 +289,7 @@ func page_library(db *gorm.DB) gin.HandlerFunc {
 			"Videos":     videos,
 			"User":       user,
 			"ServerPath": settings.ServerPath,
+			"PageTitle":  "Library",
 		}
 
 		if nextPageFound {

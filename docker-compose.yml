@@ -5,17 +5,16 @@ services:
       context: https://github.com/ryebreadgit/CreatorSpace.git
       dockerfile: Dockerfile
       args:
-        # Uncomment the following lines to specify a UID and GID
-        # UID: ${UID}
-        # GID: ${GID}
+        UID: 1000
+        GID: 1000
     image: creatorspace:latest
     restart: unless-stopped
     ports:
       - 8080:8080
     volumes:
-      - /path/to/downloads:/downloads
-      - /path/to/appdata/CreatorSpace/settings.json:/config/settings.json
-      # - /path/to/appdata/CreatorSpace/database.db:/database.db
+      - /path/to/downloads:/CreatorSpace/downloads
+      - /path/to/appdata/CreatorSpace/settings.json:/CreatorSpace/config/settings.json
+      # - /path/to/appdata/CreatorSpace/database.db:/CreatorSpace/database.db
     environment:
       - GIN_MODE=release
     depends_on:
@@ -33,3 +32,6 @@ services:
   redis:
     image: redis:latest
     restart: unless-stopped
+    
+volumes:
+  postgres-data:

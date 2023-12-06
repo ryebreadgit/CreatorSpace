@@ -31,9 +31,9 @@
                     {{ if .User }}
                         {{ if eq .User.AccountType "admin" }}
                             <hr>
-                            <!-- <a class="dropdown-item" href="/server-settings">Server Settings</a> -->
+                            <!-- <a class="dropdown-item" href="/server-settings">Server Management</a> -->
                             <a class="dropdown-item" href="/user-management">User Management</a>
-                            <!-- <a class="dropdown-item" href="/library-management">Library Management</a> -->
+                            <a class="dropdown-item" href="/library-management">Library Management</a>
                             <hr>
                         {{ end }}
                     {{ end }}
@@ -68,7 +68,7 @@
         });
     }
     lastTerm = "";
-    //a search bar that hits the /api/search/videos?q=${search-term} endpoint. Search on each key stroke and return a list of suggestions during typing
+    //a search bar that hits the /api/search/videos?q=${search-term} endpoint.
     function searchVideos(searchTerm) {
         if (searchTerm.length === 0) {
             document.getElementById("search-results").innerHTML = "";
@@ -89,11 +89,18 @@
                         let videoChannel = video["ChannelTitle"];
                         let videoLength = video["Length"];
                         let videoType = video["VideoType"];
-                        let videoThumbnail = `/api/media/${videoID}/thumbnail`;
+                        let videoThumbnail = `/api/media/${videoID}/thumbnail?compress=true`;
+                        if (videoType == "channel") {
+                            videoThumbnail = `/api/youtube/creators/${videoID}/thumbnail?compress=true`;
+                        }
 
                         /* add elements to the search results dropdown with the thumbnail, channel title, and video title present */
                         let searchResult = document.createElement("a");
-                        searchResult.href = `/watch/${videoID}`;
+                        if (videoType == "channel") {
+                            searchResult.href = `/creators/${videoID}`;
+                        } else {
+                            searchResult.href = `/watch/${videoID}`;
+                        }
                         searchResult.innerHTML = `
                             <li class="search-result">
                                 <span class="search-result-thumbnail">
@@ -116,7 +123,7 @@
                 }
             };
             
-            xhr.open("GET", `/api/search/videos?q=${searchTerm}&limit=5`, true);
+            xhr.open("GET", `/api/search/videos?q=${searchTerm}&limit=10`, true);
             xhr.send();
         }
     }
