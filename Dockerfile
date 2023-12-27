@@ -1,11 +1,11 @@
 # Stage 1: Build stage
 FROM golang:1.20.4-alpine3.18 AS build
 
-RUN apk update && \
-    apk add --no-cache git
+ENV APPVERSION=0.3.1
 
-# Download the build dependencies
-RUN apk add --no-cache git make build-base
+RUN apk update && \
+    apk add --no-cache git && \
+    apk add --no-cache git make build-base
 
 WORKDIR /go/CreatorSpace
 
@@ -16,12 +16,21 @@ COPY . .
 
 WORKDIR /go/CreatorSpace/cmd
 
+# Try to get the commit hash and date, default to "Unknown"
+ARG COMMIT_HASH="Unknown"
+ARG BUILD_DATE="Unknown"
+ARG GO_VERSION="Unknown"
+
 # Enable CGO
 ENV CGO_ENABLED=1
 
 # Build the application
-RUN go get && go build -o ../cs
-
+RUN export COMMIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo $COMMIT_HASH) && \
+    export BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || echo $BUILD_DATE) && \
+    export GO_VERSION=$(go version 2>/dev/null || echo $GO_VERSION) && \
+    go get && \
+    go build -ldflags "-X github.com/ryebreadgit/CreatorSpace/internal/api.GitCommit=$COMMIT_HASH -X github.com/ryebreadgit/CreatorSpace/internal/api.BuildDate=$BUILD_DATE -X github.com/ryebreadgit/CreatorSpace/internal/api.AppVersion=$APPVERSION" -o /go/CreatorSpace/cs
+ 
 # Stage 2: Final stage
 FROM alpine:latest AS final
 
@@ -30,11 +39,11 @@ ARG UID=1000
 ARG GID=1000
 
 RUN addgroup -g $GID -S csgroup && \
-    adduser -u $UID -S csuser -G csgroup
-
-RUN apk update && apk add --no-cache wget
-RUN apk add --no-cache python3 py3-pip ffmpeg
-RUN mkdir /CreatorSpace && chown csuser:csgroup /CreatorSpace
+    adduser -u $UID -S csuser -G csgroup && \
+    apk update && \
+    apk add --no-cache wget && \
+    apk add --no-cache python3 py3-pip ffmpeg && \
+    mkdir /CreatorSpace && chown csuser:csgroup /CreatorSpace
 
 # Change to the new user in the Docker image
 USER csuser
@@ -43,8 +52,8 @@ USER csuser
 ENV PATH="/home/csuser/.local/bin:${PATH}"
 
 # Install python dependencies
-RUN pip3 install --upgrade pip
-RUN pip3 install yt-dlp
+RUN pip3 install --upgrade pip && \
+    pip3 install --force-reinstall https://github.com/yt-dlp/yt-dlp/archive/master.tar.gz
 
 # Change the working directory /CreatorSpace
 WORKDIR /CreatorSpace/
@@ -64,8 +73,8 @@ COPY --from=build /go/CreatorSpace/static ./static
 USER root
 
 # Add user permissions to the folders
-RUN chown -R csuser:csgroup /CreatorSpace
-RUN chmod -R 755 /CreatorSpace
+RUN chown -R csuser:csgroup /CreatorSpace && \
+    chmod -R 755 /CreatorSpace
 
 # Switch back to the csuser
 USER csuser
