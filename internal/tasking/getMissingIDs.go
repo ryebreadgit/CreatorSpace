@@ -2,12 +2,14 @@ package tasking
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
@@ -52,7 +54,11 @@ func fetchChannelVideoIDs(channelID string, vidtype string, limit int) ([]string
 	if limit > 0 {
 		ytargs = append(ytargs, "--playlist-end", fmt.Sprintf("%v", limit))
 	}
-	cmd := exec.Command("yt-dlp", ytargs...)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*15) // 15 minute timeout (This is a long timeout because yt-dlp can take a long time to fetch video IDs)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "yt-dlp", ytargs...)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -60,6 +66,11 @@ func fetchChannelVideoIDs(channelID string, vidtype string, limit int) ([]string
 
 	err = cmd.Run()
 	if err != nil {
+		// Check if the error is a context timeout
+		if osErr, ok := err.(*os.PathError); ok && osErr.Err == context.DeadlineExceeded {
+			return nil, fmt.Errorf("yt-dlp command timed out after 15 minutes on fetching video ids for '%v'", channelID)
+		}
+
 		// Check if yt-dlp returned data in stdout. If so, try to continue with that data.
 		if len(stdout.Bytes()) > 0 {
 			log.Debugf("yt-dlp command failed on '%v', but returned data in stdout. Continuing with that data.\n", channelID)
@@ -90,18 +101,19 @@ func getMissingVideoIDs(settings *database.Settings, limit int, db *gorm.DB) err
 	var reterr error
 
 	// create channels for communication between goroutines
-	workChan := make(chan fetchWorkItem, 10)
-	videoIDChan := make(chan videoWorkItem, 10)
+	workChan := make(chan fetchWorkItem, 100)
+	videoIDChan := make(chan videoWorkItem, 100)
+	errChan := make(chan error, 100)
 
 	// create workers to fetch video IDs
 	var wg sync.WaitGroup
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 5; i++ {
 		wg.Add(1)
-		go fetchWorker(workChan, videoIDChan, &wg, &reterr)
+		go fetchWorker(workChan, videoIDChan, &wg, errChan)
 	}
 
 	// create goroutine to process video IDs
-	go processVideoIDs(videoIDChan, limit, settings, db, &reterr)
+	go processVideoIDs(videoIDChan, limit, settings, db, errChan)
 
 	// send fetch work items to the workers
 	for _, queueitem := range dlqueue {
@@ -126,7 +138,7 @@ func getMissingVideoIDs(settings *database.Settings, limit int, db *gorm.DB) err
 				// If the channel is not in the database, then create it
 				channel, err = getNewCreator(channelID)
 				if err != nil {
-					reterr = err
+					errChan <- err
 					continue
 				}
 			}
@@ -150,6 +162,14 @@ func getMissingVideoIDs(settings *database.Settings, limit int, db *gorm.DB) err
 	// close the videoIDChan channel to signal that no more IDs will be sent
 	close(videoIDChan)
 
+	// close the errChan channel to signal that no more errors will be sent
+	close(errChan)
+
+	// check for errors
+	for err := range errChan {
+		reterr = fmt.Errorf("%v\n%w", err, reterr)
+	}
+
 	return reterr
 }
 
@@ -166,13 +186,13 @@ type videoWorkItem struct {
 	channelID string
 }
 
-func fetchWorker(workChan chan fetchWorkItem, videoIDChan chan videoWorkItem, wg *sync.WaitGroup, reterr *error) {
+func fetchWorker(workChan chan fetchWorkItem, videoIDChan chan videoWorkItem, wg *sync.WaitGroup, errChan chan error) {
 	defer wg.Done()
 	for workItem := range workChan {
 		// fetch video IDs
 		videoIDs, err := fetchChannelVideoIDs(workItem.channelID, workItem.videoType, workItem.limit)
 		if err != nil {
-			*reterr = err
+			errChan <- err
 			continue
 		}
 		// send each video ID through the videoIDChan channel
@@ -187,7 +207,7 @@ func fetchWorker(workChan chan fetchWorkItem, videoIDChan chan videoWorkItem, wg
 	}
 }
 
-func processVideoIDs(videoIDChan chan videoWorkItem, limit int, settings *database.Settings, db *gorm.DB, reterr *error) {
+func processVideoIDs(videoIDChan chan videoWorkItem, limit int, settings *database.Settings, db *gorm.DB, errChan chan error) {
 	for videoID := range videoIDChan {
 		// check if in database
 		_, err := database.GetVideo(videoID.videoID, db)
@@ -238,7 +258,7 @@ func processVideoIDs(videoIDChan chan videoWorkItem, limit int, settings *databa
 						// If the channel is not in the database, then create it
 						channel, err = getNewCreator(videoID.channelID)
 						if err != nil {
-							*reterr = err
+							errChan <- err
 							continue
 						}
 					}
@@ -247,7 +267,7 @@ func processVideoIDs(videoIDChan chan videoWorkItem, limit int, settings *databa
 				chanName, err := general.SanitizeFileName(channel.Name)
 				if err != nil {
 					log.Errorf("Error sanitizing channel name %v: %v\n", channel.Name, err)
-					*reterr = err
+					errChan <- err
 					continue
 				}
 
@@ -261,7 +281,7 @@ func processVideoIDs(videoIDChan chan videoWorkItem, limit int, settings *databa
 					chanName, err = general.SanitizeFileName(tmpname)
 					if err != nil {
 						log.Errorf("Error sanitizing channel name %v: %v\n", channel.Name, err)
-						*reterr = err
+						errChan <- err
 						continue
 					}
 				}
@@ -272,14 +292,14 @@ func processVideoIDs(videoIDChan chan videoWorkItem, limit int, settings *databa
 				err = os.MkdirAll(filepath.Dir(item.DownloadPath), 0755)
 				if err != nil {
 					log.Errorf("Error making download path %v: %v\n", item.DownloadPath, err)
-					*reterr = err
+					errChan <- err
 					continue
 				}
 
 				err = database.InsertDownloadQueueItem(item, db)
 				if err != nil {
 					log.Errorf("Error inserting download queue item for video %v: %v\n", videoID.videoID, err)
-					*reterr = err
+					errChan <- err
 					continue
 				}
 			}
