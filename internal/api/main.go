@@ -169,11 +169,11 @@ func Routes(route *gin.Engine) {
 }
 
 func apiAbout(c *gin.Context) {
-	uptime := time.Since(ApiStartTime).Round(time.Millisecond * 10).String()
+	uptime := time.Since(ApiStartTime).Round(time.Millisecond).String()
 	var about apiAboutStruct = apiAboutStruct{
 		CommitHash: GitCommit,
 		BuildDate:  BuildDate,
-		Version:    AppVersion,
+		AppVersion: AppVersion,
 		GoVersion:  GoVersion,
 		Uptime:     uptime,
 	}
