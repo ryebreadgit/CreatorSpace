@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -12,10 +14,17 @@ import (
 	"gorm.io/gorm"
 )
 
-var db *gorm.DB
-var settings *database.Settings
-var ctx context.Context = context.Background()
-var rdb *redis.Client
+var (
+	db           *gorm.DB
+	settings     *database.Settings
+	ctx          context.Context = context.Background()
+	rdb          *redis.Client
+	GitCommit    string
+	BuildDate    string
+	AppVersion   string
+	GoVersion    string = runtime.Version()
+	ApiStartTime time.Time
+)
 
 func Routes(route *gin.Engine) {
 	api := route.Group("/api")
@@ -150,12 +159,30 @@ func Routes(route *gin.Engine) {
 			admin.PATCH("/users/:user_id/password", apiUpdateUserPassword)
 			admin.PATCH("/users/:user_id/role", apiUpdateUserRole)
 		}
-
 	}
+
+	about := route.Group("/about")
+	{
+		about.Use(jwttoken.JwtMiddleware())
+		about.GET("/", apiAbout)
+	}
+}
+
+func apiAbout(c *gin.Context) {
+	uptime := time.Since(ApiStartTime).Round(time.Millisecond * 10).String()
+	var about apiAboutStruct = apiAboutStruct{
+		CommitHash: GitCommit,
+		BuildDate:  BuildDate,
+		Version:    AppVersion,
+		GoVersion:  GoVersion,
+		Uptime:     uptime,
+	}
+	c.JSON(200, gin.H{"ret": 200, "data": about})
 }
 
 func init() {
 	var err error
+	ApiStartTime = time.Now()
 	// get database
 	db, err = database.GetDatabase()
 	if err != nil {
