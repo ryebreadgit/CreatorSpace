@@ -64,9 +64,9 @@ func task_DownloadYouTubeVideo(args ...interface{}) error {
 	return downloadYouTubeVideos(settings, db)
 }
 
-func task_UpdateTweets(args ...interface{}) error {
+/*func task_UpdateTweets(args ...interface{}) error {
 	return UpdateTwitterCreators(args[0].(int))
-}
+}*/
 
 func task_SystemCleanup(args ...interface{}) error {
 	var errs []error
@@ -151,26 +151,27 @@ func InitTasking() {
 					Args:     []interface{}{settings, db},
 				})
 			}
+			/*
+				if t.TaskName == "UpdateTweetsQuick" {
+					tasks = append(tasks, &Task{
+						Name:     t.TaskName,
+						Epoch:    t.Epoch,
+						Interval: t.Interval * time.Minute,
+						Task:     task_UpdateTweets,
+						Args:     []interface{}{100},
+					})
+				}
 
-			if t.TaskName == "UpdateTweetsQuick" {
-				tasks = append(tasks, &Task{
-					Name:     t.TaskName,
-					Epoch:    t.Epoch,
-					Interval: t.Interval * time.Minute,
-					Task:     task_UpdateTweets,
-					Args:     []interface{}{100},
-				})
-			}
-
-			if t.TaskName == "UpdateTweets" {
-				tasks = append(tasks, &Task{
-					Name:     t.TaskName,
-					Epoch:    t.Epoch,
-					Interval: t.Interval * time.Minute,
-					Task:     task_UpdateTweets,
-					Args:     []interface{}{5},
-				})
-			}
+				if t.TaskName == "UpdateTweets" {
+					tasks = append(tasks, &Task{
+						Name:     t.TaskName,
+						Epoch:    t.Epoch,
+						Interval: t.Interval * time.Minute,
+						Task:     task_UpdateTweets,
+						Args:     []interface{}{5},
+					})
+				}
+			*/
 		}
 
 		for _, t := range tasks {
