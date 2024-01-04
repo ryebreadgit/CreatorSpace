@@ -126,6 +126,21 @@ If you prefer to build the application yourself:
     mv CreatorSpace ..
     ```
 
+#### Setting Version Variables
+
+If you are manually building the application, you can set the version variables by passing the following flags to the build command (example uses Linux and version 0.3.1):
+
+```shell
+export APPVERSION=0.3.1
+export COMMIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo unknown 2>/dev/null)
+export BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || echo unknown 2>/dev/null)
+go build -ldflags "-X github.com/ryebreadgit/CreatorSpace/internal/api.GitCommit=$COMMIT_HASH -X github.com/ryebreadgit/CreatorSpace/internal/api.BuildDate=$BUILD_DATE -X github.com/ryebreadgit/CreatorSpace/internal/api.AppVersion=$APPVERSION" -o CreatorSpace_$APPVERSION
+```
+
+If these variables are not set, the application will default to "unknown" for the version information.
+
+**Please note that this is only required for manual builds, the pre-built binaries and Dockerfile will have these variables set automatically.*
+
 ## Contributing
 
 Contributions are always welcome! Please read the [contribution guidelines](CONTRIBUTING.md) first.
