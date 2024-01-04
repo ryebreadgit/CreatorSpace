@@ -148,6 +148,10 @@ func Run() {
 		port = "8080"
 	}
 
+	versonInfo := api.GetVersion()
+
+	log.Infof("Launching CreatorSpace on port %s. Running version '%s', build date '%s', commit hash '%s', go version '%s'.", port, versonInfo.AppVersion, versonInfo.BuildDate, versonInfo.CommitHash, versonInfo.GoVersion)
+
 	r.Run(":" + port)
 }
 

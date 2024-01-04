@@ -19,9 +19,9 @@ var (
 	settings     *database.Settings
 	ctx          context.Context = context.Background()
 	rdb          *redis.Client
-	GitCommit    string
-	BuildDate    string
-	AppVersion   string
+	GitCommit    string = "unknown"
+	BuildDate    string = "unknown"
+	AppVersion   string = "unknown"
 	GoVersion    string = runtime.Version()
 	ApiStartTime time.Time
 )
@@ -161,23 +161,27 @@ func Routes(route *gin.Engine) {
 		}
 	}
 
-	about := route.Group("/about")
+	version := route.Group("/version")
 	{
-		about.Use(jwttoken.JwtMiddleware())
-		about.GET("/", apiAbout)
+		version.Use(jwttoken.JwtMiddleware())
+		version.GET("/", apiAbout)
 	}
 }
 
-func apiAbout(c *gin.Context) {
+func GetVersion() apiVersionStruct {
 	uptime := time.Since(ApiStartTime).Round(time.Millisecond).String()
-	var about apiAboutStruct = apiAboutStruct{
+	var ver apiVersionStruct = apiVersionStruct{
 		CommitHash: GitCommit,
 		BuildDate:  BuildDate,
 		AppVersion: AppVersion,
 		GoVersion:  GoVersion,
 		Uptime:     uptime,
 	}
-	c.JSON(200, gin.H{"ret": 200, "data": about})
+	return ver
+}
+
+func apiAbout(c *gin.Context) {
+	c.JSON(200, gin.H{"ret": 200, "data": GetVersion()})
 }
 
 func init() {
