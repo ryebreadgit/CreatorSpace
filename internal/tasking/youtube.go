@@ -38,6 +38,9 @@ func GetYouTubeMetadata(url string, comments bool) (database.YouTubeVideoInfoStr
 		"--dump-json",
 		url,
 	}
+	if _, err := os.Stat("./config/cookies.txt"); err == nil {
+		metadataArgs = append(metadataArgs, "--cookies", "./config/cookies.txt")
+	}
 	if comments {
 		metadataArgs = append(metadataArgs, "--write-comments")
 		metadataArgs = append(metadataArgs, "--extractor-args", "youtube:comment_sort=top")
@@ -228,7 +231,15 @@ func downloadYouTubeVideo(url string, outputDir string, videoid string, config s
 
 	tmpPath := fmt.Sprintf("./data/tmp/%v", videoid)
 
-	cmd := exec.Command("yt-dlp", "--config-location", config, "-o", tmpPath, url)
+	cmd := exec.Command("yt-dlp", "--config-location", config)
+
+	// Check if cookies.txt exists
+	cookiesPath := "./config/cookies.txt"
+	if _, err := os.Stat(cookiesPath); err == nil {
+		cmd.Args = append(cmd.Args, "--cookies", cookiesPath)
+	}
+
+	cmd.Args = append(cmd.Args, "-o", tmpPath, url)
 
 	// Create a pipe for capturing the output
 	stdout, err := cmd.StdoutPipe()
