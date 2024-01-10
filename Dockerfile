@@ -16,10 +16,9 @@ COPY . .
 
 WORKDIR /go/CreatorSpace/cmd
 
-# Try to get the commit hash and date, default to "Unknown"
-ARG COMMIT_HASH="Unknown"
-ARG BUILD_DATE="Unknown"
-ARG GO_VERSION="Unknown"
+# Try to get the commit hash and date, default to "unknown"
+ARG COMMIT_HASH="unknown"
+ARG BUILD_DATE="unknown"
 
 # Enable CGO
 ENV CGO_ENABLED=1
@@ -27,7 +26,6 @@ ENV CGO_ENABLED=1
 # Build the application
 RUN export COMMIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo $COMMIT_HASH) && \
     export BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || echo $BUILD_DATE) && \
-    export GO_VERSION=$(go version 2>/dev/null || echo $GO_VERSION) && \
     go get && \
     go build -ldflags "-X github.com/ryebreadgit/CreatorSpace/internal/api.GitCommit=$COMMIT_HASH -X github.com/ryebreadgit/CreatorSpace/internal/api.BuildDate=$BUILD_DATE -X github.com/ryebreadgit/CreatorSpace/internal/api.AppVersion=$APPVERSION" -o /go/CreatorSpace/cs
  
