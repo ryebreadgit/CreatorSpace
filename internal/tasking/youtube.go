@@ -892,17 +892,14 @@ func updateAllVideoMetadata() error {
 			log.Errorf("Error updating creator %v: %v", creator.Name, err)
 			continue
 		}
-		files, err := os.ReadDir("./data/tmp")
+		fif, err := general.StringInFolder(creator.ChannelID, "./data/tmp/")
 		if err != nil {
 			return err
 		}
-
-		for _, file := range files {
-			if strings.HasPrefix(file.Name(), creator.ChannelID) {
-				err = os.Remove(fmt.Sprintf("./data/tmp/%v", file.Name()))
-				if err != nil {
-					return err
-				}
+		for _, file := range fif {
+			err = os.Remove(file)
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -920,17 +917,14 @@ func updateAllVideoMetadata() error {
 			log.Errorf("Error updating video %v: %v", video.VideoID, err)
 			continue
 		}
-		// if ./data/tmp/$videoID.* exists, delete it
-		files, err := os.ReadDir("./data/tmp")
+		fif, err := general.StringInFolder(video.VideoID, "./data/tmp/")
 		if err != nil {
 			return err
 		}
-		for _, file := range files {
-			if strings.HasPrefix(file.Name(), video.VideoID) {
-				err = os.Remove(fmt.Sprintf("./data/tmp/%v", file.Name()))
-				if err != nil {
-					return err
-				}
+		for _, file := range fif {
+			err = os.Remove(file)
+			if err != nil {
+				return err
 			}
 		}
 	}
