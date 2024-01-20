@@ -22,7 +22,6 @@
 # Go workspace file
 go.work
 
-go.sum
 /.vscode
 /.idea
 /downloads
