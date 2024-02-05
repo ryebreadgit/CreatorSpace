@@ -69,14 +69,6 @@ func Run() {
 
 	r.Static("/assets", "./static")
 
-	r.GET("/favicon.ico", func(c *gin.Context) {
-		// check if cached
-		if c.Writer.Header().Get("Cache-Control") == "" {
-			c.Writer.Header().Set("Cache-Control", "public, max-age=31536000")
-		}
-		c.File("./static/img/favicon.ico")
-	})
-
 	r.LoadHTMLGlob("./templates/*.tmpl")
 
 	r.GET("/login", page_login(db))
