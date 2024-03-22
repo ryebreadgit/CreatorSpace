@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -22,6 +24,7 @@ var (
 	GitCommit    string = "unknown"
 	BuildDate    string = "unknown"
 	AppVersion   string = "unknown"
+	YTDLPVersion string = GetYTDLPVersion()
 	GoVersion    string = runtime.Version()
 	ApiStartTime time.Time
 )
@@ -161,21 +164,34 @@ func Routes(route *gin.Engine) {
 		}
 	}
 
-	version := route.Group("/version")
+	version := route.Group("/health")
 	{
 		version.Use(jwttoken.JwtMiddleware())
 		version.GET("/", apiAbout)
 	}
 }
 
+func GetYTDLPVersion() string {
+	// Run yt-dlp --version
+	args := []string{"--version"}
+	cmd := exec.Command("yt-dlp", args...)
+	stdout, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("Error running yt-dlp: %s\n", err)
+		return "unknown"
+	}
+	return strings.TrimSpace(string(stdout))
+}
+
 func GetVersion() apiVersionStruct {
 	uptime := time.Since(ApiStartTime).Round(time.Millisecond).String()
 	var ver apiVersionStruct = apiVersionStruct{
-		CommitHash: GitCommit,
-		BuildDate:  BuildDate,
-		AppVersion: AppVersion,
-		GoVersion:  GoVersion,
-		Uptime:     uptime,
+		CommitHash:   GitCommit,
+		BuildDate:    BuildDate,
+		AppVersion:   AppVersion,
+		GoVersion:    GoVersion,
+		YTDLPVersion: YTDLPVersion,
+		Uptime:       uptime,
 	}
 	return ver
 }
