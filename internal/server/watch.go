@@ -11,6 +11,7 @@ import (
 	"github.com/ryebreadgit/CreatorSpace/internal/api"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -173,6 +174,7 @@ func page_watch(db *gorm.DB) gin.HandlerFunc {
 		// Get video recommendations
 		recs, err := api.GetRecommendations(videoid, watchedVideos)
 		if err != nil {
+			log.Errorf("Unable to get recommendations for video id '%s': %s", videoid, err.Error())
 			recs = nil
 		}
 

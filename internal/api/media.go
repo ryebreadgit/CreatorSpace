@@ -459,7 +459,7 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 	var currentVideo database.Video
 	err := db.First(&currentVideo, "video_id = ?", videoID).Error
 	if err != nil {
-		return nil, errors.New("error fetching video")
+		return nil, err
 	}
 
 	var currentCategories, currentTags []string
@@ -482,7 +482,7 @@ func GetRecommendations(videoID string, watchedVids []string) ([]database.Video,
 	query = query.Limit(3500)
 	err = query.Find(&recommendations).Error
 	if err != nil {
-		return nil, errors.New("error fetching recommendations")
+		return nil, err
 	}
 
 	type videoScore struct {
