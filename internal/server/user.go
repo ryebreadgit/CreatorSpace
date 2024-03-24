@@ -81,22 +81,23 @@ func health_check(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Only run the health check every 5 minutes to avoid spamming the database
 		if time.Since(lastHealthCheck) < 5*time.Minute {
+			ret := gin.H{"ret": lastHealthStatus, "err": lastHealthMsg}
 			if lastHealthStatus == 200 {
-				c.JSON(200, gin.H{
-					"ret":  200,
-					"data": "OK",
-				})
-				return
+				// Drop the err key and set the data key
+				ret["data"] = lastHealthMsg
+				delete(ret, "err")
 			}
-			c.JSON(lastHealthStatus, gin.H{
-				"ret": lastHealthStatus,
-				"err": lastHealthMsg,
-			})
+			c.JSON(lastHealthStatus, ret)
+			return
 		}
+
+		lastHealthCheck = time.Now()
 
 		// Check if the database is up
 		err := db.Exec("SELECT 1").Error
 		if err != nil {
+			lastHealthMsg = "Database is down"
+			lastHealthStatus = 500
 			c.AbortWithStatusJSON(500, gin.H{
 				"ret": 500,
 				"err": "Database is down",
@@ -107,6 +108,8 @@ func health_check(db *gorm.DB) gin.HandlerFunc {
 		// Check if yt-dlp is available
 		ver := api.GetYTDLPVersion()
 		if ver == "" || ver == "unknown" {
+			lastHealthMsg = "yt-dlp is not available"
+			lastHealthStatus = 500
 			c.AbortWithStatusJSON(500, gin.H{
 				"ret": 500,
 				"err": "yt-dlp is not available",
@@ -115,10 +118,8 @@ func health_check(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		// Set the last health check time
-		lastHealthCheck = time.Now()
 		lastHealthStatus = 200
 		lastHealthMsg = "OK"
-
 		c.JSON(200, gin.H{
 			"ret":  200,
 			"data": "OK",
