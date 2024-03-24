@@ -43,7 +43,7 @@ ARG GID=1000
 RUN addgroup -g $GID -S csgroup && \
     adduser -u $UID -S csuser -G csgroup && \
     apk update && \
-    apk add --no-cache python3 py3-pip ffmpeg && \
+    apk add --no-cache python3 py3-pip ffmpeg curl && \
     mkdir /CreatorSpace && chown csuser:csgroup /CreatorSpace
 
 # Change to the new user in the Docker image
@@ -77,6 +77,9 @@ RUN chown -R csuser:csgroup /CreatorSpace && \
 
 # Switch back to the csuser
 USER csuser
+
+HEALTHCHECK  --interval=1m --timeout=10s \
+    CMD curl -f http://localhost:8080/health || exit 1
 
 # Set the entrypoint
 ENTRYPOINT ["/CreatorSpace/cs"]

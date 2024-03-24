@@ -67,6 +67,10 @@ func Run() {
 		}
 	})
 
+	r.GET("/favicon.ico", func(c *gin.Context) {
+		c.File("./static/img/favicon/favicon.ico")
+	})
+
 	r.Static("/assets", "./static")
 
 	r.LoadHTMLGlob("./templates/*.tmpl")
@@ -76,6 +80,8 @@ func Run() {
 	r.GET("/logout", page_logout(db))
 
 	r.GET("/register", page_register(db))
+
+	r.GET("/health", health_check(db))
 
 	// require jwt token for all below routes
 	r.Use(notLoggedInMiddleware(db))

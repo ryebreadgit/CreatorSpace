@@ -163,11 +163,10 @@ func Routes(route *gin.Engine) {
 			admin.PATCH("/users/:user_id/role", apiUpdateUserRole)
 		}
 	}
-
-	version := route.Group("/health")
+	version := route.Group("/version")
 	{
 		version.Use(jwttoken.JwtMiddleware())
-		version.GET("/", apiAbout)
+		version.GET("", apiVersion)
 	}
 }
 
@@ -196,7 +195,7 @@ func GetVersion() apiVersionStruct {
 	return ver
 }
 
-func apiAbout(c *gin.Context) {
+func apiVersion(c *gin.Context) {
 	c.JSON(200, gin.H{"ret": 200, "data": GetVersion()})
 }
 
