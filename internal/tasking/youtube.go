@@ -595,9 +595,6 @@ func updateVideoMetadata(videoID string) error {
 			if string(newSubsJSON) != video.SubtitlePath {
 				// replace the youtube default path
 				video.SubtitlePath = strings.ReplaceAll(string(newSubsJSON), settings.BaseYouTubePath, "")
-				if err != nil {
-					return err
-				}
 				err = database.UpdateVideo(video, db)
 				if err != nil {
 					return err
@@ -1136,7 +1133,7 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 	dbcreator, err := database.GetCreator(creatorID, db)
 	if err == nil {
 		return dbcreator, nil
-	} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return database.Creator{}, err
 	}
 
@@ -1376,7 +1373,7 @@ func downloadComments(videoID string) (string, error) {
 	return sanitizedCommentPath, nil
 }
 
-func subDownload(subFile string, url string, ext string) (string, error) {
+func subDownload(subFile string, url string) (string, error) {
 
 	// Create the directory if it doesn't exist
 	err := os.MkdirAll(filepath.Dir(subFile), 0755)
@@ -1451,7 +1448,7 @@ func downloadSubtitles(subtitlePath string, videoData *database.YouTubeVideoInfo
 				continue
 			}
 
-			_, err = subDownload(subFile, sub.URL, sub.Ext)
+			_, err = subDownload(subFile, sub.URL)
 			if err != nil {
 				log.Errorf("Error downloading subtitle: %v", err)
 				continue
