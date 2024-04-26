@@ -73,7 +73,15 @@ func task_SystemCleanup(args ...interface{}) error {
 	errs = append(errs, correctVariousUsers())
 	errs = append(errs, correctUserProgress())
 	if len(errs) > 0 {
-		return fmt.Errorf("errors: %v", errs)
+		errStr := "\n\t"
+		for _, e := range errs {
+			if e != nil {
+				errStr += e.Error() + "\n\t"
+			}
+		}
+		if errStr != "\n\t" {
+			return fmt.Errorf("errors: %v", errStr)
+		}
 	}
 	return nil
 }

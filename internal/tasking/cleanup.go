@@ -3,10 +3,12 @@ package tasking
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/charlievieth/fastwalk"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/general"
 	log "github.com/sirupsen/logrus"
@@ -109,17 +111,37 @@ func correctUserProgress() error {
 }
 
 func correctVariousUsers() error {
-	// Get all videos where the path contains "/Various Creators/"
-	vids, err := database.GetAllVideos(db.Where("file_path LIKE ?", "%/Various Creators/%"))
-	if err != nil {
-		return fmt.Errorf("error getting all videos: %v", err)
-	}
+	var basePath string
+	var vcName string
 
 	// Get all creators
 	creators, err := database.GetAllCreators(db)
 	if err != nil {
 		return fmt.Errorf("error getting all creators: %v", err)
 	}
+	for _, c := range creators {
+		if c.ChannelID == "000" {
+			basePath = filepath.Join(settings.BaseYouTubePath, c.Name)
+			vcName = c.Name
+		}
+	}
+
+	if basePath == "" {
+		return fmt.Errorf("error getting base path for Various Creators")
+	}
+
+	// Get all videos where the path contains "/Various Creators/"
+	vids, err := database.GetAllVideos(db.Where("file_path LIKE ?", fmt.Sprintf("%%/%s/%%", vcName)))
+	if err != nil {
+		return fmt.Errorf("error getting all videos: %v", err)
+	}
+
+	videoPath := filepath.Join(basePath, "videos")
+	metadataPath := filepath.Join(basePath, "metadata", "metadata")
+	commentsPath := filepath.Join(basePath, "metadata", "comments")
+	subtitlePath := filepath.Join(basePath, "metadata", "subtitles")
+	thumbnailPath := filepath.Join(basePath, "metadata", "thumbnails")
+	sponsorblockPath := filepath.Join(basePath, "metadata", "sponsorblock")
 
 	var errs []error
 
@@ -131,7 +153,7 @@ func correctVariousUsers() error {
 				continue
 			}
 			if v.ChannelID == c.ChannelID {
-				err := updateVariousUserVideo(c, v)
+				err := updateVariousUserVideo(c, v, vcName, videoPath, metadataPath, commentsPath, subtitlePath, thumbnailPath, sponsorblockPath)
 				if err != nil {
 					errs = append(errs, err)
 				}
@@ -145,138 +167,130 @@ func correctVariousUsers() error {
 	return nil
 }
 
-func updateVariousUserVideo(c database.Creator, v database.Video) error {
-	tmpslc := strings.Split(c.FilePath, "/")
-	tmpname := tmpslc[len(tmpslc)-2]
+func getFilesByVidId(vidId string, path string) ([]string, error) {
+	var files []string
 
-	cname, err := general.SanitizeFileName(tmpname)
+	conf := &fastwalk.Config{
+		Follow: true,
+	}
+
+	// Iterate through all files in the path
+	err := fastwalk.Walk(conf, path, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return fmt.Errorf("error walking path %s: %v", path, err)
+		}
+		if d.IsDir() {
+			return nil
+		}
+		if strings.Contains(p, vidId) {
+			files = append(files, p)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error walking path %s: %v", path, err)
+	}
+	return files, nil
+}
+
+func updateVariousUserVideo(c database.Creator, v database.Video, oldName string, videoPath string, metadataPath string, commentsPath string, subtitlePath string, thumbnailPath string, sponsorblockPath string) error {
+	vidId := v.VideoID
+	var files []string
+
+	cname, err := general.SanitizeFileName(c.Name)
 	if err != nil {
 		return fmt.Errorf("error sanitizing creator name: %v", err)
 	}
 
-	// Replace "Various Creators" with the creator name
-	var newVidPath, newMetaPath, newThumbPath, newCommentsPath, newSubData string
-	newVidPath = strings.ReplaceAll(v.FilePath, "/Various Creators/", fmt.Sprintf("/%s/", cname))
-	if v.ThumbnailPath != "" {
-		newThumbPath = strings.ReplaceAll(v.ThumbnailPath, "/Various Creators/", fmt.Sprintf("/%s/", cname))
-	}
-	if v.MetadataPath != "" {
-		newMetaPath = strings.ReplaceAll(v.MetadataPath, "/Various Creators/", fmt.Sprintf("/%s/", cname))
-	}
-	if v.CommentsPath != "" {
-		newCommentsPath = strings.ReplaceAll(v.CommentsPath, "/Various Creators/", fmt.Sprintf("/%s/", cname))
-	}
-	if v.SubtitlePath != "" {
-		newSubData = strings.ReplaceAll(v.SubtitlePath, "/Various Creators/", fmt.Sprintf("/%s/", cname))
+	// Get all files for the video
+	files, err = getFilesByVidId(vidId, videoPath)
+	if err != nil {
+		return fmt.Errorf("error getting video files for %s: %v", vidId, err)
 	}
 
-	// Move the files
+	tmpf, err := getFilesByVidId(vidId, metadataPath)
+	if err != nil {
+		return fmt.Errorf("error getting metadata files for %s: %v", vidId, err)
+	}
+	files = append(files, tmpf...)
 
-	// Check if the video file exists
-	if _, err := os.Stat(filepath.Join(settings.BaseYouTubePath, v.FilePath)); err == nil {
-		// Make folders as necessary
-		err = os.MkdirAll(filepath.Dir(filepath.Join(settings.BaseYouTubePath, newVidPath)), 0755)
-		if err != nil {
-			return fmt.Errorf("error making folders for %s: %v", filepath.Join(settings.BaseYouTubePath, newVidPath), err)
-		}
-		// Move the video file
-		err = os.Rename(filepath.Join(settings.BaseYouTubePath, v.FilePath), filepath.Join(settings.BaseYouTubePath, newVidPath))
-		if err != nil {
-			return fmt.Errorf("error moving video file %s to %s: %v", filepath.Join(settings.BaseYouTubePath, v.FilePath), filepath.Join(settings.BaseYouTubePath, newVidPath), err)
-		}
+	tmpf, err = getFilesByVidId(vidId, commentsPath)
+	if err != nil {
+		return fmt.Errorf("error getting comments files for %s: %v", vidId, err)
+	}
+	files = append(files, tmpf...)
 
-		// Update the video path
-		v.FilePath = newVidPath
+	tmpf, err = getFilesByVidId(vidId, subtitlePath)
+	if err != nil {
+		return fmt.Errorf("error getting subtitle files for %s: %v", vidId, err)
+	}
+	files = append(files, tmpf...)
+
+	tmpf, err = getFilesByVidId(vidId, thumbnailPath)
+	if err != nil {
+		return fmt.Errorf("error getting thumbnail files for %s: %v", vidId, err)
+	}
+	files = append(files, tmpf...)
+
+	tmpf, err = getFilesByVidId(vidId, sponsorblockPath)
+	if err != nil {
+		return fmt.Errorf("error getting sponsorblock files for %s: %v", vidId, err)
+	}
+	files = append(files, tmpf...)
+
+	var moveErrs []error
+
+	// Move each file to the new creator folder, replacing "Various Creators" with cname in the path
+	for _, f := range files {
+		newPath := strings.ReplaceAll(f, fmt.Sprintf("/%s/", oldName), fmt.Sprintf("/%s/", cname))
+		err = os.MkdirAll(filepath.Dir(newPath), 0755)
+		if err != nil {
+			moveErrs = append(moveErrs, fmt.Errorf("error making folders for %s: %v", newPath, err))
+			continue
+		}
+		err = os.Rename(f, newPath)
+		if err != nil {
+			moveErrs = append(moveErrs, fmt.Errorf("error moving file %s to %s: %v", f, newPath, err))
+		}
 	}
 
-	// Check if the thumbnail file exists
-	if _, err := os.Stat(filepath.Join(settings.BaseYouTubePath, v.ThumbnailPath)); err == nil {
-		// Make folders as necessary
-		err = os.MkdirAll(filepath.Dir(filepath.Join(settings.BaseYouTubePath, newVidPath)), 0755)
-		if err != nil {
-			return fmt.Errorf("error making folders for %s: %v", filepath.Join(settings.BaseYouTubePath, newVidPath), err)
+	if len(moveErrs) > 0 {
+		errsStr := "\n\t"
+		for _, e := range moveErrs {
+			errsStr += e.Error() + "\n\t"
 		}
-		// Move the thumbnail file
-		err = os.Rename(filepath.Join(settings.BaseYouTubePath, v.ThumbnailPath), filepath.Join(settings.BaseYouTubePath, newThumbPath))
-		if err != nil {
-			return fmt.Errorf("error moving thumbnail file %s to %s: %v", filepath.Join(settings.BaseYouTubePath, v.ThumbnailPath), filepath.Join(settings.BaseYouTubePath, newThumbPath), err)
-		}
-
-		// Update the thumbnail path
-		v.ThumbnailPath = newThumbPath
-	}
-
-	// Check if the metadata file exists
-	if _, err := os.Stat(filepath.Join(settings.BaseYouTubePath, v.MetadataPath)); err == nil {
-		// Make folders as necessary
-		err = os.MkdirAll(filepath.Dir(filepath.Join(settings.BaseYouTubePath, newVidPath)), 0755)
-		if err != nil {
-			return fmt.Errorf("error making folders for %s: %v", filepath.Join(settings.BaseYouTubePath, newVidPath), err)
-		}
-		// Move the metadata file
-		err = os.Rename(filepath.Join(settings.BaseYouTubePath, v.MetadataPath), filepath.Join(settings.BaseYouTubePath, newMetaPath))
-		if err != nil {
-			return fmt.Errorf("error moving metadata file %s to %s: %v", filepath.Join(settings.BaseYouTubePath, v.MetadataPath), filepath.Join(settings.BaseYouTubePath, newMetaPath), err)
-		}
-
-		// Update the metadata path
-		v.MetadataPath = newMetaPath
-	}
-
-	// Check if the comments file exists
-	if _, err := os.Stat(filepath.Join(settings.BaseYouTubePath, v.CommentsPath)); err == nil {
-		// Make folders as necessary
-		err = os.MkdirAll(filepath.Dir(filepath.Join(settings.BaseYouTubePath, newVidPath)), 0755)
-		if err != nil {
-			return fmt.Errorf("error making folders for %s: %v", filepath.Join(settings.BaseYouTubePath, newVidPath), err)
-		}
-		// Move the comments file
-		err = os.Rename(filepath.Join(settings.BaseYouTubePath, v.CommentsPath), filepath.Join(settings.BaseYouTubePath, newCommentsPath))
-		if err != nil {
-			return fmt.Errorf("error moving comments file %s to %s: %v", filepath.Join(settings.BaseYouTubePath, v.CommentsPath), filepath.Join(settings.BaseYouTubePath, newCommentsPath), err)
-		}
-
-		// Update the comments path
-		v.CommentsPath = newCommentsPath
-	}
-
-	// Check if subtitles string is empty
-	if v.SubtitlePath != "" {
-		// Parse json to subtitles
-		var subtitles []database.VidSubtitle
-		err = json.Unmarshal([]byte(v.SubtitlePath), &subtitles)
-		if err != nil {
-			return fmt.Errorf("error unmarshalling subtitles: %v", err)
-		}
-
-		var newSubs []database.VidSubtitle
-		err = json.Unmarshal([]byte(newSubData), &newSubs)
-		if err != nil {
-			return fmt.Errorf("error unmarshalling new subtitles: %v", err)
-		}
-
-		// Get the parent folder of the first subtitle file
-		subParent := filepath.Dir(filepath.Join(settings.BaseYouTubePath, subtitles[0].FilePath))
-		newSubParent := filepath.Dir(filepath.Join(settings.BaseYouTubePath, newSubs[0].FilePath))
-
-		// Make folders as necessary
-		err = os.MkdirAll(newSubParent, 0755)
-		if err != nil {
-			return fmt.Errorf("error making folders for %s: %v", newSubParent, err)
-		}
-
-		// Move the sub parent folder to the new sub parent folder
-		err = os.Rename(subParent, newSubParent)
-		if err != nil {
-			return fmt.Errorf("error moving subtitle folder %s to %s: %v", subParent, newSubParent, err)
-		}
-
-		// Update the subtitle path
-		v.SubtitlePath = newSubData
-
+		log.Warnf("errors encountered while moving files for cleanup of %v: %v", vidId, errsStr)
 	}
 
 	// Update the video in the database
+	v.FilePath = strings.ReplaceAll(v.FilePath, fmt.Sprintf("/%s/", oldName), fmt.Sprintf("/%s/", cname))
+	v.MetadataPath = strings.ReplaceAll(v.MetadataPath, fmt.Sprintf("/%s/", oldName), fmt.Sprintf("/%s/", cname))
+	v.CommentsPath = strings.ReplaceAll(v.CommentsPath, fmt.Sprintf("/%s/", oldName), fmt.Sprintf("/%s/", cname))
+	v.SubtitlePath = strings.ReplaceAll(v.SubtitlePath, fmt.Sprintf("/%s/", oldName), fmt.Sprintf("/%s/", cname))
+	v.ThumbnailPath = strings.ReplaceAll(v.ThumbnailPath, fmt.Sprintf("/%s/", oldName), fmt.Sprintf("/%s/", cname))
+
+	// Check if paths exist
+	if v.FilePath != "" {
+		if _, err := os.Stat(filepath.Join(settings.BaseYouTubePath, v.FilePath)); err != nil {
+			return fmt.Errorf("error checking video file %s: %v", filepath.Join(settings.BaseYouTubePath, v.FilePath), err)
+		}
+	}
+	if v.MetadataPath != "" {
+		if _, err := os.Stat(filepath.Join(settings.BaseYouTubePath, v.MetadataPath)); err != nil {
+			return fmt.Errorf("error checking metadata file %s: %v", filepath.Join(settings.BaseYouTubePath, v.MetadataPath), err)
+		}
+	}
+	if v.CommentsPath != "" {
+		if _, err := os.Stat(filepath.Join(settings.BaseYouTubePath, v.CommentsPath)); err != nil {
+			return fmt.Errorf("error checking comments file %s: %v", filepath.Join(settings.BaseYouTubePath, v.CommentsPath), err)
+		}
+	}
+	if v.ThumbnailPath != "" {
+		if _, err := os.Stat(filepath.Join(settings.BaseYouTubePath, v.ThumbnailPath)); err != nil {
+			return fmt.Errorf("error checking thumbnail file %s: %v", filepath.Join(settings.BaseYouTubePath, v.ThumbnailPath), err)
+		}
+	}
+
 	err = database.UpdateVideo(v, db)
 	if err != nil {
 		return fmt.Errorf("error updating video %s: %v", v.VideoID, err)
