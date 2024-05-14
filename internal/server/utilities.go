@@ -25,6 +25,7 @@ func getSortList() map[string]string {
 		"leastviews": "CAST(views AS int) ASC, created_at ASC, id ASC",
 		"mostlikes":  "CAST(likes AS int) DESC, created_at DESC, id DESC",
 		"leastlikes": "CAST(likes AS int) ASC, created_at ASC, id ASC",
+		"dateadded":  "id DESC",
 	}
 }
 
