@@ -1,7 +1,7 @@
 # Stage 1: Build stage
 FROM golang:1.20.4-alpine3.18 AS build
 
-ENV APPVERSION=0.3.1
+ENV APPVERSION=0.3.5
 
 RUN apk update && \
     apk add --no-cache git make build-base
