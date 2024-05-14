@@ -38,6 +38,9 @@ func GetYouTubeMetadata(url string, comments bool) (database.YouTubeVideoInfoStr
 		"--dump-json",
 		url,
 	}
+	if _, err := os.Stat("./config/cookies.txt"); err == nil {
+		metadataArgs = append(metadataArgs, "--cookies", "./config/cookies.txt")
+	}
 	if comments {
 		metadataArgs = append(metadataArgs, "--write-comments")
 		metadataArgs = append(metadataArgs, "--extractor-args", "youtube:comment_sort=top")
@@ -228,7 +231,15 @@ func downloadYouTubeVideo(url string, outputDir string, videoid string, config s
 
 	tmpPath := fmt.Sprintf("./data/tmp/%v", videoid)
 
-	cmd := exec.Command("yt-dlp", "--config-location", config, "-o", tmpPath, url)
+	cmd := exec.Command("yt-dlp", "--config-location", config)
+
+	// Check if cookies.txt exists
+	cookiesPath := "./config/cookies.txt"
+	if _, err := os.Stat(cookiesPath); err == nil {
+		cmd.Args = append(cmd.Args, "--cookies", cookiesPath)
+	}
+
+	cmd.Args = append(cmd.Args, "-o", tmpPath, url)
 
 	// Create a pipe for capturing the output
 	stdout, err := cmd.StdoutPipe()
@@ -584,9 +595,6 @@ func updateVideoMetadata(videoID string) error {
 			if string(newSubsJSON) != video.SubtitlePath {
 				// replace the youtube default path
 				video.SubtitlePath = strings.ReplaceAll(string(newSubsJSON), settings.BaseYouTubePath, "")
-				if err != nil {
-					return err
-				}
 				err = database.UpdateVideo(video, db)
 				if err != nil {
 					return err
@@ -881,17 +889,14 @@ func updateAllVideoMetadata() error {
 			log.Errorf("Error updating creator %v: %v", creator.Name, err)
 			continue
 		}
-		files, err := os.ReadDir("./data/tmp")
+		fif, err := general.StringInFolder(creator.ChannelID, "./data/tmp/")
 		if err != nil {
 			return err
 		}
-
-		for _, file := range files {
-			if strings.HasPrefix(file.Name(), creator.ChannelID) {
-				err = os.Remove(fmt.Sprintf("./data/tmp/%v", file.Name()))
-				if err != nil {
-					return err
-				}
+		for _, file := range fif {
+			err = os.Remove(file)
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -909,17 +914,14 @@ func updateAllVideoMetadata() error {
 			log.Errorf("Error updating video %v: %v", video.VideoID, err)
 			continue
 		}
-		// if ./data/tmp/$videoID.* exists, delete it
-		files, err := os.ReadDir("./data/tmp")
+		fif, err := general.StringInFolder(video.VideoID, "./data/tmp/")
 		if err != nil {
 			return err
 		}
-		for _, file := range files {
-			if strings.HasPrefix(file.Name(), video.VideoID) {
-				err = os.Remove(fmt.Sprintf("./data/tmp/%v", file.Name()))
-				if err != nil {
-					return err
-				}
+		for _, file := range fif {
+			err = os.Remove(file)
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -1131,7 +1133,7 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 	dbcreator, err := database.GetCreator(creatorID, db)
 	if err == nil {
 		return dbcreator, nil
-	} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return database.Creator{}, err
 	}
 
@@ -1371,7 +1373,7 @@ func downloadComments(videoID string) (string, error) {
 	return sanitizedCommentPath, nil
 }
 
-func subDownload(subFile string, url string, ext string) (string, error) {
+func subDownload(subFile string, url string) (string, error) {
 
 	// Create the directory if it doesn't exist
 	err := os.MkdirAll(filepath.Dir(subFile), 0755)
@@ -1446,7 +1448,7 @@ func downloadSubtitles(subtitlePath string, videoData *database.YouTubeVideoInfo
 				continue
 			}
 
-			_, err = subDownload(subFile, sub.URL, sub.Ext)
+			_, err = subDownload(subFile, sub.URL)
 			if err != nil {
 				log.Errorf("Error downloading subtitle: %v", err)
 				continue

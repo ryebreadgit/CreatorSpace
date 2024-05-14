@@ -67,15 +67,11 @@ func Run() {
 		}
 	})
 
-	r.Static("/assets", "./static")
-
 	r.GET("/favicon.ico", func(c *gin.Context) {
-		// check if cached
-		if c.Writer.Header().Get("Cache-Control") == "" {
-			c.Writer.Header().Set("Cache-Control", "public, max-age=31536000")
-		}
-		c.File("./static/img/favicon.ico")
+		c.File("./static/img/favicon/favicon.ico")
 	})
+
+	r.Static("/assets", "./static")
 
 	r.LoadHTMLGlob("./templates/*.tmpl")
 
@@ -84,6 +80,8 @@ func Run() {
 	r.GET("/logout", page_logout(db))
 
 	r.GET("/register", page_register(db))
+
+	r.GET("/health", health_check(db))
 
 	// require jwt token for all below routes
 	r.Use(notLoggedInMiddleware(db))
@@ -147,6 +145,10 @@ func Run() {
 	if port == "" {
 		port = "8080"
 	}
+
+	versionInfo := api.GetVersion()
+
+	log.Infof("Launching CreatorSpace on port %s. Running version '%s', build date '%s', commit hash '%s', go version '%s', yt_dlp version '%s'.", port, versionInfo.AppVersion, versionInfo.BuildDate, versionInfo.CommitHash, versionInfo.GoVersion, versionInfo.YTDLPVersion)
 
 	r.Run(":" + port)
 }

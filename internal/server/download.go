@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	twitterscraper "github.com/n0madic/twitter-scraper"
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	"github.com/ryebreadgit/CreatorSpace/internal/tasking"
+	//twitterscraper "github.com/n0madic/twitter-scraper"
 )
 
 func getDownloadPage(c *gin.Context) {
@@ -88,23 +88,26 @@ func getDownloadPage(c *gin.Context) {
 		if data.Thumbnail == "" && len(creatorMetadata.Thumbnails) > 0 {
 			data.Thumbnail = creatorMetadata.Thumbnails[0].URL
 		}
-	} else if vidtype == "twitter" {
-		scraper := twitterscraper.New()
-		err := scraper.LoginOpenAccount()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
-			return
-		}
+		/*
+			} else if vidtype == "twitter" {
 
-		profile, err := scraper.GetProfile(videoid)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
-			return
-		}
+				scraper := twitterscraper.New()
+				err := scraper.LoginOpenAccount()
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
+					return
+				}
 
-		data.Title = profile.Name
-		data.Thumbnail = strings.ReplaceAll(profile.Avatar, "_normal", "")
-		data.Description = profile.Biography
+				profile, err := scraper.GetProfile(videoid)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"ret": http.StatusInternalServerError, "err": err.Error()})
+					return
+				}
+
+				data.Title = profile.Name
+				data.Thumbnail = strings.ReplaceAll(profile.Avatar, "_normal", "")
+				data.Description = profile.Biography
+		*/
 	} else {
 		data.Title = videoid
 		data.Thumbnail = "https://i.ytimg.com/vi/" + videoid + "/hqdefault.jpg"

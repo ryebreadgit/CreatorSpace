@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os/exec"
+	"runtime"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -12,10 +16,18 @@ import (
 	"gorm.io/gorm"
 )
 
-var db *gorm.DB
-var settings *database.Settings
-var ctx context.Context = context.Background()
-var rdb *redis.Client
+var (
+	db           *gorm.DB
+	settings     *database.Settings
+	ctx          context.Context = context.Background()
+	rdb          *redis.Client
+	GitCommit    string = "unknown"
+	BuildDate    string = "unknown"
+	AppVersion   string = "unknown"
+	YTDLPVersion string = GetYTDLPVersion()
+	GoVersion    string = runtime.Version()
+	ApiStartTime time.Time
+)
 
 func Routes(route *gin.Engine) {
 	api := route.Group("/api")
@@ -150,12 +162,46 @@ func Routes(route *gin.Engine) {
 			admin.PATCH("/users/:user_id/password", apiUpdateUserPassword)
 			admin.PATCH("/users/:user_id/role", apiUpdateUserRole)
 		}
-
 	}
+	version := route.Group("/version")
+	{
+		version.Use(jwttoken.JwtMiddleware())
+		version.GET("", apiVersion)
+	}
+}
+
+func GetYTDLPVersion() string {
+	// Run yt-dlp --version
+	args := []string{"--version"}
+	cmd := exec.Command("yt-dlp", args...)
+	stdout, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("Error running yt-dlp: %s\n", err)
+		return "unknown"
+	}
+	return strings.TrimSpace(string(stdout))
+}
+
+func GetVersion() apiVersionStruct {
+	uptime := time.Since(ApiStartTime).Round(time.Millisecond).String()
+	var ver apiVersionStruct = apiVersionStruct{
+		CommitHash:   GitCommit,
+		BuildDate:    BuildDate,
+		AppVersion:   AppVersion,
+		GoVersion:    GoVersion,
+		YTDLPVersion: YTDLPVersion,
+		Uptime:       uptime,
+	}
+	return ver
+}
+
+func apiVersion(c *gin.Context) {
+	c.JSON(200, gin.H{"ret": 200, "data": GetVersion()})
 }
 
 func init() {
 	var err error
+	ApiStartTime = time.Now()
 	// get database
 	db, err = database.GetDatabase()
 	if err != nil {
