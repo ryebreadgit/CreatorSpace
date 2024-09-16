@@ -34,8 +34,8 @@ import (
 func GetYouTubeMetadata(url string, comments bool) (database.YouTubeVideoInfoStruct, error) {
 	// Construct the command to run yt-dlp and get video info in JSON format
 	metadataArgs := []string{
-		"--skip-download",
-		"--dump-json",
+		"--config-locations",
+		"./config/youtube-metadata.conf",
 		url,
 	}
 	if _, err := os.Stat("./config/cookies.txt"); err == nil {
@@ -65,7 +65,7 @@ func GetYouTubeMetadata(url string, comments bool) (database.YouTubeVideoInfoStr
 		} else if strings.Contains(errstr, "unavailable") || strings.Contains(errstr, "this video has been removed") {
 			return database.YouTubeVideoInfoStruct{}, fmt.Errorf("unavailable video")
 		} else {
-			log.Errorf("Error getting video metadata: %v", err)
+			log.Errorf("Error getting video metadata: '%v': %v", err, out)
 			return database.YouTubeVideoInfoStruct{}, err
 		}
 	}
@@ -231,7 +231,7 @@ func downloadYouTubeVideo(url string, outputDir string, videoid string, config s
 
 	tmpPath := fmt.Sprintf("./data/tmp/%v", videoid)
 
-	cmd := exec.Command("yt-dlp", "--config-location", config)
+	cmd := exec.Command("yt-dlp", "--config-locations", config)
 
 	// Check if cookies.txt exists
 	cookiesPath := "./config/cookies.txt"
@@ -930,7 +930,7 @@ func updateAllVideoMetadata() error {
 
 func GetCreatorMetadata(creatorLink string) (database.YoutubePlaylistStruct, error) {
 	// Get creator json from https://www.youtube.com/channel/$creatorID/about from yt-dlp. Export to stdout and unmarshal into a Creator struct
-	cmd := exec.Command("yt-dlp", "--dump-single-json", creatorLink)
+	cmd := exec.Command("yt-dlp", "--config-locations", "./config/youtube-metadata-creator.conf", creatorLink)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
