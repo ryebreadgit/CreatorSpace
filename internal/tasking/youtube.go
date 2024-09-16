@@ -635,6 +635,29 @@ func updateVideoMetadata(videoID string) error {
 			}
 		}
 
+		var oldThumbPath string
+
+		if video.ThumbnailPath != "" {
+			oldThumbPath = fmt.Sprintf("%v/%v", settings.BaseYouTubePath, video.ThumbnailPath)
+		} else {
+			oldThumbPath = ""
+		}
+
+		// Download thumbnail
+		newThumbPath, err := downloadThumbnail(info.Thumbnail, oldThumbPath, video.VideoID)
+		if err != nil && !strings.Contains(err.Error(), "thumbnails are the same") {
+			newThumbPath = ""
+		}
+
+		if newThumbPath != "" && newThumbPath != video.ThumbnailPath {
+			// Update the video thumbnail path in the database
+			video.ThumbnailPath = strings.ReplaceAll(newThumbPath, settings.BaseYouTubePath, "")
+			err = database.UpdateVideo(video, db)
+			if err != nil {
+				return err
+			}
+		}
+
 		// If over 7 days old and not updated, update comments and set updated to true
 		if time.Since(pubTime) > 7*24*time.Hour && !video.Updated {
 			// Download comments
@@ -723,15 +746,6 @@ func updateVideoMetadata(videoID string) error {
 			log.Errorf("Error downloading sponsorblock segments for %v: %v", video.Title, err) // Change to log error
 		}
 
-		// Download comments
-		newCommPath, err := downloadComments(video.VideoID)
-		if err == nil {
-			// if the comments path is different, update the comments path
-			if newCommPath != video.CommentsPath {
-				video.CommentsPath = strings.ReplaceAll(newCommPath, settings.BaseYouTubePath, "")
-			}
-		} // We'll just ignore the error here. If the comments fail to download, we'll just leave the old comments path
-
 		video.Views = strconv.Itoa(info.ViewCount)
 
 		// save info to the disk. Save this to the video.MetadataPath location. Rename the old file to video.MetadataPath.00n where n increments if the file already exists
@@ -816,26 +830,38 @@ func updateVideoMetadata(videoID string) error {
 			}
 		}
 
+		var oldThumbPath string
+
+		if video.ThumbnailPath != "" {
+			oldThumbPath = fmt.Sprintf("%v/%v", settings.BaseYouTubePath, video.ThumbnailPath)
+		} else {
+			oldThumbPath = ""
+		}
+
+		// Download thumbnail
+		newThumbPath, err := downloadThumbnail(info.Thumbnail, oldThumbPath, video.VideoID)
+		if err != nil && !strings.Contains(err.Error(), "thumbnails are the same") {
+			return err
+		}
+		if newThumbPath != "" {
+			video.ThumbnailPath = strings.ReplaceAll(newThumbPath, settings.BaseYouTubePath, "")
+		}
+
 		err = database.UpdateVideo(video, db)
 		if err != nil {
 			return err
 		}
 
+		// Download comments
+		newCommPath, err := downloadComments(video.VideoID)
+		if err == nil {
+			// if the comments path is different, update the comments path
+			if newCommPath != video.CommentsPath {
+				video.CommentsPath = strings.ReplaceAll(newCommPath, settings.BaseYouTubePath, "")
+			}
+		} // We'll just ignore the error here. If the comments fail to download, we'll just leave the old comments path
+
 		log.Infof("Updated video metadata for: %v", video.VideoID)
-	}
-
-	var oldThumbPath string
-
-	if video.ThumbnailPath != "" {
-		oldThumbPath = fmt.Sprintf("%v/%v", settings.BaseYouTubePath, video.ThumbnailPath)
-	} else {
-		oldThumbPath = ""
-	}
-
-	// Download thumbnail
-	newThumbPath, err := downloadThumbnail(info.Thumbnail, oldThumbPath, video.VideoID)
-	if err != nil && !strings.Contains(err.Error(), "thumbnails are the same") {
-		return err
 	}
 
 	// If video is older than a week old, set updated to true
@@ -853,7 +879,6 @@ func updateVideoMetadata(videoID string) error {
 		}
 	}
 
-	video.ThumbnailPath = strings.ReplaceAll(newThumbPath, settings.BaseYouTubePath, "")
 	err2 := database.UpdateVideo(video, db)
 	if err2 != nil {
 		return err2
@@ -1193,7 +1218,7 @@ func getNewCreator(creatorID string) (database.Creator, error) {
 
 	if thumbUrl != "" {
 		thmb, err := downloadThumbnail(thumbUrl, thumbPath, "avatar")
-		if err != nil {
+		if err != nil && !strings.Contains(err.Error(), "thumbnails are the same") {
 			log.Errorf("Error downloading thumbnail for %v: %v", creator.Name, err)
 		} else {
 			creator.ThumbnailPath, err = general.SanitizeFilePath(thmb)
