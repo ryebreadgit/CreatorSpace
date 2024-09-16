@@ -64,7 +64,7 @@ func GetYouTubeMetadata(url string, comments bool) (database.YouTubeVideoInfoStr
 			return database.YouTubeVideoInfoStruct{}, fmt.Errorf("private video")
 		} else if strings.Contains(errstr, "unavailable") || strings.Contains(errstr, "this video has been removed") {
 			return database.YouTubeVideoInfoStruct{}, fmt.Errorf("unavailable video")
-		} else if strings.Contains(errstr, "Sign in to confirm you’re not a bot. This helps protect our community.") {
+		} else if strings.Contains(errstr, "sign in to confirm you’re not a bot") {
 			return database.YouTubeVideoInfoStruct{}, fmt.Errorf("rate limited")
 		} else {
 			log.Errorf("Error getting video metadata: '%v': %v", err, out)
@@ -396,7 +396,7 @@ func updateVideoMetadata(videoID string) error {
 			}
 			return nil
 		} else if strings.Contains(strings.ToLower(err.Error()), "rate limited") {
-			log.Debugf("Rate limited, waiting 5 minutes")
+			log.Warnf("Rate limited, waiting 5 minutes and skipping video '%v' until next run", videoID)
 			time.Sleep(5 * time.Minute)
 			return nil
 		} else {
@@ -858,8 +858,15 @@ func updateVideoMetadata(videoID string) error {
 			// if the comments path is different, update the comments path
 			if newCommPath != video.CommentsPath {
 				video.CommentsPath = strings.ReplaceAll(newCommPath, settings.BaseYouTubePath, "")
+				err = database.UpdateVideo(video, db)
+				if err != nil {
+					log.Warnf("Error updating comments path in db for %v: %v", video.VideoID, err)
+				}
 			}
-		} // We'll just ignore the error here. If the comments fail to download, we'll just leave the old comments path
+		} else {
+			// We'll just ignore the error here. If the comments fail to download, we'll just leave the old comments path
+			log.Warnf("Error downloading comments for %v: %v", video.VideoID, err)
+		}
 
 		log.Infof("Updated video metadata for: %v", video.VideoID)
 	}
