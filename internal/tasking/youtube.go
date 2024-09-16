@@ -50,21 +50,19 @@ func GetYouTubeMetadata(url string, comments bool) (database.YouTubeVideoInfoStr
 	if err != nil {
 		// check if video is private. Check stderr for "This video is private"
 		errstr := strings.ToLower(string(err.(*exec.ExitError).Stderr))
-		// check if just a warning
-		if strings.Contains(errstr, "warning") {
-			// check if data in stdout is valid
-			var info database.YouTubeVideoInfoStruct
-			err = json.Unmarshal(out, &info)
-			if err != nil {
-				log.Errorf("Error unmarshalling JSON data: %v", err)
-				return database.YouTubeVideoInfoStruct{}, err
-			}
+		var info database.YouTubeVideoInfoStruct
+
+		if json.Unmarshal(out, &info) == nil {
 			return info, nil
-		} else if strings.Contains(errstr, "private video") {
+		}
+		// check if just a warning
+		if strings.Contains(errstr, "private video") {
 			return database.YouTubeVideoInfoStruct{}, fmt.Errorf("private video")
 		} else if strings.Contains(errstr, "unavailable") || strings.Contains(errstr, "this video has been removed") {
 			return database.YouTubeVideoInfoStruct{}, fmt.Errorf("unavailable video")
 		} else if strings.Contains(errstr, "sign in to confirm you’re not a bot") {
+			return database.YouTubeVideoInfoStruct{}, fmt.Errorf("rate limited")
+		} else if strings.Contains(strings.ToLower(string(out)), "sign in to confirm you’re not a bot") {
 			return database.YouTubeVideoInfoStruct{}, fmt.Errorf("rate limited")
 		} else {
 			log.Errorf("Error getting video metadata: '%v': %v", err, out)

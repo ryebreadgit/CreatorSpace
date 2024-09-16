@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func fetchChannelVideoIDs(channelID string, vidtype string, limit int) ([]string, error) {
+func fetchChannelVideoIDs(channelID string, vidtype string, limit int, is_retry bool) ([]string, error) {
 	if limit > 0 {
 		log.Debugf("Fetching video IDs for %v-%v (quick)", channelID, vidtype)
 	} else {
@@ -75,6 +75,18 @@ func fetchChannelVideoIDs(channelID string, vidtype string, limit int) ([]string
 		if len(stdout.Bytes()) > 0 {
 			log.Debugf("yt-dlp command failed on '%v', but returned data in stdout. Continuing with that data.\n", channelID)
 		} else {
+
+			// Check for rate limit, sleep for 5 minutes then retry once
+			if strings.Contains(strings.ToLower(stderr.String()), "sign in to confirm you’re not a bot") {
+				log.Warnf("Rate limited, sleeping for 5 minutes")
+				time.Sleep(5 * time.Minute)
+				if is_retry {
+					return nil, fmt.Errorf("yt-dlp command failed on '%v' with rate limit error, even after retrying: %v", channelID, err)
+				} else {
+					return fetchChannelVideoIDs(channelID, vidtype, limit, true)
+				}
+			}
+
 			return nil, fmt.Errorf("yt-dlp command failed on '%v': %v, stderr: %s", channelID, err, stderr.String())
 		}
 	}
@@ -190,7 +202,7 @@ func fetchWorker(workChan chan fetchWorkItem, videoIDChan chan videoWorkItem, wg
 	defer wg.Done()
 	for workItem := range workChan {
 		// fetch video IDs
-		videoIDs, err := fetchChannelVideoIDs(workItem.channelID, workItem.videoType, workItem.limit)
+		videoIDs, err := fetchChannelVideoIDs(workItem.channelID, workItem.videoType, workItem.limit, false)
 		if err != nil {
 			errChan <- err
 			continue

@@ -46,7 +46,7 @@ func downloadYouTubeVideos(settings *database.Settings, db *gorm.DB) error {
 
 		filePath, err := downloadYouTubeVideo(vidUrl, outputDir, video.VideoID, config)
 		if err != nil {
-			if strings.Contains(err.Error(), "rate limited") {
+			if strings.Contains(err.Error(), "rate limited") || strings.Contains(err.Error(), "429") || strings.Contains(strings.ToLower(err.Error()), "sign in to confirm you’re not a bot") {
 				log.Warnf("Rate limited, skipping video id '%v' and sleeping for 5 minutes", video.VideoID)
 				time.Sleep(5 * time.Minute)
 				continue
