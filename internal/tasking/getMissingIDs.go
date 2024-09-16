@@ -251,8 +251,7 @@ func processVideoIDs(videoIDChan chan videoWorkItem, limit int, settings *databa
 					if videoID.videoType == "playlist" {
 						// If the channel is not in the database, then instead use chanel id 000 and Various Creators as the channel name
 						channel = database.Creator{
-							ChannelID: "000",
-							Name:      "Various Creators",
+							Name: "Various Creators",
 						}
 					} else {
 						// If the channel is not in the database, then create it
