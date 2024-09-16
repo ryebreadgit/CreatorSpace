@@ -24,8 +24,7 @@ func runTask(task *Task, db *gorm.DB) {
 			}
 			log.Infof("Started running task '%v' at '%v'", task.Name, time.Now().Format("2006-01-02 15:04:05"))
 
-			// Create a context with a timeout of 2 hours
-			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
+			ctx, cancel := context.WithTimeout(context.Background(), task.Timeout)
 
 			done := make(chan error, 1)
 			go func() {
@@ -124,6 +123,7 @@ func InitTasking() {
 					Epoch:    t.Epoch,
 					Interval: t.Interval * time.Minute,
 					Task:     task_ScanLibraryAndAddToDatabase,
+					Timeout:  1 * time.Hour,
 					Args:     []interface{}{settings, db},
 				})
 			}
@@ -134,6 +134,7 @@ func InitTasking() {
 					Epoch:    t.Epoch,
 					Interval: t.Interval * time.Minute,
 					Task:     task_getMissingVideoIDs,
+					Timeout:  4 * time.Hour,
 					Args:     []interface{}{settings, db},
 				})
 			}
@@ -144,6 +145,7 @@ func InitTasking() {
 					Epoch:    t.Epoch,
 					Interval: t.Interval * time.Minute,
 					Task:     task_updateAllVideoMetadata,
+					Timeout:  4 * time.Hour,
 					Args:     []interface{}{settings, db},
 				})
 			}
@@ -154,6 +156,7 @@ func InitTasking() {
 					Epoch:    t.Epoch,
 					Interval: t.Interval * time.Minute,
 					Task:     task_DownloadYouTubeVideo,
+					Timeout:  1 * time.Hour,
 					Args:     []interface{}{settings, db},
 				})
 			}
@@ -164,6 +167,7 @@ func InitTasking() {
 					Epoch:    t.Epoch,
 					Interval: t.Interval * time.Minute,
 					Task:     task_getMissingVideoIDsQuick,
+					Timeout:  30 * time.Minute,
 					Args:     []interface{}{settings, db},
 				})
 			}
@@ -174,6 +178,7 @@ func InitTasking() {
 					Epoch:    t.Epoch,
 					Interval: t.Interval * time.Minute,
 					Task:     task_SystemCleanup,
+					Timeout:  30 * time.Minute,
 					Args:     []interface{}{settings, db},
 				})
 			}

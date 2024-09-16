@@ -10,6 +10,7 @@ type Task struct {
 	Name     string
 	Epoch    int64
 	Interval time.Duration
+	Timeout  time.Duration
 	Task     func(...interface{}) error
 	Args     []interface{}
 }
