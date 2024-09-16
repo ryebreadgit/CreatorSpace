@@ -50,7 +50,7 @@ func fetchChannelVideoIDs(channelID string, vidtype string, limit int) ([]string
 		}
 	}
 
-	ytargs := []string{"--skip-download", "--get-id", addr}
+	ytargs := []string{"--config-locations", "./config/youtube-video-fetch_id.conf", addr}
 	if limit > 0 {
 		ytargs = append(ytargs, "--playlist-end", fmt.Sprintf("%v", limit))
 	}
