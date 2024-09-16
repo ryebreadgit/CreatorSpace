@@ -297,6 +297,9 @@ func processVideoIDs(videoIDChan chan videoWorkItem, limit int, settings *databa
 
 				err = database.InsertDownloadQueueItem(item, db)
 				if err != nil {
+					if strings.Contains(err.Error(), "item already exists") {
+						continue
+					}
 					log.Errorf("Error inserting download queue item for video %v: %v\n", videoID.videoID, err)
 					errChan <- err
 					continue
