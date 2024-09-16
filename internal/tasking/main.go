@@ -24,8 +24,8 @@ func runTask(task *Task, db *gorm.DB) {
 			}
 			log.Infof("Started running task '%v' at '%v'", task.Name, time.Now().Format("2006-01-02 15:04:05"))
 
-			// Create a context with a timeout of 1 hour
-			ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+			// Create a context with a timeout of 2 hours
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
 
 			done := make(chan error, 1)
 			go func() {
@@ -38,7 +38,7 @@ func runTask(task *Task, db *gorm.DB) {
 					log.Errorf("Error running task '%v': %v", task.Name, err)
 				}
 			case <-ctx.Done():
-				log.Errorf("Task '%v' timed out", task.Name)
+				log.Warnf("Task '%v' timed out", task.Name)
 			}
 
 			// Explicitly call cancel to release resources
