@@ -1,6 +1,7 @@
 package tasking
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -22,10 +23,27 @@ func runTask(task *Task, db *gorm.DB) {
 				log.Errorf("Error updating task epoch: %v", err)
 			}
 			log.Infof("Started running task '%v' at '%v'", task.Name, time.Now().Format("2006-01-02 15:04:05"))
-			err = task.Task(task.Args...)
-			if err != nil {
-				log.Errorf("Error running task '%v': %v", task.Name, err)
+
+			// Create a context with a timeout of 1 hour
+			ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+
+			done := make(chan error, 1)
+			go func() {
+				done <- task.Task(task.Args...)
+			}()
+
+			select {
+			case err = <-done:
+				if err != nil {
+					log.Errorf("Error running task '%v': %v", task.Name, err)
+				}
+			case <-ctx.Done():
+				log.Errorf("Task '%v' timed out", task.Name)
 			}
+
+			// Explicitly call cancel to release resources
+			cancel()
+
 			task.Lock()
 			task.Epoch = time.Now().Unix() + int64(task.Interval.Seconds())
 
