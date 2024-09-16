@@ -64,6 +64,8 @@ func GetYouTubeMetadata(url string, comments bool) (database.YouTubeVideoInfoStr
 			return database.YouTubeVideoInfoStruct{}, fmt.Errorf("private video")
 		} else if strings.Contains(errstr, "unavailable") || strings.Contains(errstr, "this video has been removed") {
 			return database.YouTubeVideoInfoStruct{}, fmt.Errorf("unavailable video")
+		} else if strings.Contains(errstr, "Sign in to confirm you’re not a bot. This helps protect our community.") {
+			return database.YouTubeVideoInfoStruct{}, fmt.Errorf("rate limited")
 		} else {
 			log.Errorf("Error getting video metadata: '%v': %v", err, out)
 			return database.YouTubeVideoInfoStruct{}, err
@@ -392,6 +394,10 @@ func updateVideoMetadata(videoID string) error {
 			if err != nil {
 				return err
 			}
+			return nil
+		} else if strings.Contains(strings.ToLower(err.Error()), "rate limited") {
+			log.Debugf("Rate limited, waiting 5 minutes")
+			time.Sleep(5 * time.Minute)
 			return nil
 		} else {
 			log.Errorf("Error getting video metadata: %v", err)
