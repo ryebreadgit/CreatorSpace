@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/ryebreadgit/CreatorSpace/internal/database"
 	log "github.com/sirupsen/logrus"
@@ -45,6 +46,11 @@ func downloadYouTubeVideos(settings *database.Settings, db *gorm.DB) error {
 
 		filePath, err := downloadYouTubeVideo(vidUrl, outputDir, video.VideoID, config)
 		if err != nil {
+			if strings.Contains(err.Error(), "rate limited") {
+				log.Warnf("Rate limited, skipping video id '%v' and sleeping for 5 minutes", video.VideoID)
+				time.Sleep(5 * time.Minute)
+				continue
+			}
 			dlerrs = append(dlerrs, err)
 			log.Errorf("Error downloading video id '%v': %v", video.VideoID, err)
 			continue
