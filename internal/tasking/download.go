@@ -46,6 +46,7 @@ func downloadYouTubeVideos(settings *database.Settings, db *gorm.DB) error {
 
 		filePath, err := downloadYouTubeVideo(vidUrl, outputDir, video.VideoID, config)
 		if err != nil {
+			_ = database.DeleteVideo(video.VideoID, db) // Remove video from Videos table if it exists
 			if strings.Contains(err.Error(), "rate limited") || strings.Contains(err.Error(), "429") || strings.Contains(strings.ToLower(err.Error()), "sign in to confirm you’re not a bot") {
 				log.Warnf("Rate limited, skipping video id '%v' and sleeping for 5 minutes", video.VideoID)
 				time.Sleep(5 * time.Minute)
@@ -87,6 +88,12 @@ func downloadYouTubeVideos(settings *database.Settings, db *gorm.DB) error {
 		// update video metadata
 		err = updateVideoMetadata(video.VideoID)
 		if err != nil {
+			_ = database.DeleteVideo(video.VideoID, db) // Remove video from Videos table if it exists
+			if strings.Contains(err.Error(), "rate limited") || strings.Contains(err.Error(), "429") || strings.Contains(strings.ToLower(err.Error()), "sign in to confirm you’re not a bot") {
+				log.Warnf("Rate limited, skipping video id '%v' and sleeping for 5 minutes", video.VideoID)
+				time.Sleep(5 * time.Minute)
+				continue
+			}
 			log.Errorf("Error updating video metadata for video id '%v': %v", video.VideoID, err)
 			dlerrs = append(dlerrs, err)
 			continue

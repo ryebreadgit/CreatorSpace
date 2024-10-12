@@ -37,7 +37,7 @@ func runTask(task *Task, db *gorm.DB) {
 					log.Errorf("Error running task '%v': %v", task.Name, err)
 				}
 			case <-ctx.Done():
-				log.Warnf("Task '%v' timed out", task.Name)
+				log.Warnf("Task '%v' timed out after '%v'", task.Name, task.Timeout.String())
 			}
 
 			// Explicitly call cancel to release resources
@@ -167,7 +167,7 @@ func InitTasking() {
 					Epoch:    t.Epoch,
 					Interval: t.Interval * time.Minute,
 					Task:     task_getMissingVideoIDsQuick,
-					Timeout:  30 * time.Minute,
+					Timeout:  1 * time.Hour,
 					Args:     []interface{}{settings, db},
 				})
 			}
