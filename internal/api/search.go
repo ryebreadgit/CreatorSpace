@@ -156,6 +156,7 @@ func apiSearchVideos(c *gin.Context) {
 	// Append creators to the bottom
 
 	var creators []database.Creator
+	var creatorMap = make(map[string]bool)
 
 	err = db.Limit(limit).Where("LOWER(name) LIKE ?", "%"+query+"%").Find(&creators).Error
 	if err != nil {
@@ -173,6 +174,35 @@ func apiSearchVideos(c *gin.Context) {
 		creatorVideo.Title = creator.Name
 
 		videos = append(videos, creatorVideo)
+		creatorMap[creator.ChannelID] = true
+	}
+
+	var channelCreators []database.Video
+
+	// Do the same where channel name is like query
+	err = db.Limit(limit).Where("LOWER(channel_title) LIKE ?", "%"+query+"%").Find(&channelCreators).Error
+
+	if err != nil {
+		c.JSON(500, gin.H{
+			"res": 500,
+			"err": err.Error(),
+		})
+		return
+	}
+
+	for _, creator := range channelCreators {
+		var creatorVideo database.Video
+		creatorVideo.VideoType = "channel"
+		creatorVideo.VideoID = creator.ChannelID
+		creatorVideo.Title = creator.ChannelTitle
+
+		if _, ok := creatorMap[creator.ChannelID]; ok {
+			continue
+		}
+
+		videos = append(videos, creatorVideo)
+
+		creatorMap[creator.ChannelID] = true
 	}
 
 	c.JSON(200, gin.H{
